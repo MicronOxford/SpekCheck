@@ -20,8 +20,9 @@
 // Extensions to strip from source filenames, and files to exclude.
 var FN_EXCLUDE = ['.csv', '.Csv', 'CSV', 'index.html'];
 // The set of active filters.
-var FSET = [];
 var CHART = null;
+var SPECTRA = {};
+
 var lastui;
 var lastevent;
 
@@ -34,6 +35,35 @@ var WLSTEP = 1.0;
  * #filters - a list of available filters
  * #dyes    - a list of available dyes
  */
+
+
+// Spectrum constructor.
+function Spectrum(source, name) {
+    this.source = source;   // source url
+    this.name = name;       // name
+    this.raw=null;          // raw data after fetch
+    this.interp=null;       // interpolated data
+    this.points=null;       // points as [{x: , y:}, ...]
+
+    this.fetch = function ( ){
+        // Fetch data for item if not already available.
+        // Used deferred item to allow concurrent fetches.
+        var d = $.Deferred();
+        if (this.raw === null) {
+        $.get(this.source,
+            $.proxy(function(resp){
+                this.raw = resp;
+                this.interp = interpolate(this.raw);
+                this.points = this.interp.map(function (row) {return {x:row[0], y:row[1]}});
+                d.resolve();
+            }, this),
+            'text');
+        } else {
+            d.resolve();
+        }
+        return d;
+    }
+}
 
 
 function interpolate(raw) {
@@ -65,83 +95,59 @@ function interpolate(raw) {
 }
 
 
-function fetchItemData(thing) {
-    // Fetch data for item if not already available.
-    // Used deferred item to allow concurrent fetches.
-     TIC = (new Date()).getTime();
-     var d = $.Deferred();
-     if (thing.data().raw == undefined) {
-        $.get(thing.data().source, 
-            function(resp){
-                thing.data('raw', resp);
-                thing.data('interpolated', interpolate(resp));
-                d.resolve();
-            }, 
-            'text');
-    } else {
-        d.resolve();
-    }
-    return d;
-}
-
-
 function updatePlot() {
-    var filters = $( "#fset .activeFilter" );
-    var dye = $( "#dyes .ui-selected");
-    var chart = $( "#chart");
+    var dye = [];
+    var filters = [];
+    var filterModes = [];
+
+    $( "#dyes .ui-selected").each(function() {dye.push($(this).data().key)})
+    $( "#fset .activeFilter").each(function() {filters.push($(this).data().key)})
+    $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
 
     // Fetch all data with concurrent calls.
     var defer = [];   
     if (dye.length > 0){
-        defer.push(fetchItemData(dye));
+        defer.push(SPECTRA[dye[0]].fetch());
     }
-    $('.activeFilter').each(function (index) {
-        defer.push(fetchItemData( $( this ) ));
-    })
+
+    for (var f of filters) {
+        defer.push(SPECTRA[f].fetch());
+    }
 
     // When all the data is ready, do the calculation and draw the plot.
-    $.when.apply(null, defer).then(function(){drawPlot()});
+    $.when.apply(null, defer).then(function(){drawPlot(dye[0], filters, filterModes)});
 }
 
 
-function drawPlot() {
-    console.log("Drawing the plot.")
-
-    var ctx = $( "#chart")[0].getContext('2d');
-        //CHART = new Chart(ctx, {
-        //    type: 'scatter'
-        //});
-
-    var traces = []
-    $(".activeFilter").each(function( index ) {
-        traces.push(
-            $( this ).data('interpolated').map(function (row) {
-                return {x:row[0], y:row[1]};
-        }) )
-    });
-
-
-
-
-    lastui = traces;
+function drawPlot(dye, filters, filterModes) {
+    if (!CHART) {
+        var ctx = $( "#chart")[0].getContext('2d');
         CHART = new Chart(ctx, {
-            type: 'scatter',
-            data: {
-                datasets: [{
-                    label: 'a trace',
-                    data: traces[0],
-            }],
-            options: {
-                scales: {
-                    xAxes: [{
-                        type: 'linear',
-                        position: 'bottom',
-                    }]
-                }
-            }
-        }
-    });
+            type: 'scatter'})
+    }
 
+    var skeys = [];
+    $("#dyes .ui-selected").each(function() {skeys.push($(this).data().key)});
+    $(".activeFilter").each(function() {skeys.push($(this).data().key)});
+
+    var traces = CHART.data.datasets.map( item => item.label );
+    var toRemove = traces.filter(item => skeys.indexOf(item) === -1);
+    var toAdd = skeys.filter(item => traces.indexOf(item) === -1 );
+
+    for (var key of toRemove) {
+        CHART.data.datasets.splice(
+            CHART.data.datasets.indexOf(
+                CHART.data.datasets.filter(item => item.label == key)[0]), 1);
+    }
+
+    for (var key of toAdd) {
+        CHART.data.datasets.push({
+            label: key,
+            data: SPECTRA[key].points
+        });
+    }
+
+    CHART.update();
 }
 
 
@@ -193,18 +199,19 @@ function selectDye( event, ui) {
 
 //=== DOCUMENT READY===//
 $( document ).ready(function() { 
-    // Populate list of filters
+    // Populate list of filters, and store SPECTRA key on the div.data
     $.ajax(
         {url: "./filters",
          data: "",
          dataType: "text",
-         success: function( data ) {
-            var filters = parseSources(data);
+         success: function( resp ) {
+            var filters = parseSources(resp);
             var divs = []
             $.each(filters, function(key, value) {
+                SPECTRA[key] = new Spectrum(`filters/${value}`, key);
                 var div = $( `<div><label>${key}</label></div>`);
                 div.addClass( "filterSpec" );
-                div.data('source', 'filters/' + value);
+                div.data('key', key);
                 divs.push(div);
             });
             $( "#filters" ).append(divs);
@@ -216,7 +223,7 @@ $( document ).ready(function() {
         drop: addFilter
     });
     
-    // Populate list of dyes
+    // Populate list of dyes, and store SPECTRA key on the div.data
     $.ajax(
         {url: "./dyes",
          data: "",
@@ -226,7 +233,8 @@ $( document ).ready(function() {
             var divs = []
             $.each(dyes, function(key, value) {
                 var div = $(`<div>${key}</div>`);
-                div.data('source', 'dyes/' + value);
+                SPECTRA[key] = new Spectrum(`dyes/${value}`, key);
+                div.data('key', key);
                 divs.push(div);
             });
             $( "#dyes" ).append(divs);
