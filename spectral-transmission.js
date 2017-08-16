@@ -36,18 +36,17 @@ var WLSTEP = 1.0;
  */
 
 
-
-function processData(thing) {
+function interpolate(raw) {
     // Parse csv and resample.
-    var csv = thing.data().raw.split('\n');
+    var csv = raw.split('\n');
     var wls = []
     var values = []
     for (let [index, line] of csv.entries()) {
         if (null !== line.match(/^\s?([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)[\w,;:\t]([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/)) {
             var wl, value;
             [wl, value] = line.trim().split(/[,;:\s\t]/);
-            wls.push(wl);
-            values.push(value);
+            wls.push(parseFloat(wl));
+            values.push(parseFloat(value));
         }
     }
     // interpolate; assumes input data is sorted by wavelength.
@@ -55,35 +54,34 @@ function processData(thing) {
     var i = 1; // Index into original data.
     var dw = wls[1] - wls[0];
     var dv = values[1] - values[0];
-    console.log(dw, dv, values[1], values[0], wls[1], wls[0]);
     for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
         if (wl > wls[i]) {
             i += 1;
-            dw = wls[i] - wls[i];
-            dv = values[i] - values[i];
+            dvdw = (values[i] - values[i]) / wls[i] - wls[i];
         }
         interpolated.push([wl, values[i-1] + (wl - wls[i-1]) * dv/dw]);
     }
-    thing.data('interpolated', interpolated);
+    return interpolated;
 }
 
 
 function fetchItemData(thing) {
     // Fetch data for item if not already available.
     // Used deferred item to allow concurrent fetches.
+     TIC = (new Date()).getTime();
      var d = $.Deferred();
      if (thing.data().raw == undefined) {
         $.get(thing.data().source, 
             function(resp){
                 thing.data('raw', resp);
-                processData(thing);
+                thing.data('interpolated', interpolate(resp));
                 d.resolve();
             }, 
             'text');
     } else {
         d.resolve();
     }
-     return d;
+    return d;
 }
 
 
@@ -98,9 +96,10 @@ function updatePlot() {
         defer.push(fetchItemData(dye));
     }
     $('.activeFilter').each(function (index) {
-        defer.push[fetchItemData( $( this ) )];
+        defer.push(fetchItemData( $( this ) ));
     })
-    // When all the data is ready, to the calculation and draw the plot.
+
+    // When all the data is ready, do the calculation and draw the plot.
     $.when.apply(null, defer).then(function(){drawPlot()});
 }
 
@@ -113,20 +112,35 @@ function drawPlot() {
         //    type: 'scatter'
         //});
 
-    var datasets = []
-    $(".activeFilter").each(function( index ) {datasets.push(
+    var traces = []
+    $(".activeFilter").each(function( index ) {
+        traces.push(
             $( this ).data('interpolated').map(function (row) {
-            return {x:row[0], y:row[1]}; 
-        }) }) })
+                return {x:row[0], y:row[1]};
+        }) )
+    });
 
 
-    lastui = datasets;
 
 
+    lastui = traces;
         CHART = new Chart(ctx, {
-            type: 'line',
-            data: [1,2,3,3,2,1],
-            options: ''});
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'a trace',
+                    data: traces[0],
+            }],
+            options: {
+                scales: {
+                    xAxes: [{
+                        type: 'linear',
+                        position: 'bottom',
+                    }]
+                }
+            }
+        }
+    });
 
 }
 
