@@ -28,7 +28,7 @@ var lastevent;
 
 var WLMIN = 300.0;
 var WLMAX = 800.0;
-var WLSTEP = 1.0;
+var WLSTEP = 2.0;
 
 /* Required page elements:
  * #fset    - the active filter set
@@ -55,6 +55,7 @@ function Spectrum(source, name) {
                 this.raw = resp;
                 this.interp = interpolate(this.raw);
                 this.points = this.interp.map(function (row) {return {x:row[0], y:row[1]}});
+                this.peakwl = this.interp.reduce((last,curr) => last[1] < curr[1] ? curr : last)[0]
                 d.resolve();
             }, this),
             'text');
@@ -65,41 +66,61 @@ function Spectrum(source, name) {
     }
 }
 
+function wavelengthToHue(wl) {
+    // Convert a wavelength to HSL-alpha string.
+    return Math.max(0., Math.min(300, 650-wl)) * 0.96;
+}
+
 
 function interpolate(raw) {
     // Parse csv and resample.
     var csv = raw.split('\n');
     var wls = []
-    var values = []
+    var vals = []
     for (let [index, line] of csv.entries()) {
         if (null !== line.match(/^\s?([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)[\w,;:\t]([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/)) {
             var wl, value;
             [wl, value] = line.trim().split(/[,;:\s\t]/);
             wls.push(parseFloat(wl));
-            values.push(parseFloat(value));
+            vals.push(parseFloat(value));
         }
+    }
+    var divisor;
+    if (vals.reduce( (peak, current) => current > peak ? current : peak) > 10.) {
+        // Spectrum is probably in percent
+        divisor = 100;
+    } else {
+        divisor = 1;
     }
     // interpolate; assumes input data is sorted by wavelength.
     var interpolated = []
     var i = 1; // Index into original data.
     var dw = wls[1] - wls[0];
-    var dv = values[1] - values[0];
+    var dv = vals[1] - vals[0];
     for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
-        if (wl > wls[i]) {
-            i += 1;
-            dvdw = (values[i] - values[i]) / wls[i] - wls[i];
+        if (wl < wls[0] | wl > wls[wls.length-1]){
+            interpolated.push([wl, 0]);
+            continue;
         }
-        interpolated.push([wl, values[i-1] + (wl - wls[i-1]) * dv/dw]);
+        if (wl > wls[i]) {
+            while(wl > wls[i]) {
+                i += 1;
+            }
+            dvdw = (vals[i] - vals[i-1]) / wls[i] - wls[i-1];
+        }
+        interpolated.push([wl, (vals[i-1] + (wl - wls[i-1]) * dv/dw)/divisor]);
     }
     return interpolated;
 }
 
 
 function updatePlot() {
+    // Prepare to redraw the plot.
     var dye = [];
     var filters = [];
     var filterModes = [];
 
+    // Fetch configuration from UI.
     $( "#dyes .ui-selected").each(function() {dye.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filters.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
@@ -109,7 +130,6 @@ function updatePlot() {
     if (dye.length > 0){
         defer.push(SPECTRA[dye[0]].fetch());
     }
-
     for (var f of filters) {
         defer.push(SPECTRA[f].fetch());
     }
@@ -120,6 +140,7 @@ function updatePlot() {
 
 
 function deepCopy( src ) {
+    // Deep copy an array of arrays.
     var i, target;
     if ( Array.isArray( src ) ) {
         target = src.slice(0);
@@ -133,6 +154,7 @@ function deepCopy( src ) {
 }
 
 function drawPlot(dye, filters, filterModes) {
+    // Create chart if it doesn't exist.
     if (!CHART) {
         var ctx = $( "#chart")[0].getContext('2d');
         CHART = new Chart(ctx, {
@@ -141,25 +163,25 @@ function drawPlot(dye, filters, filterModes) {
                 datasets: [{
                     label: 'transmitted',
                     data: [],
+                    borderWidth: 4,
                 }]
             }
         })
+        $(window).resize(CHART.update);
     }
 
+    // Calculate transmission.
     var trans = null;
     if (dye) {
-        console.log('Setting trans=dye.')
         trans = deepCopy(SPECTRA[dye].interp);
     }
-
     for ([findex, filter] of filters.entries()) {
         if (trans === null) {
+            // If there was no dye, initialize from first filter.
             trans = deepCopy(SPECTRA[filter].interp);
-            console.log('Setting trans=filter[0].')
             continue
         }
         var refl = ['r','R'].indexOf(filterModes[findex]) > -1;
-        console.log(`modulating by filter ${findex}`)
         for (i=0; i<trans.length; i+=1) {
             if (refl) {
                 trans[i][1] *= 1 - SPECTRA[filter].interp[i][1];
@@ -169,14 +191,18 @@ function drawPlot(dye, filters, filterModes) {
         }
     }
 
-    skeys = [];
+
+    var fkeys = []; // keys of active filters
+    var skeys = []; // all active keys (filters + dye)
     $("#dyes .ui-selected").each(function() {skeys.push($(this).data().key)});
-    $(".activeFilter").each(function() {skeys.push($(this).data().key)});
+    $(".activeFilter").each(function() {fkeys.push($(this).data().key)});
+    skeys.push.apply(skeys, fkeys);
 
     var traces = CHART.data.datasets.map( item => item.label );
     var toRemove = traces.filter(item => skeys.indexOf(item) === -1);
     var toAdd = skeys.filter(item => traces.indexOf(item) === -1 );
 
+    // Remove traces that are no longer needed.
     for (var key of toRemove) {
         if (key == 'transmitted') { continue }
         CHART.data.datasets.splice(
@@ -184,15 +210,29 @@ function drawPlot(dye, filters, filterModes) {
                 CHART.data.datasets.filter(item => item.label == key)[0]), 1);
     }
 
+    // Add new traces.
     for (var key of toAdd) {
+        var bg;
+        var hue = wavelengthToHue(SPECTRA[key].peakwl);
+        bg = `hsla(${hue}, 100%, 50%, 0.2)`
+
         CHART.data.datasets.push({
             label: key,
-            data: SPECTRA[key].points
+            data: SPECTRA[key].points,
+            backgroundColor: bg,
+            pointRadius: 0,
         });
     }
 
+    // Update the transmission trace.
     var transTrace = CHART.data.datasets.filter( item => item.label == 'transmitted')[0]
-    transTrace.data = trans.map(function (row) {return {x:row[0], y:row[1]}});
+    if (trans === null) {
+        transTrace.data = [];
+    } else {
+        transTrace.data = trans.map(function (row) {return {x:row[0], y:row[1]}});
+        var hue = wavelengthToHue(trans.reduce((last,curr) => last[1] < curr[1] ? curr : last)[0]);
+        transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.95)`
+    }
 
     CHART.update();
 }
@@ -262,7 +302,7 @@ $( document ).ready(function() {
                 divs.push(div);
             });
             $( "#filters" ).append(divs);
-            $ ( ".filterSpec").draggable({helper: "clone", cursor:"move"});
+            $( ".filterSpec").draggable({helper: "clone", cursor:"move"});
         }
     });
     $( "#fset").droppable({
@@ -288,6 +328,5 @@ $( document ).ready(function() {
             $( "#dyes" ).selectable({selected: selectDye});
         ;}
     });
-
     // To do - parse URL to select dye and populate fset.
 });
