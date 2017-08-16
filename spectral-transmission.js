@@ -246,7 +246,7 @@ function parseSources( sources )  {
         for (var excl of FN_EXCLUDE) {
             name = name.split(excl).join("");
         }
-        if (name.length > 0) {
+        if (name.length > 1) {
             filters[name] = file;
         }
     }
