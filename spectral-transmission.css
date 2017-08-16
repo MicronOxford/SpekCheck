@@ -1,3 +1,7 @@
+body {
+    font-family: sans-serif;
+}
+
 #dyes *.ui-selecting {
     background: #ccc;
 }
@@ -7,15 +11,24 @@
 }
 
 #dyes, #filters, #fset {
-    float:left;
-    margin: 1em;
     overflow-y: scroll;
     border: ridge;
     height: 12em;
 }
 
+
+.container {
+    float: left;
+    margin: 1em;
+}
+
+
 #fset > * {
     display: flex;
     justify-content: space-between;
     width: 12em;
+}
+
+label {
+    display: inline-block;
 }
