@@ -119,14 +119,57 @@ function updatePlot() {
 }
 
 
+function deepCopy( src ) {
+    var i, target;
+    if ( Array.isArray( src ) ) {
+        target = src.slice(0);
+        for( i = 0; i < target.length; i+=1 ) {
+            target[i] = deepCopy( target[i] );
+        }
+        return target;
+    } else {
+        return src;
+    }
+}
+
 function drawPlot(dye, filters, filterModes) {
     if (!CHART) {
         var ctx = $( "#chart")[0].getContext('2d');
         CHART = new Chart(ctx, {
-            type: 'scatter'})
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'transmitted',
+                    data: [],
+                }]
+            }
+        })
     }
 
-    var skeys = [];
+    var trans = null;
+    if (dye) {
+        console.log('Setting trans=dye.')
+        trans = deepCopy(SPECTRA[dye].interp);
+    }
+
+    for ([findex, filter] of filters.entries()) {
+        if (trans === null) {
+            trans = deepCopy(SPECTRA[filter].interp);
+            console.log('Setting trans=filter[0].')
+            continue
+        }
+        var refl = ['r','R'].indexOf(filterModes[findex]) > -1;
+        console.log(`modulating by filter ${findex}`)
+        for (i=0; i<trans.length; i+=1) {
+            if (refl) {
+                trans[i][1] *= 1 - SPECTRA[filter].interp[i][1];
+            } else {
+                trans[i][1] *= SPECTRA[filter].interp[i][1];
+            }
+        }
+    }
+
+    skeys = [];
     $("#dyes .ui-selected").each(function() {skeys.push($(this).data().key)});
     $(".activeFilter").each(function() {skeys.push($(this).data().key)});
 
@@ -135,6 +178,7 @@ function drawPlot(dye, filters, filterModes) {
     var toAdd = skeys.filter(item => traces.indexOf(item) === -1 );
 
     for (var key of toRemove) {
+        if (key == 'transmitted') { continue }
         CHART.data.datasets.splice(
             CHART.data.datasets.indexOf(
                 CHART.data.datasets.filter(item => item.label == key)[0]), 1);
@@ -146,6 +190,9 @@ function drawPlot(dye, filters, filterModes) {
             data: SPECTRA[key].points
         });
     }
+
+    var transTrace = CHART.data.datasets.filter( item => item.label == 'transmitted')[0]
+    transTrace.data = trans.map(function (row) {return {x:row[0], y:row[1]}});
 
     CHART.update();
 }
