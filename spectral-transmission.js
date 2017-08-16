@@ -36,6 +36,16 @@ var WLSTEP = 2.0;
  * #dyes    - a list of available dyes
  */
 
+// Dash styles generator.
+DASHES = function* () {
+    var styles = [[8,4], [16,4], [4,8,4], [4,8,8]];
+    var index = -1;
+    while(true){
+        index = (index+1) % styles.length;
+        yield styles[index];
+    }
+}()
+
 
 // Spectrum constructor.
 function Spectrum(source, name) {
@@ -153,6 +163,7 @@ function deepCopy( src ) {
     }
 }
 
+
 function drawPlot(dye, filters, filterModes) {
     // Create chart if it doesn't exist.
     if (!CHART) {
@@ -164,7 +175,13 @@ function drawPlot(dye, filters, filterModes) {
                     label: 'transmitted',
                     data: [],
                     borderWidth: 4,
+                    borderColor: `rgba(0, 0, 0, 0.5)`,
+                    pointRadius: 0,
                 }]
+            },
+            options:{
+                responsive: true,
+                maintainAspectRatio: true,
             }
         })
         $(window).resize(CHART.update);
@@ -213,14 +230,24 @@ function drawPlot(dye, filters, filterModes) {
     // Add new traces.
     for (var key of toAdd) {
         var bg;
+        var fg;
+        var borderDash;
         var hue = wavelengthToHue(SPECTRA[key].peakwl);
         bg = `hsla(${hue}, 100%, 50%, 0.2)`
+        fg = `hsla(${hue}, 100%, 50%, 0.5)`
+        if (fkeys.indexOf(key) > -1){
+            borderDash = DASHES.next().value;
+        } else {
+            borderDash = [];
+        }
 
         CHART.data.datasets.push({
             label: key,
             data: SPECTRA[key].points,
             backgroundColor: bg,
             pointRadius: 0,
+            borderDash: borderDash,
+            borderColor: fg,
         });
     }
 
