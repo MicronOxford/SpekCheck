@@ -167,9 +167,10 @@ function deepCopy( src ) {
 function drawPlot(dye, filters, filterModes) {
     // Create chart if it doesn't exist.
     if (!CHART) {
-        var ctx = $( "#chart")[0].getContext('2d');
+        var ctx = $( "#chart" )[0].getContext('2d');
         CHART = new Chart(ctx, {
             type: 'scatter',
+            height: `100%`,
             data: {
                 datasets: [{
                     label: 'transmitted',
@@ -181,10 +182,18 @@ function drawPlot(dye, filters, filterModes) {
             },
             options:{
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
             }
-        })
-        $(window).resize(CHART.update);
+        });
+        // Set chart height now, and on window resize.
+        var resizeChart = () => {
+            var frac = Math.floor(100*Math.min(
+                (1- $( CHART.canvas ).position().top / $( window ).height()),
+                $( CHART.canvas ).width() / $( window ).height()));
+            CHART.canvas.parentNode.style.height = `${frac}vh`;
+        }
+        resizeChart();
+        $(window).resize(resizeChart);
     }
 
     // Calculate transmission.
