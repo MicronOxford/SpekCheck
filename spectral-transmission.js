@@ -84,6 +84,26 @@ Spectrum.prototype.interpolate = function () {
     this.peakwl = this.interp.reduce((last,curr) => last[1] < curr[1] ? curr : last)[0]
 }
 
+Spectrum.prototype.copy = function (name) {
+    copy = new Spectrum(name);
+    copy.raw = deepCopy(this.raw);
+    copy.interp = deepCopy(this.interp);
+    return copy;
+}
+
+Spectrum.prototype.multiplyBy = function (other) {
+    // multiplies this spectrum by other
+    // Assumes that both spectra have been interpolated with same parameters.
+    if (other instanceof Spectrum) {
+        for (var i = 0; i < this.interp.length; i ++) {
+            this.interp[i][1] *= other.interp[1][i];
+        }
+    } else {
+        for (var i = 0; i < this.interp.length; i ++) {
+            this.interp[i][1] *= other;
+        }
+    }
+}
 
 // === ServerSpectrum - spectrum with data from server === //
 function ServerSpectrum(source, name) {
