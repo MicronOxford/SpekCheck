@@ -1,0 +1,34 @@
+body {
+    font-family: sans-serif;
+}
+
+#dyes *.ui-selecting {
+    background: #ccc;
+}
+
+#dyes *.ui-selected {
+    background: #999;
+}
+
+#dyes, #filters, #fset {
+    overflow-y: scroll;
+    border: ridge;
+    height: 12em;
+}
+
+
+.container {
+    float: left;
+    margin: 1em;
+}
+
+
+#fset > * {
+    display: flex;
+    justify-content: space-between;
+    width: 12em;
+}
+
+label {
+    display: inline-block;
+}
