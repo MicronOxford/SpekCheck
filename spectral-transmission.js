@@ -19,6 +19,8 @@
 
 // Extensions to strip from source filenames, and files to exclude.
 var FN_EXCLUDE = ['.csv', '.Csv', 'CSV', 'index.html'];
+// CSV matching regex
+CSVMATCH = /^\s?([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)[\w,;:\t]([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/;
 // The set of active filters.
 var CHART = null;
 var SPECTRA = {};
@@ -47,26 +49,78 @@ DASHES = function* () {
 }()
 
 
-// Spectrum constructor.
-function Spectrum(source, name) {
-    this.source = source;   // source url
+// ==== Spectrum base === //
+function Spectrum(name) {
     this.name = name;       // name
     this.raw=null;          // raw data after fetch
     this.interp=null;       // interpolated data
     this.points=null;       // points as [{x: , y:}, ...]
 }
 
-Spectrum.prototype.fetch = function ( ){
+Spectrum.prototype.interpolate = function () {
+    // Resample raw data.
+    var wls;
+    var vals;
+    [wls, vals] = this.raw;
+    // interpolate; assumes input data is sorted by wavelength.
+    this.interp = []
+    var i = 1; // Index into original data.
+    var dw = wls[1] - wls[0];
+    var dv = vals[1] - vals[0];
+    for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
+        if (wl < wls[0] | wl > wls[wls.length-1]){
+            this.interp.push([wl, 0]);
+            continue;
+        }
+        if (wl > wls[i]) {
+            while(wl > wls[i]) {
+                i += 1;
+            }
+            dvdw = (vals[i] - vals[i-1]) / wls[i] - wls[i-1];
+        }
+        this.interp.push([wl, (vals[i-1] + (wl - wls[i-1]) * dv/dw)]);
+    }
+    this.points = this.interp.map(function (row) {return {x:row[0], y:row[1]}});
+    this.peakwl = this.interp.reduce((last,curr) => last[1] < curr[1] ? curr : last)[0]
+}
+
+
+// === ServerSpectrum - spectrum with data from server === //
+function ServerSpectrum(source, name) {
+    Spectrum.call(this, name);
+    this.source = source;   // source url
+}
+
+ServerSpectrum.prototype = new Spectrum();
+
+ServerSpectrum.prototype.fetch = function ( ){
     // Fetch data for item if not already available.
     // Used deferred item to allow concurrent fetches.
     var d = $.Deferred();
     if (this.raw === null) {
     $.get(this.source,
         $.proxy(function(resp){
-            this.raw = resp;
-            this.interp = interpolate(this.raw);
-            this.points = this.interp.map(function (row) {return {x:row[0], y:row[1]}});
-            this.peakwl = this.interp.reduce((last,curr) => last[1] < curr[1] ? curr : last)[0]
+            // Parse csv.
+            var csv = resp.split('\n');
+            var wls = []
+            var vals = []
+            for (let [index, line] of csv.entries()) {
+                if (null !== line.match(CSVMATCH)) {
+                    var wl, value;
+                    [wl, value] = line.trim().split(/[,;:\s\t]/);
+                    wls.push(parseFloat(wl));
+                    vals.push(parseFloat(value));
+                }
+            }
+            // Find max. intensity in spectrum.
+            if (vals.reduce( (peak, val) => val > peak ? val : peak) > 10.) {
+                // Spectrum is probably in percent
+                for (var i = 0; i < vals.length; i++) {
+                    vals[i] = vals[i] / 100;
+                }
+            }
+            this.raw = [wls, vals];
+            this.interpolate(); // sets this.interp, this.points and this.peakwl
             d.resolve();
         }, this),
         'text');
@@ -76,52 +130,12 @@ Spectrum.prototype.fetch = function ( ){
     return d;
 }
 
+// === End of prototype definitions === //
+
 
 function wavelengthToHue(wl) {
     // Convert a wavelength to HSL-alpha string.
     return Math.max(0., Math.min(300, 650-wl)) * 0.96;
-}
-
-
-function interpolate(raw) {
-    // Parse csv and resample.
-    var csv = raw.split('\n');
-    var wls = []
-    var vals = []
-    for (let [index, line] of csv.entries()) {
-        if (null !== line.match(/^\s?([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)[\w,;:\t]([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/)) {
-            var wl, value;
-            [wl, value] = line.trim().split(/[,;:\s\t]/);
-            wls.push(parseFloat(wl));
-            vals.push(parseFloat(value));
-        }
-    }
-    var divisor;
-    if (vals.reduce( (peak, current) => current > peak ? current : peak) > 10.) {
-        // Spectrum is probably in percent
-        divisor = 100;
-    } else {
-        divisor = 1;
-    }
-    // interpolate; assumes input data is sorted by wavelength.
-    var interpolated = []
-    var i = 1; // Index into original data.
-    var dw = wls[1] - wls[0];
-    var dv = vals[1] - vals[0];
-    for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
-        if (wl < wls[0] | wl > wls[wls.length-1]){
-            interpolated.push([wl, 0]);
-            continue;
-        }
-        if (wl > wls[i]) {
-            while(wl > wls[i]) {
-                i += 1;
-            }
-            dvdw = (vals[i] - vals[i-1]) / wls[i] - wls[i-1];
-        }
-        interpolated.push([wl, (vals[i-1] + (wl - wls[i-1]) * dv/dw)/divisor]);
-    }
-    return interpolated;
 }
 
 
@@ -332,7 +346,7 @@ $( document ).ready(function() {
             var filters = parseSources(resp);
             var divs = []
             $.each(filters, function(key, value) {
-                SPECTRA[key] = new Spectrum(`filters/${value}`, key);
+                SPECTRA[key] = new ServerSpectrum(`filters/${value}`, key);
                 var div = $( `<div><label>${key}</label></div>`);
                 div.addClass( "filterSpec" );
                 div.data('key', key);
@@ -357,7 +371,7 @@ $( document ).ready(function() {
             var divs = []
             $.each(dyes, function(key, value) {
                 var div = $(`<div>${key}</div>`);
-                SPECTRA[key] = new Spectrum(`dyes/${value}`, key);
+                SPECTRA[key] = new ServerSpectrum(`dyes/${value}`, key);
                 div.data('key', key);
                 divs.push(div);
             });
