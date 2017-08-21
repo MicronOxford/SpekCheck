@@ -54,27 +54,28 @@ function Spectrum(source, name) {
     this.raw=null;          // raw data after fetch
     this.interp=null;       // interpolated data
     this.points=null;       // points as [{x: , y:}, ...]
-
-    this.fetch = function ( ){
-        // Fetch data for item if not already available.
-        // Used deferred item to allow concurrent fetches.
-        var d = $.Deferred();
-        if (this.raw === null) {
-        $.get(this.source,
-            $.proxy(function(resp){
-                this.raw = resp;
-                this.interp = interpolate(this.raw);
-                this.points = this.interp.map(function (row) {return {x:row[0], y:row[1]}});
-                this.peakwl = this.interp.reduce((last,curr) => last[1] < curr[1] ? curr : last)[0]
-                d.resolve();
-            }, this),
-            'text');
-        } else {
-            d.resolve();
-        }
-        return d;
-    }
 }
+
+Spectrum.prototype.fetch = function ( ){
+    // Fetch data for item if not already available.
+    // Used deferred item to allow concurrent fetches.
+    var d = $.Deferred();
+    if (this.raw === null) {
+    $.get(this.source,
+        $.proxy(function(resp){
+            this.raw = resp;
+            this.interp = interpolate(this.raw);
+            this.points = this.interp.map(function (row) {return {x:row[0], y:row[1]}});
+            this.peakwl = this.interp.reduce((last,curr) => last[1] < curr[1] ? curr : last)[0]
+            d.resolve();
+        }, this),
+        'text');
+    } else {
+        d.resolve();
+    }
+    return d;
+}
+
 
 function wavelengthToHue(wl) {
     // Convert a wavelength to HSL-alpha string.
