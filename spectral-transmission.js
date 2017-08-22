@@ -328,6 +328,17 @@ function drawPlot(dye, filters, filterModes) {
         });
     }
 
+    // Fill traces according to transmission/reflection
+    for (var i=0; i < CHART.data.datasets.length; i++) {
+        var idx = filters.indexOf(CHART.data.datasets[i].label);
+        if (idx === -1) { continue; }
+        if (['r','R'].indexOf(filterModes[idx]) > -1) {
+            CHART.data.datasets[i].fill = 'end';
+        } else {
+            CHART.data.datasets[i].fill = 'start';
+        }
+    }
+
     // Update the transmission trace.
     var transTrace = CHART.data.datasets.filter( item => item.label == 'transmitted')[0]
     var hue = wavelengthToHue(SPECTRA['transmitted'].peakwl());
