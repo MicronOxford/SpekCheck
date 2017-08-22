@@ -272,6 +272,8 @@ function drawPlot(dye, filters, filterModes) {
                 maintainAspectRatio: false,
             }
         });
+        CHART.options.scales.xAxes[0].scaleLabel.display = true;
+        CHART.options.scales.xAxes[0].scaleLabel.labelString = "wavelength / nm";
         // Set chart height now, and on window resize.
         var resizeChart = () => {
             var frac = Math.floor(100*Math.min(
