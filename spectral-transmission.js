@@ -59,22 +59,24 @@ function Spectrum(name) {
 
 Spectrum.prototype.interpolate = function () {
     // Resample raw data. Assumes input data is sorted by wavelength.
-    var wls;
-    var vals;
-    [wls, vals] = this.raw;
-    if (wls[0] !== WLMIN ||
-        wls[wls.length-1] !== WLMAX ||
-        wls.length !== (WLMIN-WLMAX) / WLSTEP) {
+    if (!this._interp ||
+        this._interp[0][0] !== WLMIN ||
+        this._interp[0][this._interp[0].length-1] !== WLMAX ||
+        this._interp[0].length !== 1+(WLMAX-WLMIN) / WLSTEP) {
         // Need to interpolate.
         // Invalidates previously-interpolated points.
         this._points = null;
-        this._interp = []
+        this._interp = [[],[]];
+        var wls;
+        var vals;
+        [wls, vals] = this.raw;
         var i = 1; // Index into original data.
         var dw = wls[1] - wls[0];
         var dv = vals[1] - vals[0];
         for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
             if (wl < wls[0] | wl > wls[wls.length-1]){
-                this._interp.push([wl, 0]);
+                this._interp[0].push(wl);
+                this._interp[1].push(0);
                 continue;
             }
             if (wl > wls[i]) {
@@ -83,18 +85,18 @@ Spectrum.prototype.interpolate = function () {
                 }
                 dvdw = (vals[i] - vals[i-1]) / wls[i] - wls[i-1];
             }
-            this._interp.push([wl, (vals[i-1] + (wl - wls[i-1]) * dv/dw)]);
+            this._interp[0].push(wl);
+            this._interp[1].push(vals[i-1] + (wl - wls[i-1]) * dv/dw);
         }
-        //this.points = this._interp.map(function (row) {return {x:row[0], y:row[1]}});
-        this.peakwl = this._interp.reduce((last,curr) => last[1] < curr[1] ? curr : last)[0]
     }
     return this._interp;
 }
 
 Spectrum.prototype.copy = function (name) {
     copy = new Spectrum(name);
-    copy.raw = deepCopy(this.raw);
-    copy._interp = deepCopy(this._interp);
+    copy.raw = null;
+    copy._interp = deepCopy(this.interpolate());
+
     return copy;
 }
 
@@ -103,14 +105,19 @@ Spectrum.prototype.multiplyBy = function (other) {
     // invalidates previously calculated _points
     this._points = null;
     this.interpolate();
+    var oldMax = Math.max(...this._interp[1])
     if (other instanceof Spectrum) {
         var m = other.interpolate()[1];
-        for (var i = 0; i < this._interp.length; i ++) {
-            this._interp[i][1] *= m[i];
+        for (var i = 0; i < this._interp[1].length; i ++) {
+            this._interp[1][i] *= m[i];
+        }
+    } else if (Array.isArray(other)) {
+        for (var i = 0; i < this._interp[1].length; i ++) {
+            this._interp[1][i] *= other[i];
         }
     } else {
-        for (var i = 0; i < this.interp.length; i ++) {
-            this._interp[i][1] *= other;
+        for (var i = 0; i < this._interp[1].length; i ++) {
+            this._interp[1][i] *= other;
         }
     }
 }
@@ -118,11 +125,13 @@ Spectrum.prototype.multiplyBy = function (other) {
 
 Spectrum.prototype.points = function () {
     // Return points as {x: xval, y: yval}
-    var rows = this.interpolate();
+    var data = this.interpolate();
     if (this._points) {
         return this._points;
     } else {
-        return rows.map(function (row) {return {x:row[0], y:row[1]}});
+        return data[0].map(function (v, i) {
+            return {x: v, y:data[1][i]};
+        })
     }
 }
 
