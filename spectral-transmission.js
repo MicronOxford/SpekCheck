@@ -92,6 +92,19 @@ Spectrum.prototype.interpolate = function () {
     return this._interp;
 }
 
+Spectrum.prototype.area = function (name) {
+    // Return the area of the spectrum.
+    // Clamps negative values to zero.
+    var w;
+    var v;
+    [v,w] = this.interpolate();
+    var area = 0;
+    for (var i=1; i < w.length; i++) {
+        area += 0.5 * (Math.max(0, v[i]) + Math.max(v[i-1]))*(w[i] - w[i-1]);
+    }
+    return area;
+}
+
 Spectrum.prototype.copy = function (name) {
     copy = new Spectrum(name);
     copy.raw = null;
