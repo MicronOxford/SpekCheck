@@ -122,6 +122,13 @@ Spectrum.prototype.multiplyBy = function (other) {
     }
 }
 
+Spectrum.prototype.peakwl = function () {
+    if (this._interp) {
+        var peakidx = this._interp[1].indexOf(Math.max(...this._interp[1]));
+        return this._interp[0][peakidx];
+    }
+}
+
 
 Spectrum.prototype.points = function () {
     // Return points as {x: xval, y: yval}
@@ -262,27 +269,23 @@ function drawPlot(dye, filters, filterModes) {
     }
 
     // Calculate transmission.
-    var trans = null;
     if (dye) {
-        trans = deepCopy(SPECTRA[dye].interpolate());
+        SPECTRA['transmitted'] = SPECTRA[dye].copy();
     }
     for ([findex, filter] of filters.entries()) {
-        if (trans === null) {
+        if (findex === 0 && !dye) {
             // If there was no dye, initialize from first filter.
-            trans = deepCopy(SPECTRA[filter].interpolate());
+            SPECTRA['transmitted'] = SPECTRA[filter].copy();
             continue
         }
         var refl = ['r','R'].indexOf(filterModes[findex]) > -1;
-        var mult = SPECTRA[filter].interpolate()
-        for (i=0; i<trans.length; i+=1) {
-            if (refl) {
-                trans[i][1] *= 1 - mult[i][1];
-            } else {
-                trans[i][1] *= mult[i][1];
-            }
+        if (refl) {
+            var mult = SPECTRA[filter].interpolate()[1].map((v) => {return 1-v;});
+            SPECTRA['transmitted'].multiplyBy(mult);
+        } else {
+            SPECTRA['transmitted'].multiplyBy(SPECTRA[filter]);
         }
     }
-
 
     var fkeys = []; // keys of active filters
     var skeys = []; // all active keys (filters + dye)
@@ -307,7 +310,8 @@ function drawPlot(dye, filters, filterModes) {
         var bg;
         var fg;
         var borderDash;
-        var hue = wavelengthToHue(SPECTRA[key].peakwl);
+        var data = SPECTRA[key].points();
+        var hue = wavelengthToHue(SPECTRA[key].peakwl());
         bg = `hsla(${hue}, 100%, 50%, 0.2)`
         fg = `hsla(${hue}, 100%, 50%, 0.5)`
         if (fkeys.indexOf(key) > -1){
@@ -318,7 +322,7 @@ function drawPlot(dye, filters, filterModes) {
 
         CHART.data.datasets.push({
             label: key,
-            data: SPECTRA[key].points(),
+            data: data,
             backgroundColor: bg,
             pointRadius: 0,
             borderDash: borderDash,
@@ -328,13 +332,9 @@ function drawPlot(dye, filters, filterModes) {
 
     // Update the transmission trace.
     var transTrace = CHART.data.datasets.filter( item => item.label == 'transmitted')[0]
-    if (trans === null) {
-        transTrace.data = [];
-    } else {
-        transTrace.data = trans.map(function (row) {return {x:row[0], y:row[1]}});
-        var hue = wavelengthToHue(trans.reduce((last,curr) => last[1] < curr[1] ? curr : last)[0]);
-        transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.95)`
-    }
+    var hue = wavelengthToHue(SPECTRA['transmitted'].peakwl());
+    transTrace.data = SPECTRA['transmitted'].points();
+    transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.9)`
 
     CHART.update();
 }
