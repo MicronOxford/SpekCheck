@@ -360,6 +360,16 @@ function drawPlot(dye, filters, filterModes) {
     transTrace.data = SPECTRA['transmitted'].points();
     transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.9)`
 
+    if (dye) {
+        var eff = SPECTRA['transmitted'].area() / SPECTRA[dye].area();
+        CHART.options.title = {display: true,
+                               text: 'Efficiency: ' + (100*eff).toFixed(1) + '%',
+                               fontSize: 24};
+    } else {
+        CHART.options.title = {display: false,
+                               text: ''};
+    }
+
     CHART.update();
 }
 
