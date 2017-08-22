@@ -287,11 +287,9 @@ function drawPlot(dye, filters, filterModes) {
         }
     }
 
-    var fkeys = []; // keys of active filters
     var skeys = []; // all active keys (filters + dye)
     $("#dyes .ui-selected").each(function() {skeys.push($(this).data().key)});
-    $(".activeFilter").each(function() {fkeys.push($(this).data().key)});
-    skeys.push.apply(skeys, fkeys);
+    skeys.push.apply(skeys, filters);
 
     var traces = CHART.data.datasets.map( item => item.label );
     var toRemove = traces.filter(item => skeys.indexOf(item) === -1);
@@ -314,7 +312,7 @@ function drawPlot(dye, filters, filterModes) {
         var hue = wavelengthToHue(SPECTRA[key].peakwl());
         bg = `hsla(${hue}, 100%, 50%, 0.2)`
         fg = `hsla(${hue}, 100%, 50%, 0.5)`
-        if (fkeys.indexOf(key) > -1){
+        if (filters.indexOf(key) > -1){
             borderDash = DASHES.next().value;
         } else {
             borderDash = [];
