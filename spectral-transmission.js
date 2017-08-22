@@ -53,57 +53,79 @@ DASHES = function* () {
 function Spectrum(name) {
     this.name = name;       // name
     this.raw=null;          // raw data after fetch
-    this.interp=null;       // interpolated data
-    this.points=null;       // points as [{x: , y:}, ...]
+    this._interp=null;      // cache for interpolated data
+    this._points=null;      // cache for points as [{x: , y:}, ...]
 }
 
 Spectrum.prototype.interpolate = function () {
-    // Resample raw data.
+    // Resample raw data. Assumes input data is sorted by wavelength.
     var wls;
     var vals;
     [wls, vals] = this.raw;
-    // interpolate; assumes input data is sorted by wavelength.
-    this.interp = []
-    var i = 1; // Index into original data.
-    var dw = wls[1] - wls[0];
-    var dv = vals[1] - vals[0];
-    for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
-        if (wl < wls[0] | wl > wls[wls.length-1]){
-            this.interp.push([wl, 0]);
-            continue;
-        }
-        if (wl > wls[i]) {
-            while(wl > wls[i]) {
-                i += 1;
+    if (wls[0] !== WLMIN ||
+        wls[wls.length-1] !== WLMAX ||
+        wls.length !== (WLMIN-WLMAX) / WLSTEP) {
+        // Need to interpolate.
+        // Invalidates previously-interpolated points.
+        this._points = null;
+        this._interp = []
+        var i = 1; // Index into original data.
+        var dw = wls[1] - wls[0];
+        var dv = vals[1] - vals[0];
+        for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
+            if (wl < wls[0] | wl > wls[wls.length-1]){
+                this._interp.push([wl, 0]);
+                continue;
             }
-            dvdw = (vals[i] - vals[i-1]) / wls[i] - wls[i-1];
+            if (wl > wls[i]) {
+                while(wl > wls[i]) {
+                    i += 1;
+                }
+                dvdw = (vals[i] - vals[i-1]) / wls[i] - wls[i-1];
+            }
+            this._interp.push([wl, (vals[i-1] + (wl - wls[i-1]) * dv/dw)]);
         }
-        this.interp.push([wl, (vals[i-1] + (wl - wls[i-1]) * dv/dw)]);
+        //this.points = this._interp.map(function (row) {return {x:row[0], y:row[1]}});
+        this.peakwl = this._interp.reduce((last,curr) => last[1] < curr[1] ? curr : last)[0]
     }
-    this.points = this.interp.map(function (row) {return {x:row[0], y:row[1]}});
-    this.peakwl = this.interp.reduce((last,curr) => last[1] < curr[1] ? curr : last)[0]
+    return this._interp;
 }
 
 Spectrum.prototype.copy = function (name) {
     copy = new Spectrum(name);
     copy.raw = deepCopy(this.raw);
-    copy.interp = deepCopy(this.interp);
+    copy._interp = deepCopy(this._interp);
     return copy;
 }
 
 Spectrum.prototype.multiplyBy = function (other) {
     // multiplies this spectrum by other
-    // Assumes that both spectra have been interpolated with same parameters.
+    // invalidates previously calculated _points
+    this._points = null;
+    this.interpolate();
     if (other instanceof Spectrum) {
-        for (var i = 0; i < this.interp.length; i ++) {
-            this.interp[i][1] *= other.interp[1][i];
+        var m = other.interpolate()[1];
+        for (var i = 0; i < this._interp.length; i ++) {
+            this._interp[i][1] *= m[i];
         }
     } else {
         for (var i = 0; i < this.interp.length; i ++) {
-            this.interp[i][1] *= other;
+            this._interp[i][1] *= other;
         }
     }
 }
+
+
+Spectrum.prototype.points = function () {
+    // Return points as {x: xval, y: yval}
+    var rows = this.interpolate();
+    if (this._points) {
+        return this._points;
+    } else {
+        return rows.map(function (row) {return {x:row[0], y:row[1]}});
+    }
+}
+
 
 // === ServerSpectrum - spectrum with data from server === //
 function ServerSpectrum(source, name) {
@@ -140,7 +162,6 @@ ServerSpectrum.prototype.fetch = function ( ){
                 }
             }
             this.raw = [wls, vals];
-            this.interpolate(); // sets this.interp, this.points and this.peakwl
             d.resolve();
         }, this),
         'text');
@@ -234,20 +255,21 @@ function drawPlot(dye, filters, filterModes) {
     // Calculate transmission.
     var trans = null;
     if (dye) {
-        trans = deepCopy(SPECTRA[dye].interp);
+        trans = deepCopy(SPECTRA[dye].interpolate());
     }
     for ([findex, filter] of filters.entries()) {
         if (trans === null) {
             // If there was no dye, initialize from first filter.
-            trans = deepCopy(SPECTRA[filter].interp);
+            trans = deepCopy(SPECTRA[filter].interpolate());
             continue
         }
         var refl = ['r','R'].indexOf(filterModes[findex]) > -1;
+        var mult = SPECTRA[filter].interpolate()
         for (i=0; i<trans.length; i+=1) {
             if (refl) {
-                trans[i][1] *= 1 - SPECTRA[filter].interp[i][1];
+                trans[i][1] *= 1 - mult[i][1];
             } else {
-                trans[i][1] *= SPECTRA[filter].interp[i][1];
+                trans[i][1] *= mult[i][1];
             }
         }
     }
@@ -287,7 +309,7 @@ function drawPlot(dye, filters, filterModes) {
 
         CHART.data.datasets.push({
             label: key,
-            data: SPECTRA[key].points,
+            data: SPECTRA[key].points(),
             backgroundColor: bg,
             pointRadius: 0,
             borderDash: borderDash,
