@@ -106,6 +106,7 @@ Spectrum.prototype.area = function (name) {
 }
 
 Spectrum.prototype.copy = function (name) {
+    // Create a copy of this spectrum.
     copy = new Spectrum(name);
     copy.raw = null;
     copy._interp = deepCopy(this.interpolate());
@@ -136,6 +137,7 @@ Spectrum.prototype.multiplyBy = function (other) {
 }
 
 Spectrum.prototype.peakwl = function () {
+    // Return the wavelength of the peak.
     if (this._interp) {
         var peakidx = this._interp[1].indexOf(Math.max(...this._interp[1]));
         return this._interp[0][peakidx];
