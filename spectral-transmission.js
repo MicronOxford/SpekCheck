@@ -418,10 +418,11 @@ function dropFilter( event, ui) {
 
 function addFilterToSet(filter, mode) {
     var el = $(`<div><label>${filter}</label></div>`).addClass('activeFilter');
+    mode = mode.toLowerCase()
     el.data('mode', mode);
     el.data('key', filter)
     var buttons = $( "<span></span>").appendTo(el);
-    var modeBtn = $(`<button class="modeButton">t</button>`).appendTo(buttons);
+    var modeBtn = $(`<button class="modeButton">${mode}</button>`).appendTo(buttons);
     modeBtn.button()
     modeBtn.click(function(){
         var newMode = {'t':'r', 'r':'t'}[el.data('mode')];
