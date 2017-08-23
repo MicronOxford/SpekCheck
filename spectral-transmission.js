@@ -493,8 +493,8 @@ $( document ).ready(function() {
             var divs = [];
             for (let set of parseSets(resp)) {
                 var div = $( `<div><label>${set.name}</label></div>` );
-                $(div).click((_) => {selectFilterSet(set);});
-                $(div).addClass("searchable");
+                div.click((_) => {selectFilterSet(set);});
+                div.addClass("searchable");
                 divs.push(div);
                 }
             $( "#sets" ).append(divs);
