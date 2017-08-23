@@ -458,9 +458,33 @@ function selectFilterSet(set) {
 }
 
 
+// Case-insensitive 'contains' selector.
+$.extend($.expr[":"], {
+    "icontains": function(el, i, m, arr) {
+        return (el.textContent || el.innerText || "").toLowerCase().indexOf((m[3] || "").toLowerCase()) >= 0;
+    }
+});
+
+
+function refineList(event) {
+    // Show and hide searchable items based on search key.
+    let target = $(event.target);
+    let items = target.parent().children('.searchable');
+    if(event.key === 'Escape') {
+        target.val('');
+        items.show()
+    } else {
+        let val = target.val();
+        items.filter(':icontains(' + val + ')').show();
+        items.not(':icontains(' + val + ')').hide();
+    }
+}
+
+
 //=== DOCUMENT READY===//
 $( document ).ready(function() { 
     // Populate list of filter sets.
+    $("#sets").append($("<input>").keyup(refineList))
     $.ajax(
         {url: "./sets",
         data: "",
@@ -470,6 +494,7 @@ $( document ).ready(function() {
             for (let set of parseSets(resp)) {
                 var div = $( `<div><label>${set.name}</label></div>` );
                 $(div).click((_) => {selectFilterSet(set);});
+                $(div).addClass("searchable");
                 divs.push(div);
                 }
             $( "#sets" ).append(divs);
@@ -478,6 +503,7 @@ $( document ).ready(function() {
     );
 
     // Populate list of filters, and store SPECTRA key on the div.data
+    $("#filters").append($("<input>").keyup(refineList))
     $.ajax(
         {url: "./filters",
          data: "",
@@ -489,6 +515,7 @@ $( document ).ready(function() {
                 SPECTRA[key] = new ServerSpectrum(`filters/${value}`, key);
                 var div = $( `<div><label>${key}</label></div>`);
                 div.addClass( "filterSpec" );
+                div.addClass( "searchable" );
                 div.data('key', key);
                 divs.push(div);
             });
@@ -502,6 +529,7 @@ $( document ).ready(function() {
     });
     
     // Populate list of dyes, and store SPECTRA key on the div.data
+    $("#dyes").append($("<input>").keyup(refineList))
     $.ajax(
         {url: "./dyes",
          data: "",
@@ -513,6 +541,7 @@ $( document ).ready(function() {
                 var div = $(`<div>${key}</div>`);
                 SPECTRA[key] = new ServerSpectrum(`dyes/${value}`, key);
                 div.data('key', key);
+                div.addClass( "searchable" );
                 divs.push(div);
             });
             $( "#dyes" ).append(divs);
