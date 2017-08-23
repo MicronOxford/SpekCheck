@@ -84,8 +84,6 @@ Spectrum.prototype.interpolate = function () {
                 }
                 t = (wl - wls[i-1]) / (wls[i] - wls[i-1]);
                 val = (1-t)*vals[i-1]+t*vals[i]
-                // var dvdw = (vals[i] - vals[i-1]) / wls[i] - wls[i-1];
-                //this._interp[1].push(vals[i-1] + (wl - wls[i-1]) * dv/dw);
             }
             this._interp[0].push(wl);
             this._interp[1].push(val);
