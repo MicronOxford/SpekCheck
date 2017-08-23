@@ -71,22 +71,24 @@ Spectrum.prototype.interpolate = function () {
         var vals;
         [wls, vals] = this.raw;
         var i = 1; // Index into original data.
-        var dw = wls[1] - wls[0];
-        var dv = vals[1] - vals[0];
         for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
+            var val;
+            var t;
             if (wl < wls[0] | wl > wls[wls.length-1]){
-                this._interp[0].push(wl);
-                this._interp[1].push(0);
-                continue;
-            }
-            if (wl > wls[i]) {
-                while(wl > wls[i]) {
-                    i += 1;
+                val = 0;
+            } else {
+                if (wl > wls[i]) {
+                    while(wl > wls[i]) {
+                        i += 1;
+                    }
                 }
-                dvdw = (vals[i] - vals[i-1]) / wls[i] - wls[i-1];
+                t = (wl - wls[i-1]) / (wls[i] - wls[i-1]);
+                val = (1-t)*vals[i-1]+t*vals[i]
+                // var dvdw = (vals[i] - vals[i-1]) / wls[i] - wls[i-1];
+                //this._interp[1].push(vals[i-1] + (wl - wls[i-1]) * dv/dw);
             }
             this._interp[0].push(wl);
-            this._interp[1].push(vals[i-1] + (wl - wls[i-1]) * dv/dw);
+            this._interp[1].push(val);
         }
     }
     return this._interp;
