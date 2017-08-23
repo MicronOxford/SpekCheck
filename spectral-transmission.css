@@ -10,7 +10,7 @@ body {
     background: #999;
 }
 
-#dyes, #filters, #fset {
+#dyes, #filters, #fset, #sets {
     overflow-y: scroll;
     border: ridge;
     height: 12em;
