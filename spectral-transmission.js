@@ -299,7 +299,7 @@ function drawPlot(dye, filters, filterModes) {
         }
         var refl = ['r','R'].indexOf(filterModes[findex]) > -1;
         if (refl) {
-            var mult = SPECTRA[filter].interpolate()[1].map((v) => {return 1-v;});
+            var mult = SPECTRA[filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
             SPECTRA['transmitted'].multiplyBy(mult);
         } else {
             SPECTRA['transmitted'].multiplyBy(SPECTRA[filter]);
