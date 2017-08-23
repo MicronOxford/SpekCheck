@@ -399,7 +399,7 @@ function parseSets( txt ) {
         }
         var csv = line.split(/[\t,:;]/);
         var filters = csv.slice(2).map( (_) => _.trim().split(/ +/)).map(
-                                            (_) => {return{filter:_[0], mode:_[1]}});
+                                            (_) => {return{filter:_[0], mode:_[1]||'t'}});
         sets.push({name: csv[0].trim(),
                    dye: csv[1].trim(),
                    filters: filters});
