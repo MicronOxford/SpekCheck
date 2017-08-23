@@ -394,7 +394,7 @@ function parseSources( sources )  {
 function parseSets( txt ) {
     var sets = [];
     for (line of txt.split(/\n/)) {
-        if (line.match(/^\s*(\/{2,2}|#|\/\*).*/)) {
+        if (line.length <=1 || line.match(/^\s*(\/{2,2}|#|\/\*).*/)) {
             continue;
         }
         var csv = line.split(/[\t,:;]/);
