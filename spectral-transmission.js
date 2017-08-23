@@ -391,12 +391,35 @@ function parseSources( sources )  {
     return filters
 }
 
+function parseSets( txt ) {
+    var sets = [];
+    for (line of txt.split(/\n/)) {
+        if (line.match(/^\s*(\/{2,2}|#|\/\*).*/)) {
+            continue;
+        }
+        var csv = line.split(/[\t,:;]/);
+        var filters = csv.slice(2).map( (_) => _.trim().split(/ +/)).map(
+                                            (_) => {return{filter:_[0], mode:_[1]}});
+        sets.push({name: csv[0].trim(),
+                   dye: csv[1].trim(),
+                   filters: filters});
+    }
+    return sets.sort((a,b) => (a.name > b.name));
+}
+
+
 
 //=== UI INTERACTION FUNCTIONS ===//
-function addFilter( event, ui) {
+function dropFilter( event, ui) {
     // Add a filter to the active filter set.
-    var el = ui.draggable.clone(true).removeClass('filterSpec').addClass('activeFilter');
-    el.data('mode', 't')
+    addFilterToSet(ui.draggable.data('key'), 't');
+    updatePlot();
+}
+
+function addFilterToSet(filter, mode) {
+    var el = $(`<div><label>${filter}</label></div>`).addClass('activeFilter');
+    el.data('mode', mode);
+    el.data('key', filter)
     var buttons = $( "<span></span>").appendTo(el);
     var modeBtn = $(`<button class="modeButton">t</button>`).appendTo(buttons);
     modeBtn.button()
@@ -412,7 +435,6 @@ function addFilter( event, ui) {
         el.remove();
         updatePlot();});
     $( "#fset" ).append(el);
-    updatePlot();
 }
 
 function selectDye( event, ui) {
@@ -421,9 +443,39 @@ function selectDye( event, ui) {
     updatePlot();
 }
 
+function selectFilterSet(set) {
+    $(".activeFilter").remove()
+    for (filter of set.filters) {
+        addFilterToSet(filter.filter, filter.mode);
+    }
+    if (set.dye) {
+        $('#dyes .ui-selected').removeClass('ui-selected');
+        $('#dyes .ui-selectee').filter(function() {
+            return $(this).data('key') == set.dye}).addClass("ui-selected")
+    }
+    updatePlot();
+}
+
 
 //=== DOCUMENT READY===//
 $( document ).ready(function() { 
+    // Populate list of filter sets.
+    $.ajax(
+        {url: "./sets",
+        data: "",
+        dataType: "text",
+        success: function ( resp ) {
+            var divs = [];
+            for (let set of parseSets(resp)) {
+                var div = $( `<div><label>${set.name}</label></div>` );
+                $(div).click((_) => {selectFilterSet(set);});
+                divs.push(div);
+                }
+            $( "#sets" ).append(divs);
+            }
+        }
+    );
+
     // Populate list of filters, and store SPECTRA key on the div.data
     $.ajax(
         {url: "./filters",
@@ -445,7 +497,7 @@ $( document ).ready(function() {
     });
     $( "#fset").droppable({
         accept: ".filterSpec",
-        drop: addFilter
+        drop: dropFilter
     });
     
     // Populate list of dyes, and store SPECTRA key on the div.data
