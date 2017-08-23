@@ -24,15 +24,13 @@ CSVMATCH = /^\s?([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)[\w,;:\t]([-+]?[0-9]*\
 // The set of active filters.
 var CHART = null;
 var SPECTRA = {};
-
-var lastui;
-var lastevent;
-
+// Interpolation parameters.
 var WLMIN = 300.0;
 var WLMAX = 800.0;
 var WLSTEP = 2.0;
 
 /* Required page elements:
+ * #sets    - a list of predefined filter sets
  * #fset    - the active filter set
  * #filters - a list of available filters
  * #dyes    - a list of available dyes
@@ -392,6 +390,7 @@ function parseSources( sources )  {
 }
 
 function parseSets( txt ) {
+    // Parse pre-defined filter sets.
     var sets = [];
     for (line of txt.split(/\n/)) {
         if (line.length <=1 || line.match(/^\s*(\/{2,2}|#|\/\*).*/)) {
@@ -411,12 +410,13 @@ function parseSets( txt ) {
 
 //=== UI INTERACTION FUNCTIONS ===//
 function dropFilter( event, ui) {
-    // Add a filter to the active filter set.
+    // Add the dropped filter to the active filter set.
     addFilterToSet(ui.draggable.data('key'), 't');
     updatePlot();
 }
 
 function addFilterToSet(filter, mode) {
+    // Add a filter to the active filter set.
     var el = $(`<div><label>${filter}</label></div>`).addClass('activeFilter');
     mode = mode.toLowerCase()
     el.data('mode', mode);
@@ -445,6 +445,7 @@ function selectDye( event, ui) {
 }
 
 function selectFilterSet(set) {
+    // Load a pre-defined filter set.
     $(".activeFilter").remove()
     for (filter of set.filters) {
         addFilterToSet(filter.filter, filter.mode);
