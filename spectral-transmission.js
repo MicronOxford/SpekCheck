@@ -444,7 +444,7 @@ function selectDye( event, ui) {
     updatePlot();
 }
 
-function selectFilterSet(set) {
+function selectFilterSet(event, set) {
     // Load a pre-defined filter set.
     $(".activeFilter").remove()
     for (filter of set.filters) {
@@ -455,6 +455,11 @@ function selectFilterSet(set) {
         $('#dyes .ui-selectee').filter(function() {
             return $(this).data('key') == set.dye}).addClass("ui-selected")
     }
+    // Highlight loaded filter set
+    let target = $(event.target);
+    $("#sets .searchable >").css('font-weight', 'normal');
+    target.find("label").andSelf().css('font-weight', 'bold');
+    // Update plot.
     updatePlot();
 }
 
@@ -495,7 +500,7 @@ $( document ).ready(function() {
             var divs = [];
             for (let set of parseSets(resp)) {
                 var div = $( `<div><label>${set.name}</label></div>` );
-                div.click((_) => {selectFilterSet(set);});
+                div.click((_) => {selectFilterSet(_, set);});
                 div.addClass("searchable");
                 divs.push(div);
                 }
