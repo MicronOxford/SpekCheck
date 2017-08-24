@@ -216,7 +216,7 @@ function updatePlot() {
     var filterModes = [];
 
     // Fetch configuration from UI.
-    $( "#dyes .ui-selected").each(function() {dye.push($(this).data().key)})
+    $( "#dyes .selected").each(function() {dye.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filters.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
 
@@ -303,7 +303,7 @@ function drawPlot(dye, filters, filterModes) {
     }
 
     var skeys = []; // all active keys (filters + dye)
-    $("#dyes .ui-selected div").each(function() {skeys.push($(this).data().key)});
+    skeys.push($("#dyes .selected").data("key"));
     skeys.push.apply(skeys, filters);
 
     var traces = CHART.data.datasets.map( item => item.label );
@@ -438,9 +438,12 @@ function addFilterToSet(filter, mode) {
     $( "#fset" ).append(el);
 }
 
-function selectDye( event, ui) {
+EVT = null;
+
+function selectDye(event, key) {
     // Update on dye selection.
-    $(ui.selected).addClass("ui-selected").siblings().removeClass("ui-selected");
+    $('#dyes .selected').removeClass('selected');
+    $(event.target).closest('.selectable').addClass('selected')
     updatePlot();
 }
 
@@ -451,9 +454,9 @@ function selectFilterSet(event, set) {
         addFilterToSet(filter.filter, filter.mode);
     }
     if (set.dye) {
-        $('#dyes .ui-selected').removeClass('ui-selected');
-        $('#dyes .ui-selectee').filter(function() {
-            return $(this).data('key') == set.dye}).addClass("ui-selected")
+        $('#dyes .selected').removeClass('selected');
+        $('#dyes .selectable').filter(function() {
+            return $(this).data('key') == set.dye}).addClass("selected")
     }
     // Highlight loaded filter set
     let target = $(event.target);
@@ -550,11 +553,12 @@ $( document ).ready(function() {
                 var div = $(`<div><label>${key}</label></div>`);
                 SPECTRA[key] = new ServerSpectrum(`dyes/${value}`, key);
                 div.data('key', key);
-                div.addClass( "searchable" );
+                div.addClass("searchable");
+                div.addClass("selectable");
+                div.click((_) => {selectDye(_, key);});
                 divs.push(div);
             });
             $( "#dyes" ).append(divs);
-            $( "#dyes ").selectable({selected: selectDye});
         ;}
     });
     // To do - parse URL to select dye and populate fset.

@@ -2,11 +2,9 @@ body {
     font-family: sans-serif;
 }
 
-#dyes *.ui-selecting {
-    background: #ccc;
-}
 
-#dyes *.ui-selected {
+
+*.selected {
     background: #999;
 }
 
