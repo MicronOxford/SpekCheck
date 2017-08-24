@@ -460,9 +460,8 @@ function selectFilterSet(event, set) {
     }
     // Highlight loaded filter set
     let target = $(event.target);
-    $("#sets .searchable >").css('font-weight', 'normal');
-    target.find("label").andSelf().css('font-weight', 'bold');
-    // Update plot.
+    $("#sets .selectable").removeClass("selected");
+    target.closest(".selectable").addClass("selected");
     updatePlot();
 }
 
@@ -505,6 +504,7 @@ $( document ).ready(function() {
                 var div = $( `<div><label>${set.name}</label></div>` );
                 div.click((_) => {selectFilterSet(_, set);});
                 div.addClass("searchable");
+                div.addClass("selectable");
                 divs.push(div);
                 }
             $( "#sets" ).append(divs);
