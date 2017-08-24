@@ -17,6 +17,10 @@ body {
 }
 
 
+label {
+    margin-top: 3px;
+}
+
 .container {
     float: left;
     margin: 1em;

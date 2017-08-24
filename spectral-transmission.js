@@ -303,7 +303,7 @@ function drawPlot(dye, filters, filterModes) {
     }
 
     var skeys = []; // all active keys (filters + dye)
-    $("#dyes .ui-selected").each(function() {skeys.push($(this).data().key)});
+    $("#dyes .ui-selected div").each(function() {skeys.push($(this).data().key)});
     skeys.push.apply(skeys, filters);
 
     var traces = CHART.data.datasets.map( item => item.label );
@@ -470,7 +470,7 @@ $.extend($.expr[":"], {
 function refineList(event) {
     // Show and hide searchable items based on search key.
     let target = $(event.target);
-    let items = target.parent().children('.searchable');
+    let items = $(target.data("search")).children('.searchable');
     if(event.key === 'Escape') {
         target.val('');
         items.show()
@@ -485,7 +485,8 @@ function refineList(event) {
 //=== DOCUMENT READY===//
 $( document ).ready(function() { 
     // Populate list of filter sets.
-    $("#sets").append($("<input>").keyup(refineList))
+    $("<div>").insertBefore($("#sets")).html(
+        $("<input>").data("search", "#sets").keyup(refineList));
     $.ajax(
         {url: "./sets",
         data: "",
@@ -504,7 +505,8 @@ $( document ).ready(function() {
     );
 
     // Populate list of filters, and store SPECTRA key on the div.data
-    $("#filters").append($("<input>").keyup(refineList))
+    $("<div>").insertBefore($("#filters")).html(
+        $("<input>").data("search", "#filters").keyup(refineList));
     $.ajax(
         {url: "./filters",
          data: "",
@@ -530,7 +532,8 @@ $( document ).ready(function() {
     });
     
     // Populate list of dyes, and store SPECTRA key on the div.data
-    $("#dyes").append($("<input>").keyup(refineList))
+    $("<div>").insertBefore($("#dyes")).html(
+        $("<input>").data("search", "#dyes").keyup(refineList));
     $.ajax(
         {url: "./dyes",
          data: "",
@@ -539,14 +542,14 @@ $( document ).ready(function() {
             var dyes = parseSources(data);
             var divs = []
             $.each(dyes, function(key, value) {
-                var div = $(`<div>${key}</div>`);
+                var div = $(`<div><label>${key}</label></div>`);
                 SPECTRA[key] = new ServerSpectrum(`dyes/${value}`, key);
                 div.data('key', key);
                 div.addClass( "searchable" );
                 divs.push(div);
             });
             $( "#dyes" ).append(divs);
-            $( "#dyes" ).selectable({selected: selectDye});
+            $( "#dyes ").selectable({selected: selectDye});
         ;}
     });
     // To do - parse URL to select dye and populate fset.
