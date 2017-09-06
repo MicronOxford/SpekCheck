@@ -1,3 +1,6 @@
+Dye: Cy5
+Extinction coefficient: 250000
+Quantum Yield: 0.27
 wavelength,Cy5
 635.00,0.036196999251842
 636.00,0.042659997940063
