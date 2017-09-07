@@ -95,10 +95,10 @@ Spectrum.prototype.area = function (name) {
     // Clamps negative values to zero.
     var w;
     var v;
-    [v,w] = this.interpolate();
+    [w,v] = this.interpolate();
     var area = 0;
     for (var i=1; i < w.length; i++) {
-        area += 0.5 * (Math.max(0, v[i]) + Math.max(v[i-1]))*(w[i] - w[i-1]);
+        area += 0.5 * (Math.max(0, v[i]) + Math.max(0, v[i-1]))*(w[i] - w[i-1]);
     }
     return area;
 }
