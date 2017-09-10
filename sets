@@ -1,7 +1,7 @@
 // Name, Dye, filter mode, filter mode ...
 //OMX V3 Live
 OMXv3 Live-YFP, YFP, R-0056 T, EM-550-49 T
-OMXv3 Live_RFP, mRFP, R-0056 R, R-0048 T, R-0053 R, EM-629-53 T
+OMXv3 Live_RFP, mRFP, R-0056 R, R-0048 T, R-0053 R, EM-642-80-m T
 OMXv3 Live_CFP, CFP, R-0056 R, R-0048 T, R-0053 T, EM-482-35 T
 //OMXv3 standard
 OMXv3 Std_GFP, GFP, R-0063 T, R-0054 R, EM-525-50 T
