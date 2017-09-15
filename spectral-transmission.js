@@ -527,15 +527,20 @@ function selectExcitation(event, key) {
 
 
 function selectFilterSet(event, set) {
-    // Load a pre-defined filter set.
-    $(".activeFilter").remove()
-    for (filter of set.filters) {
-        addFilterToSet(filter.filter, filter.mode);
-    }
-    if (set.dye) {
-        $('#dyes .selected').removeClass('selected');
-        $('#dyes .selectable').filter(function() {
-            return $(this).data('key') == set.dye}).addClass("selected")
+    if (set === '_adv_') {
+        $(".advanced").show()
+    } else {
+        // Load a pre-defined filter set.
+        $(".advanced").hide()
+        $(".activeFilter").remove()
+        for (filter of set.filters) {
+            addFilterToSet(filter.filter, filter.mode);
+        }
+        if (set.dye) {
+            $('#dyes .selected').removeClass('selected');
+            $('#dyes .selectable').filter(function() {
+                return $(this).data('key') == set.dye}).addClass("selected")
+        }
     }
     // Highlight loaded filter set
     let target = $(event.target);
@@ -570,9 +575,14 @@ function refineList(event) {
 
 //=== DOCUMENT READY===//
 $( document ).ready(function() {
+    $(".advanced").hide()
     // Populate list of filter sets.
     $("<div>").insertBefore($("#sets")).html(
         $("<input>").data("search", "#sets").keyup(refineList));
+    var div = $(`<div><label>CUSTOM</label></div>` );
+    div.addClass("searchable").addClass("selectable");
+    div.click((_) => {selectFilterSet(_, '_adv_')});
+    div.appendTo($("#sets"));
     $.ajax(
         {url: "./sets",
         data: "",
