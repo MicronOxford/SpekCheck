@@ -463,7 +463,7 @@ function parseSources( sources )  {
     for (var file of sources.split('\n')) {
         var name = file;
         for (var excl of FN_EXCLUDE) {
-            name = name.split(excl).join("");
+            name = name.split(excl).join("").trim();
         }
         if (name.length > 1) {
             filters[name] = file;
