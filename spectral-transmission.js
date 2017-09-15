@@ -318,11 +318,6 @@ function drawPlot(dye, excitation, filters, filterModes) {
         $(window).resize(resizeChart);
     }
 
-    if(!dye && filters.length === 0) {
-        // No data.
-        return;
-    }
-
     // Calculate excitation.
     var e_eff;
     if (excitation && dye && SPECTRA[dye + EXSUFFIX]) {
@@ -334,6 +329,8 @@ function drawPlot(dye, excitation, filters, filterModes) {
     // Calculate transmission.
     if (dye) {
         SPECTRA['transmitted'] = SPECTRA[dye].copy();
+    } else if (filters.length === 0) {
+        SPECTRA['transmitted'] = new Spectrum();
     }
     for ([findex, filter] of filters.entries()) {
         if (findex === 0 && !dye) {
