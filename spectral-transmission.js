@@ -69,7 +69,7 @@ Spectrum.prototype.interpolate = function () {
         this._interp = [[],[]];
         var wls;
         var vals;
-        [wls, vals] = this.raw;
+        [wls, vals] = this.raw || [[0,1], [0,0]];
         var i = 1; // Index into original data.
         for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
             var val;
