@@ -556,6 +556,9 @@ function selectExcitation(event, key) {
 function selectFilterSet(event, set) {
     if (set === '_adv_') {
         $(".advanced").show()
+    } else if (set === '_empty_') {
+        $(".advanced").hide()
+        $(".activeFilter").remove()
     } else {
         // Load a pre-defined filter set.
         $(".advanced").hide()
@@ -606,10 +609,17 @@ $( document ).ready(function() {
     // Populate list of filter sets.
     $("<div>").insertBefore($("#sets")).html(
         $("<input>").data("search", "#sets").keyup(refineList));
+
     var div = $(`<div><label>CUSTOM</label></div>` );
     div.addClass("searchable").addClass("selectable");
     div.click((_) => {selectFilterSet(_, '_adv_')});
     div.appendTo($("#sets"));
+
+    div = $(`<div><label>EMPTY</label></div>` );
+    div.addClass("searchable").addClass("selectable");
+    div.click((_) => {selectFilterSet(_, '_empty_')});
+    div.appendTo($("#sets"));
+
     $.ajax(
         {url: "./sets",
         data: "",
