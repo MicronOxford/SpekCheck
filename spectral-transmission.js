@@ -92,6 +92,16 @@ Spectrum.prototype.interpolate = function () {
     return this._interp;
 }
 
+Spectrum.prototype.rescale = function() {
+    // Find max. intensity in spectrum.
+    if (this.raw[1].reduce( (peak, val) => val > peak ? val : peak) > 10.) {
+        // Spectrum is probably in percent
+        for (var i = 0; i < this.raw[1].length; i++) {
+            this.raw[1][i] = this.raw[1][i] / 100;
+        }
+    }
+}
+
 Spectrum.prototype.area = function (name) {
     // Return the area of the spectrum.
     // Clamps negative values to zero.
@@ -177,8 +187,8 @@ ServerSpectrum.prototype.fetch = function ( ){
             // Parse csv.
             var csv = resp.split('\n');
             var wls = [] // wavelength
-            var vals = [] // value
-            var auxs = [] // aux. value, e.g. excitation
+            var val0s = [] // value0
+            var val1s = [] // aux. value
             for (let [index, line] of csv.entries()) {
                 let strings = line.split(FLOATMATCH)
                 let sepstrings = strings.filter((el, i, arr) => i%2 === 0)
@@ -187,28 +197,29 @@ ServerSpectrum.prototype.fetch = function ( ){
                     continue;
                 }
                 let floatstrings = strings.filter((el, i, arr) => i%2 === 1)
-                let [wl, value, aux] = floatstrings.map( v => parseFloat(v));
-                if (wl && value) {
+                let [wl, val0, val1] = floatstrings.map( v => parseFloat(v));
+                if (wl != null && val0 != null) {
                     wls.push(wl);
-                    vals.push(value);
-                    if (aux) {
-                        auxs.push(aux);
+                    val0s.push(val0);
+                    if (val1 != null) {
+                        val1s.push(val1);
                     }
                 }
             }
-            // Find max. intensity in spectrum.
-            if (vals.reduce( (peak, val) => val > peak ? val : peak) > 10.) {
-                // Spectrum is probably in percent
-                for (var i = 0; i < vals.length; i++) {
-                    vals[i] = vals[i] / 100;
-                }
-            }
-            this.raw = [wls, vals];
-            // Create a new spectrum for any auxilliary data.
-            if (auxs.length === wls.length) {
+
+            if (val1s.length === val0s.length) {
+                // 3 columns of data: wl, excitation, emission
+                // Create a new spectrum for the excitation.
+                this.raw = [wls, val1s];
+                this.rescale();
                 let n = this.name + EXSUFFIX;
                 SPECTRA[n] = new Spectrum(n);
-                SPECTRA[n].raw = [wls, auxs];
+                SPECTRA[n].raw = [wls, val0s];
+                SPECTRA[n].rescale();
+            } else {
+                // 2 columns of data: wl, emission
+                this.raw = [wls, val0s];
+                this.rescale();
             }
             d.resolve();
         }, this),
