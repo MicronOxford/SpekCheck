@@ -284,7 +284,6 @@ function deepCopy( src ) {
     }
 }
 
-
 function drawPlot(dye, excitation, filters, filterModes) {
     // Create chart if it doesn't exist.
     if (!CHART) {
@@ -325,7 +324,7 @@ function drawPlot(dye, excitation, filters, filterModes) {
     }
 
     // Calculate excitation.
-    var e_eff = undefined;
+    var e_eff;
     if (excitation && dye && SPECTRA[dye + EXSUFFIX]) {
         SPECTRA['_excitation_'] = SPECTRA[dye + EXSUFFIX].copy();
         SPECTRA['_excitation_'].multiplyBy(SPECTRA[excitation]);
@@ -352,7 +351,7 @@ function drawPlot(dye, excitation, filters, filterModes) {
     }
 
     // Caclulate efficiency.
-    var t_eff = undefined;
+    var t_eff;
     if (dye) {
         var t_eff = SPECTRA['transmitted'].area() / SPECTRA[dye].area();
     }
@@ -361,10 +360,14 @@ function drawPlot(dye, excitation, filters, filterModes) {
     dye = $("#dyes .selected").data("key");
     if (dye) {
         skeys.push(dye);
+        if (SPECTRA[dye + EXSUFFIX]) {
+            skeys.push(dye + EXSUFFIX);
+        }
     }
     if (excitation) {
         skeys.push(excitation);
     }
+
     skeys.push.apply(skeys, filters);
 
     var traces = CHART.data.datasets.map( item => item.label );
@@ -386,23 +389,39 @@ function drawPlot(dye, excitation, filters, filterModes) {
         var borderDash;
         var data = SPECTRA[key].points();
         var hue = wavelengthToHue(SPECTRA[key].peakwl());
-        bg = `hsla(${hue}, 100%, 50%, 0.2)`
-        fg = `hsla(${hue}, 100%, 50%, 0.5)`
-        if (filters.indexOf(key) > -1){
-            borderDash = DASHES.next().value;
-        } else {
-            borderDash = [];
+        switch (key) {
+            case excitation:
+                bg = `hsla(${hue}, 100%, 50%, 1)`
+                fg = `hsla(${hue}, 100%, 50%, 1)`
+                var addToChart = x => CHART.data.datasets.splice(1, 0, x);
+                break
+            case dye:
+                bg = `hsla(${hue}, 100%, 50%, 0.2)`
+                fg = `rgba(0, 0, 255, 0.5)`
+                var addToChart = x => CHART.data.datasets.splice(1, 0, x);
+                break;
+            case dye + EXSUFFIX:
+                bg = `hsla(${hue}, 100%, 50%, 0.2)`
+                fg = `rgba(255, 0, 0, 0.5)`
+                var addToChart = x => CHART.data.datasets.splice(1, 0, x);
+                break
+            default:
+                bg = `hsla(${hue}, 100%, 50%, 0.1)`
+                fg = `hsla(${hue}, 100%, 50%, 0.5)`
+                borderDash = DASHES.next().value;
+                var addToChart = x => CHART.data.datasets.push(x);
         }
 
-        CHART.data.datasets.push({
-            label: key,
-            data: data,
-            backgroundColor: bg,
-            pointRadius: 0,
-            borderDash: borderDash,
-            borderColor: fg,
+        addToChart({
+                label: key,
+                data: data,
+                backgroundColor: bg,
+                pointRadius: 0,
+                borderDash: borderDash,
+                borderColor: fg,
         });
     }
+
 
     // Fill traces according to transmission/reflection
     for (var i=0; i < CHART.data.datasets.length; i++) {
@@ -419,7 +438,7 @@ function drawPlot(dye, excitation, filters, filterModes) {
     var transTrace = CHART.data.datasets.filter( item => item.label == 'transmitted')[0]
     var hue = wavelengthToHue(SPECTRA['transmitted'].peakwl());
     transTrace.data = SPECTRA['transmitted'].points();
-    transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.9)`
+    transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
 
     if (t_eff && e_eff) {
         CHART.options.title = {display: true,
