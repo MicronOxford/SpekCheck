@@ -8,7 +8,7 @@ body {
     background: #999;
 }
 
-#dyes, #filters, #fset, #sets {
+#dyes, #filters, #fset, #sets, #excitation {
     overflow-y: scroll;
     border: ridge;
     height: 12em;
