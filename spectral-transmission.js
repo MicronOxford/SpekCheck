@@ -20,7 +20,7 @@
 // Extensions to strip from source filenames, and files to exclude.
 var FN_EXCLUDE = ['.csv', '.Csv', 'CSV', 'index.html'];
 // CSV matching regex
-CSVMATCH = /^\s?([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)[\w,;:\t]([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/;
+FLOATMATCH = /([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
 // The set of active filters.
 var CHART = null;
 var SPECTRA = {};
@@ -28,6 +28,8 @@ var SPECTRA = {};
 var WLMIN = 300.0;
 var WLMAX = 800.0;
 var WLSTEP = 2.0;
+// Suffix for excitation spectra
+var EXSUFFIX = '_ex'
 
 /* Required page elements:
  * #sets    - a list of predefined filter sets
@@ -134,6 +136,7 @@ Spectrum.prototype.multiplyBy = function (other) {
     }
 }
 
+
 Spectrum.prototype.peakwl = function () {
     // Return the wavelength of the peak.
     if (this._interp) {
@@ -173,14 +176,24 @@ ServerSpectrum.prototype.fetch = function ( ){
         $.proxy(function(resp){
             // Parse csv.
             var csv = resp.split('\n');
-            var wls = []
-            var vals = []
+            var wls = [] // wavelength
+            var vals = [] // value
+            var auxs = [] // aux. value, e.g. excitation
             for (let [index, line] of csv.entries()) {
-                if (null !== line.match(CSVMATCH)) {
-                    var wl, value;
-                    [wl, value] = line.trim().split(/[,;:\s\t]/);
-                    wls.push(parseFloat(wl));
-                    vals.push(parseFloat(value));
+                let strings = line.split(FLOATMATCH)
+                let sepstrings = strings.filter((el, i, arr) => i%2 === 0)
+                // Skip header lines.
+                if(!sepstrings.every( v => v === "" || /^[\s,;:]+$/.test(v))){
+                    continue;
+                }
+                let floatstrings = strings.filter((el, i, arr) => i%2 === 1)
+                let [wl, value, aux] = floatstrings.map( v => parseFloat(v));
+                if (wl && value) {
+                    wls.push(wl);
+                    vals.push(value);
+                    if (aux) {
+                        auxs.push(aux);
+                    }
                 }
             }
             // Find max. intensity in spectrum.
@@ -191,6 +204,12 @@ ServerSpectrum.prototype.fetch = function ( ){
                 }
             }
             this.raw = [wls, vals];
+            // Create a new spectrum for any auxilliary data.
+            if (auxs.length === wls.length) {
+                let n = this.name + EXSUFFIX;
+                SPECTRA[n] = new Spectrum(n);
+                SPECTRA[n].raw = [wls, auxs];
+            }
             d.resolve();
         }, this),
         'text');
