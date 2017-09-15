@@ -221,7 +221,7 @@ function updatePlot() {
     $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
 
     // Fetch all data with concurrent calls.
-    var defer = [];   
+    var defer = [];
     if (dye.length > 0){
         defer.push(SPECTRA[dye[0]].fetch());
     }
@@ -283,6 +283,11 @@ function drawPlot(dye, filters, filterModes) {
         $(window).resize(resizeChart);
     }
 
+    if(!dye && filters.length === 0) {
+        // No data.
+        return
+    }
+
     // Calculate transmission.
     if (dye) {
         SPECTRA['transmitted'] = SPECTRA[dye].copy();
@@ -303,7 +308,10 @@ function drawPlot(dye, filters, filterModes) {
     }
 
     var skeys = []; // all active keys (filters + dye)
-    skeys.push($("#dyes .selected").data("key"));
+    dye = $("#dyes .selected").data("key");
+    if (dye) {
+        skeys.push(dye);
+    }
     skeys.push.apply(skeys, filters);
 
     var traces = CHART.data.datasets.map( item => item.label );
@@ -442,8 +450,16 @@ EVT = null;
 
 function selectDye(event, key) {
     // Update on dye selection.
-    $('#dyes .selected').removeClass('selected');
-    $(event.target).closest('.selectable').addClass('selected')
+    s = event.target.closest(".selectable")
+    cl = s.classList
+    if( cl && cl.value.includes("selected")) {
+        $(s).removeClass("selected");
+    }
+    else
+    {
+        $('#dyes .selected').removeClass('selected');
+        $(s).addClass('selected');
+    }
     updatePlot();
 }
 
@@ -490,7 +506,7 @@ function refineList(event) {
 
 
 //=== DOCUMENT READY===//
-$( document ).ready(function() { 
+$( document ).ready(function() {
     // Populate list of filter sets.
     $("<div>").insertBefore($("#sets")).html(
         $("<input>").data("search", "#sets").keyup(refineList));
