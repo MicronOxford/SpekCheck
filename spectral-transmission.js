@@ -231,11 +231,13 @@ function wavelengthToHue(wl) {
 function updatePlot() {
     // Prepare to redraw the plot.
     var dye = [];
+    var excitation = [];
     var filters = [];
     var filterModes = [];
 
     // Fetch configuration from UI.
     $( "#dyes .selected").each(function() {dye.push($(this).data().key)})
+    $( "#excitation .selected").each(function() {excitation.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filters.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
 
@@ -244,12 +246,16 @@ function updatePlot() {
     if (dye.length > 0){
         defer.push(SPECTRA[dye[0]].fetch());
     }
+    if (excitation.length > 0) {
+        defer.push(SPECTRA[excitation[0]].fetch());
+    }
     for (var f of filters) {
         defer.push(SPECTRA[f].fetch());
     }
 
     // When all the data is ready, do the calculation and draw the plot.
-    $.when.apply(null, defer).then(function(){drawPlot(dye[0], filters, filterModes)});
+
+    $.when.apply(null, defer).then(function(){drawPlot(dye[0], excitation[0], filters, filterModes)});
 }
 
 
@@ -268,7 +274,7 @@ function deepCopy( src ) {
 }
 
 
-function drawPlot(dye, filters, filterModes) {
+function drawPlot(dye, excitation, filters, filterModes) {
     // Create chart if it doesn't exist.
     if (!CHART) {
         var ctx = $( "#chart" )[0].getContext('2d');
@@ -330,6 +336,9 @@ function drawPlot(dye, filters, filterModes) {
     dye = $("#dyes .selected").data("key");
     if (dye) {
         skeys.push(dye);
+    }
+    if (excitation) {
+        skeys.push(excitation);
     }
     skeys.push.apply(skeys, filters);
 
@@ -471,6 +480,7 @@ function selectDye(event, key) {
     // Update on dye selection.
     s = event.target.closest(".selectable")
     cl = s.classList
+
     if( cl && cl.value.includes("selected")) {
         $(s).removeClass("selected");
     }
@@ -481,6 +491,23 @@ function selectDye(event, key) {
     }
     updatePlot();
 }
+
+
+function selectExcitation(event, key) {
+    // Update on excitation selection.
+    s = event.target.closest(".selectable")
+    cl = s.classList
+    if( cl && cl.value.includes("selected")) {
+        $(s).removeClass("selected");
+    }
+    else
+    {
+        $('#excitation .selected').removeClass('selected');
+        $(s).addClass('selected');
+    }
+    updatePlot();
+}
+
 
 function selectFilterSet(event, set) {
     // Load a pre-defined filter set.
@@ -573,7 +600,31 @@ $( document ).ready(function() {
         accept: ".filterSpec",
         drop: dropFilter
     });
-    
+
+    // Populate list of excitation sources.
+    $("<div>").insertBefore($("#excitation")).html(
+        $("<input>").data("search", "#excitation").keyup(refineList));
+    $.ajax(
+        {url: "./excitation",
+         data: "",
+         dataType: "text",
+         success: function( data ) {
+            var excitations = parseSources(data);
+            var divs = []
+            $.each(excitations, function(key, value) {
+                var div = $(`<div><label>${key}</label></div>`);
+                SPECTRA[key] = new ServerSpectrum(`excitation/${value}`, key);
+                div.data('key', key);
+                div.addClass("searchable");
+                div.addClass("selectable");
+                div.click((_) => {selectExcitation(_, key);});
+                divs.push(div);
+            });
+            $( "#excitation" ).append(divs);
+        ;}
+    });
+
+
     // Populate list of dyes, and store SPECTRA key on the div.data
     $("<div>").insertBefore($("#dyes")).html(
         $("<input>").data("search", "#dyes").keyup(refineList));
