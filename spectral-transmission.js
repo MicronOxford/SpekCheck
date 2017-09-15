@@ -158,10 +158,10 @@ Spectrum.prototype.peakwl = function () {
 
 Spectrum.prototype.points = function () {
     // Return points as {x: xval, y: yval}
-    var data = this.interpolate();
     if (this._points) {
         return this._points;
     } else {
+        var data = this.interpolate();
         return data[0].map(function (v, i) {
             return {x: v, y:data[1][i]};
         })
