@@ -310,7 +310,15 @@ function drawPlot(dye, excitation, filters, filterModes) {
 
     if(!dye && filters.length === 0) {
         // No data.
-        return
+        return;
+    }
+
+    // Calculate excitation.
+    var e_eff = undefined;
+    if (excitation && dye && SPECTRA[dye + EXSUFFIX]) {
+        SPECTRA['_excitation_'] = SPECTRA[dye + EXSUFFIX].copy();
+        SPECTRA['_excitation_'].multiplyBy(SPECTRA[excitation]);
+        e_eff = SPECTRA['_excitation_'].area() / SPECTRA[excitation].area()
     }
 
     // Calculate transmission.
@@ -330,6 +338,12 @@ function drawPlot(dye, excitation, filters, filterModes) {
         } else {
             SPECTRA['transmitted'].multiplyBy(SPECTRA[filter]);
         }
+    }
+
+    // Caclulate efficiency.
+    var t_eff = undefined;
+    if (dye) {
+        var t_eff = SPECTRA['transmitted'].area() / SPECTRA[dye].area();
     }
 
     var skeys = []; // all active keys (filters + dye)
@@ -396,10 +410,13 @@ function drawPlot(dye, excitation, filters, filterModes) {
     transTrace.data = SPECTRA['transmitted'].points();
     transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.9)`
 
-    if (dye) {
-        var eff = SPECTRA['transmitted'].area() / SPECTRA[dye].area();
+    if (t_eff && e_eff) {
         CHART.options.title = {display: true,
-                               text: 'Efficiency: ' + (100*eff).toFixed(1) + '%',
+                               text: 'Efficiency: ex ' + (100*e_eff).toFixed(1) + '%, tr ' + (100*t_eff).toFixed(1) + '%',
+                               fontSize: 24};
+    } else if (t_eff) {
+        CHART.options.title = {display: true,
+                               text: 'Efficiency: tr ' + (100*t_eff).toFixed(1) + '%',
                                fontSize: 24};
     } else {
         CHART.options.title = {display: false,
