@@ -1,4 +1,7 @@
 // Name, Dye, filter mode, filter mode ...
+//Diamond CryoSIM
+CryoSIM Red, mCherry, ZT405-488-561-647-22.5deg T,  T560lpxr R, EM-600-37 T
+CryoSIM mVenus, GFP, ZT405-488-561-647-22.5deg T,  T560lpxr T, EM-544-24 T
 //OMX V3 Live
 OMXv3 Live-YFP, YFP, R-0056 T, EM-550-49 T
 OMXv3 Live_RFP, mRFP, R-0056 R, R-0048 T, R-0053 R, EM-642-80-m T
