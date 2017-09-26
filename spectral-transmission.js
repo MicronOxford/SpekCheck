@@ -21,6 +21,7 @@
 var FN_EXCLUDE = ['.csv', '.Csv', 'CSV', 'index.html'];
 // CSV matching regex
 FLOATMATCH = /([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
+QYIELDMATCH = /[Qq]uantum [Yy]ield: ([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
 // The set of active filters.
 var CHART = null;
 var SPECTRA = {};
@@ -55,6 +56,8 @@ function Spectrum(name) {
     this.raw=null;          // raw data after fetch
     this._interp=null;      // cache for interpolated data
     this._points=null;      // cache for points as [{x: , y:}, ...]
+    this.qyield=null;       //quantum yield 
+    this.extcoeff=null;     //Exctintiction Coefficent
 }
 
 Spectrum.prototype.interpolate = function () {
@@ -194,7 +197,12 @@ ServerSpectrum.prototype.fetch = function ( ){
                 let sepstrings = strings.filter((el, i, arr) => i%2 === 0)
                 // Skip header lines.
                 if(!sepstrings.every( v => v === "" || /^[\s,;:]+$/.test(v))){
-                    continue;
+		    //Match Qyield and Extcoeff values.
+		    let strings = line.match(QYIELDMATCH)
+		    if (strings){
+			this.qyield=strings
+		    }
+		    continue;
                 }
                 let floatstrings = strings.filter((el, i, arr) => i%2 === 1)
                 let [wl, val0, val1] = floatstrings.map( v => parseFloat(v));
@@ -324,6 +332,10 @@ function drawPlot(dye, excitation, filters, filterModes) {
         SPECTRA['_excitation_'] = SPECTRA[dye + EXSUFFIX].copy();
         SPECTRA['_excitation_'].multiplyBy(SPECTRA[excitation]);
         e_eff = SPECTRA['_excitation_'].area() / SPECTRA[excitation].area()
+	if(SPECTRA[dye].qyield){
+	    e_eff=e_eff*SPECTRA[dye].qyield
+	}
+
     }
 
     // Calculate transmission.
