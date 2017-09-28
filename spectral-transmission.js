@@ -21,7 +21,10 @@
 var FN_EXCLUDE = ['.csv', '.Csv', 'CSV', 'index.html'];
 // CSV matching regex
 FLOATMATCH = /([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
-QYIELDMATCH = /[Qq]uantum [Yy]ield: ([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
+QYIELDMATCH = /[Qq]uantum [Yy]ield:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
+EXTCOEFFMATCH = /[Ex]ctinction [Cc]oefficient:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
+//Alexa-488 birghtness for relative brightness calculations
+var ALEXABRIGHT= 0.92*73000    
 // The set of active filters.
 var CHART = null;
 var SPECTRA = {};
@@ -198,9 +201,16 @@ ServerSpectrum.prototype.fetch = function ( ){
                 // Skip header lines.
                 if(!sepstrings.every( v => v === "" || /^[\s,;:]+$/.test(v))){
 		    //Match Qyield and Extcoeff values.
+		    //this data gets added to the emission spectra as
+		    //we dont know yet if this is 2 column or 3 column data.
 		    let strings = line.match(QYIELDMATCH)
 		    if (strings){
-			this.qyield=strings
+			this.qyield=strings[1]
+			continue;
+		    }
+		    strings = line.match(EXTCOEFFMATCH)
+		    if (strings){
+			this.extcoeff=strings[1]
 		    }
 		    continue;
                 }
@@ -332,11 +342,14 @@ function drawPlot(dye, excitation, filters, filterModes) {
         SPECTRA['_excitation_'] = SPECTRA[dye + EXSUFFIX].copy();
         SPECTRA['_excitation_'].multiplyBy(SPECTRA[excitation]);
         e_eff = SPECTRA['_excitation_'].area() / SPECTRA[excitation].area()
-	if(SPECTRA[dye].qyield){
-	    e_eff=e_eff*SPECTRA[dye].qyield
-	}
-
     }
+    //calculate relative brightness compared to alexa-448 at 100% excitation.
+    var bright;
+    if (SPECTRA[dye].qyield && SPECTRA[dye].extcoeff) {
+	bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff)/
+		  ALEXABRIGHT)
+    }
+
 
     // Calculate transmission.
     if (dye) {
@@ -449,6 +462,11 @@ function drawPlot(dye, excitation, filters, filterModes) {
     transTrace.data = SPECTRA['transmitted'].points();
     transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
 
+    if (t_eff && e_eff && bright) {
+	CHART.options.title = {display: true,
+                               text: 'Efficiency: ex ' + (100*e_eff).toFixed(1) + '%, tr ' + (100*t_eff).toFixed(1) + '%' + ' Brightness: ' + bright.toFixed(2),
+                               fontSize: 24};
+    }
     if (t_eff && e_eff) {
         CHART.options.title = {display: true,
                                text: 'Efficiency: ex ' + (100*e_eff).toFixed(1) + '%, tr ' + (100*t_eff).toFixed(1) + '%',
