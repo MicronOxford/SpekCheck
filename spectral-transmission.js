@@ -462,18 +462,17 @@ function drawPlot(dye, excitation, filters, filterModes) {
     transTrace.data = SPECTRA['transmitted'].points();
     transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
 
-    if (t_eff && e_eff && bright) {
-	CHART.options.title = {display: true,
-                               text: 'Efficiency: ex ' + (100*e_eff).toFixed(1) + '%, tr ' + (100*t_eff).toFixed(1) + '%' + ' Brightness: ' + bright.toFixed(2),
+    if (t_eff != null && e_eff != null && bright != null) {
+       CHART.options.title = {display: true,
+                               text: 'ex ' + (100*e_eff).toFixed(1) + '%, tr ' + (100*t_eff).toFixed(1) + '%' + ', brightness ' + bright.toFixed(2),
                                fontSize: 24};
-    }
-    if (t_eff && e_eff) {
+    } else if (t_eff != null && e_eff != null) {
         CHART.options.title = {display: true,
-                               text: 'Efficiency: ex ' + (100*e_eff).toFixed(1) + '%, tr ' + (100*t_eff).toFixed(1) + '%',
+                               text: 'ex ' + (100*e_eff).toFixed(1) + '%, tr ' + (100*t_eff).toFixed(1) + '%',
                                fontSize: 24};
-    } else if (t_eff) {
+    } else if (t_eff != null) {
         CHART.options.title = {display: true,
-                               text: 'Efficiency: tr ' + (100*t_eff).toFixed(1) + '%',
+                               text: 'tr ' + (100*t_eff).toFixed(1) + '%',
                                fontSize: 24};
     } else {
         CHART.options.title = {display: false,
