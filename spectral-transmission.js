@@ -343,13 +343,13 @@ function drawPlot(dye, excitation, filters, filterModes) {
         SPECTRA['_excitation_'].multiplyBy(SPECTRA[excitation]);
         e_eff = SPECTRA['_excitation_'].area() / SPECTRA[excitation].area()
     }
-    //calculate relative brightness compared to alexa-448 at 100% excitation.
-    var bright;
-    if (SPECTRA[dye].qyield && SPECTRA[dye].extcoeff) {
-	bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff)/
-		  ALEXABRIGHT)
-    }
 
+    //calculate relative brightness compared to alexa-448 at 100% excitation.
+    var bright = null;
+    if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff) {
+        bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff)/
+          ALEXABRIGHT)
+    }
 
     // Calculate transmission.
     if (dye) {
