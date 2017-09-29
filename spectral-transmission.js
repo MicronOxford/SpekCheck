@@ -200,19 +200,19 @@ ServerSpectrum.prototype.fetch = function ( ){
                 let sepstrings = strings.filter((el, i, arr) => i%2 === 0)
                 // Skip header lines.
                 if(!sepstrings.every( v => v === "" || /^[\s,;:]+$/.test(v))){
-		    //Match Qyield and Extcoeff values.
-		    //this data gets added to the emission spectra as
-		    //we dont know yet if this is 2 column or 3 column data.
-		    let strings = line.match(QYIELDMATCH)
-		    if (strings){
-			this.qyield=strings[1]
-			continue;
-		    }
-		    strings = line.match(EXTCOEFFMATCH)
-		    if (strings){
-			this.extcoeff=strings[1]
-		    }
-		    continue;
+                    // Match Qyield and Extcoeff values.
+                    // this data gets added to the emission spectra as
+                    // we dont know yet if this is 2 column or 3 column data.
+                    let strings = line.match(QYIELDMATCH)
+                    if (strings){
+                        this.qyield=strings[1]
+                        continue;
+                    }
+                    strings = line.match(EXTCOEFFMATCH)
+                    if (strings){
+                        this.extcoeff=strings[1]
+                    }
+                    continue;
                 }
                 let floatstrings = strings.filter((el, i, arr) => i%2 === 1)
                 let [wl, val0, val1] = floatstrings.map( v => parseFloat(v));
