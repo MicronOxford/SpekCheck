@@ -374,9 +374,10 @@ function drawPlot(dye, excitation, filters, filterModes) {
 
     //calculate relative brightness compared to alexa-448 at 100% excitation.
     var bright = null;
+    // mulitple by 10 to give resasonable range of values.
     if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
         bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
-          ALEXABRIGHT)
+          ALEXABRIGHT) * 10.0 
     }
 
     var skeys = []; // all active keys (filters + dye)
@@ -473,7 +474,7 @@ function drawPlot(dye, excitation, filters, filterModes) {
                                fontSize: 24};
     } else if (t_eff != null) {
         CHART.options.title = {display: true,
-                               text: 'Efficency: em ' + (100*t_eff).toFixed(1) + '%',
+                               text: 'Efficency:  ' + (100*t_eff).toFixed(1) + '%',
                                fontSize: 24};
     } else {
         CHART.options.title = {display: false,
