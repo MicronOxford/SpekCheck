@@ -19,11 +19,14 @@
 
 // Extensions to strip from source filenames, and files to exclude.
 var FN_EXCLUDE = ['.csv', '.Csv', 'CSV', 'index.html'];
-// CSV matching regex
+// regex strings
+// match a floating point number
 FLOATMATCH = /([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
+// match a quantum yield entry
 QYIELDMATCH = /[Qq]uantum [Yy]ield:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
-EXTCOEFFMATCH = /[Ex]ctinction [Cc]oefficient:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
-//Alexa-488 birghtness for relative brightness calculations
+// match an exctinction coefficient entry
+EXTCOEFFMATCH = /[Ex]tinction [Cc]oefficient:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
+// Alexa-488 birghtness for relative brightness calculations
 var ALEXABRIGHT= 0.92*73000    
 // The set of active filters.
 var CHART = null;
@@ -59,8 +62,8 @@ function Spectrum(name) {
     this.raw=null;          // raw data after fetch
     this._interp=null;      // cache for interpolated data
     this._points=null;      // cache for points as [{x: , y:}, ...]
-    this.qyield=null;       //quantum yield 
-    this.extcoeff=null;     //Exctintiction Coefficent
+    this.qyield=null;       // quantum yield 
+    this.extcoeff=null;     // extinction coefficent
 }
 
 Spectrum.prototype.interpolate = function () {
