@@ -25,7 +25,7 @@ FLOATMATCH = /([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
 // match a quantum yield entry
 QYIELDMATCH = /[Qq]uantum [Yy]ield:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
 // match an exctinction coefficient entry
-EXTCOEFFMATCH = /[Ex]tinction [Cc]oefficient:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
+EXTCOEFFMATCH = /[Ee]xtinction [Cc]oefficient:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
 // Alexa-488 birghtness for relative brightness calculations
 var ALEXABRIGHT= 0.92*73000    
 // The set of active filters.
