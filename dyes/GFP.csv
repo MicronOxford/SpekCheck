@@ -1,6 +1,6 @@
 Type: Dye
 Name: eGFP
-Exctinction coefficient: 55000
+Extinction coefficient: 55000
 Quantum Yield: 0.6
 wavelength,excitation,emission
 250,0.494230986,0.000

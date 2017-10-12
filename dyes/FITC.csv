@@ -1,6 +1,6 @@
 Type: dye
 Name: FITC
-Exctinction coefficient: 85000
+Extinction coefficient: 85000
 Quantum Yield: 0.92
 wavelength,excitation,emission
 300,0.242219001,0
