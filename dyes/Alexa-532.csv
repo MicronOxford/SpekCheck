@@ -1,8 +1,7 @@
 Type: Dye
 Name: Alexa-532
-Exctinction coefficient: 81000
+Extinction coefficient: 81000
 Quantum Yield: 0.61
-Data copyright Molecular Probes
 wavelength,emission
 400,0.0082,0
 401,0.0068,0
