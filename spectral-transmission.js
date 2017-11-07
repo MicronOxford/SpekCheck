@@ -43,6 +43,7 @@ var EXSUFFIX = '_ex'
  * #fset    - the active filter set
  * #filters - a list of available filters
  * #dyes    - a list of available dyes
+ * #exset   - excitation filter set
  */
 
 // Dash styles generator.
@@ -272,6 +273,9 @@ function updatePlot() {
     $( "#excitation .selected").each(function() {excitation.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filters.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
+    //exciation filter sets.
+    $( "#exset .activeExFilter").each(function() {filters.push($(this).data().key)})
+    $( "#exset .activeExFilter").each(function() {filterModes.push($(this).data().mode)})
 
     // Fetch all data with concurrent calls.
     var defer = [];
@@ -552,6 +556,31 @@ function addFilterToSet(filter, mode) {
     $( "#fset" ).append(el);
 }
 
+
+function addExFilterToSet(filter, mode) {
+    // Add a filter to the active filter set.
+    var el = $(`<div><label>${filter}</label></div>`).addClass('activeExFilter');
+    mode = mode.toLowerCase()
+    el.data('mode', mode);
+    el.data('key', filter)
+    var buttons = $( "<span></span>").appendTo(el);
+    var modeBtn = $(`<button class="modeButton">${mode}</button>`).appendTo(buttons);
+    modeBtn.button()
+    modeBtn.click(function(){
+        var newMode = {'t':'r', 'r':'t'}[el.data('mode')];
+        el.data('mode', newMode);
+        $( this ).text(newMode);
+        updatePlot();
+    });
+    var delBtn = $(`<button class="delButton">x</button>`).appendTo(buttons);
+    delBtn.button();
+    delBtn.click(function(){
+        el.remove();
+        updatePlot();});
+    $( "#exset" ).append(el);
+}
+
+
 EVT = null;
 
 function selectDye(event, key) {
@@ -695,6 +724,12 @@ $( document ).ready(function() {
         }
     });
     $( "#fset").droppable({
+        accept: ".filterSpec",
+        drop: dropFilter
+    });
+    
+    //excitation filter set list
+    $( "#exset").droppable({
         accept: ".filterSpec",
         drop: dropFilter
     });
