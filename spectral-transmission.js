@@ -267,15 +267,17 @@ function updatePlot() {
     var excitation = [];
     var filters = [];
     var filterModes = [];
-
+    var exFilters = [];
+    var exFilterModes = [];
+    
     // Fetch configuration from UI.
     $( "#dyes .selected").each(function() {dye.push($(this).data().key)})
     $( "#excitation .selected").each(function() {excitation.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filters.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
     //exciation filter sets.
-    $( "#exset .activeExFilter").each(function() {filters.push($(this).data().key)})
-    $( "#exset .activeExFilter").each(function() {filterModes.push($(this).data().mode)})
+    $( "#exset .activeExFilter").each(function() {exFilters.push($(this).data().key)})
+    $( "#exset .activeExFilter").each(function() {exFilterModes.push($(this).data().mode)})
 
     // Fetch all data with concurrent calls.
     var defer = [];
@@ -291,7 +293,7 @@ function updatePlot() {
 
     // When all the data is ready, do the calculation and draw the plot.
 
-    $.when.apply(null, defer).then(function(){drawPlot(dye[0], excitation[0], filters, filterModes)});
+    $.when.apply(null, defer).then(function(){drawPlot(dye[0], excitation[0], filters, filterModes,exFilters,exFilterModes)});
 }
 
 
@@ -309,7 +311,7 @@ function deepCopy( src ) {
     }
 }
 
-function drawPlot(dye, excitation, filters, filterModes) {
+function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterModes) {
     // Create chart if it doesn't exist.
     if (!CHART) {
         var ctx = $( "#chart" )[0].getContext('2d');
@@ -346,12 +348,26 @@ function drawPlot(dye, excitation, filters, filterModes) {
     // Calculate excitation.
     var e_eff;
     if (excitation && dye && SPECTRA[dye + EXSUFFIX]) {
-        SPECTRA['_excitation_'] = SPECTRA[dye + EXSUFFIX].copy();
-        SPECTRA['_excitation_'].multiplyBy(SPECTRA[excitation]);
-        e_eff = SPECTRA['_excitation_'].area() / SPECTRA[excitation].area()
+        SPECTRA['_excitation_']= SPECTRA[excitation].copy();
+	//#        SPECTRA['_excitation_'] = SPECTRA[dye + EXSUFFIX].copy();
+    } else if (excitation) {
+	SPECTRA['_excitation_']= SPECTRA[excitation].copy();
     }
+    if (exFilters.length > 0) {
+	for([exfindex,exFilter] of exFilters.entries()){
+	    var refl = ['r','R'].indexOf(exFilterModes[exfindex]) > -1;
+	    if (refl) {
+		var mult = SPECTRA[exFilter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
+		SPECTRA['_excitation_'].multiplyBy(mult);
+	    } else {
+		SPECTRA['_excitation_'].multiplyBy(SPECTRA[exFilter]);
+	    }
+	}
+    }
+    e_eff = SPECTRA['_excitation_'].area() / SPECTRA[excitation].area()
+    
 
-
+    
     // Calculate transmission.
     if (dye) {
         SPECTRA['transmitted'] = SPECTRA[dye].copy();
@@ -396,7 +412,7 @@ function drawPlot(dye, excitation, filters, filterModes) {
         }
     }
     if (excitation) {
-        skeys.push(excitation);
+        skeys.push('_excitation_');
     }
 
     skeys.push.apply(skeys, filters);
@@ -532,6 +548,13 @@ function dropFilter( event, ui) {
     addFilterToSet(ui.draggable.data('key'), 't');
     updatePlot();
 }
+
+function dropExFilter( event, ui) {
+    // Add the dropped filter to the active filter set.
+    addExFilterToSet(ui.draggable.data('key'), 't');
+    updatePlot();
+}
+
 
 function addFilterToSet(filter, mode) {
     // Add a filter to the active filter set.
@@ -731,7 +754,7 @@ $( document ).ready(function() {
     //excitation filter set list
     $( "#exset").droppable({
         accept: ".filterSpec",
-        drop: dropFilter
+        drop: dropExFilter
     });
 
     // Populate list of excitation sources.
