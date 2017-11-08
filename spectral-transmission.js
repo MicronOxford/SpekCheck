@@ -290,6 +290,9 @@ function updatePlot() {
     for (var f of filters) {
         defer.push(SPECTRA[f].fetch());
     }
+    for (var f of exFilters) {
+	defer.push(SPECTRA[f].fetch());
+    }
 
     // When all the data is ready, do the calculation and draw the plot.
 
@@ -347,25 +350,25 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
 
     // Calculate excitation.
     var e_eff;
-    if (excitation && dye && SPECTRA[dye + EXSUFFIX]) {
-        SPECTRA['_excitation_']= SPECTRA[excitation].copy();
-	//#        SPECTRA['_excitation_'] = SPECTRA[dye + EXSUFFIX].copy();
-    } else if (excitation) {
+    if (excitation) {
 	SPECTRA['_excitation_']= SPECTRA[excitation].copy();
-    }
-    if (exFilters.length > 0) {
-	for([exfindex,exFilter] of exFilters.entries()){
-	    var refl = ['r','R'].indexOf(exFilterModes[exfindex]) > -1;
-	    if (refl) {
-		var mult = SPECTRA[exFilter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
-		SPECTRA['_excitation_'].multiplyBy(mult);
-	    } else {
-		SPECTRA['_excitation_'].multiplyBy(SPECTRA[exFilter]);
+
+	if (dye && SPECTRA[dye + EXSUFFIX]) {
+	    SPECTRA['_excitation_'].multiplyBy(SPECTRA[dye + EXSUFFIX]);
+	}
+	if (exFilters.length >= 1) {
+	    for([exfindex,exFilter] of exFilters.entries()){
+		var refl = ['r','R'].indexOf(exFilterModes[exfindex]) > -1;
+		if (refl) {
+		    var mult = SPECTRA[exFilter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
+		    SPECTRA['_excitation_'].multiplyBy(mult);
+		} else {
+		    SPECTRA['_excitation_'].multiplyBy(SPECTRA[exFilter]);
+		}
 	    }
 	}
+	e_eff = SPECTRA['_excitation_'].area() / SPECTRA[excitation].area()
     }
-    e_eff = SPECTRA['_excitation_'].area() / SPECTRA[excitation].area()
-    
 
     
     // Calculate transmission.
