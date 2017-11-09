@@ -504,6 +504,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     	    var hue = wavelengthToHue(SPECTRA['excitation'].peakwl());
     	    extTrace.data = SPECTRA['excitation'].points();
     	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
+	    extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
 	} else {
 	    var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0]
     	    var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
