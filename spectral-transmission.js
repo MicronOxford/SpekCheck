@@ -445,7 +445,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         switch (key) {
             case excitation:
                 bg = `hsla(${hue}, 100%, 50%, 1)`
-                fg = `hsla(${hue}, 100%, 50%, 1)`
+	        fg = `hsla(${hue}, 100%, 50%, 1)`
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
                 break
             case 'excitation':
@@ -497,7 +497,22 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     var hue = wavelengthToHue(SPECTRA['transmitted'].peakwl());
     transTrace.data = SPECTRA['transmitted'].points();
     transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
-
+    // // Update the excitation trace.
+    if (excitation) {
+	if (exFilters.length >= 1) {
+	    var extTrace = CHART.data.datasets.filter( item => item.label == 'excitation')[0]
+    	    var hue = wavelengthToHue(SPECTRA['excitation'].peakwl());
+    	    extTrace.data = SPECTRA['excitation'].points();
+    	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
+	} else {
+	    var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0]
+    	    var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
+    	    extTrace.data = SPECTRA[excitation].points();
+    	    extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`
+	}
+    }
+    // if(excitation) {
+    
     if (t_eff != null && e_eff != null && bright != null) {
        CHART.options.title = {display: true,
                                text: 'Efficiency: ex ' + (100*e_eff).toFixed(1) + '%, em ' + (100*t_eff).toFixed(1) + '%' + ', brightness ' + bright.toFixed(2),
