@@ -351,25 +351,24 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     // Calculate excitation.
     var e_eff;
     if (excitation) {
-	SPECTRA['_excitation_']= SPECTRA[excitation].copy();
+	SPECTRA['excitation']= SPECTRA[excitation].copy();
 
 	if (dye && SPECTRA[dye + EXSUFFIX]) {
-	    SPECTRA['_excitation_'].multiplyBy(SPECTRA[dye + EXSUFFIX]);
+	    SPECTRA['excitation'].multiplyBy(SPECTRA[dye + EXSUFFIX]);
 	}
 	if (exFilters.length >= 1) {
 	    for([exfindex,exFilter] of exFilters.entries()){
 		var refl = ['r','R'].indexOf(exFilterModes[exfindex]) > -1;
 		if (refl) {
 		    var mult = SPECTRA[exFilter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
-		    SPECTRA['_excitation_'].multiplyBy(mult);
+		    SPECTRA['excitation'].multiplyBy(mult);
 		} else {
-		    SPECTRA['_excitation_'].multiplyBy(SPECTRA[exFilter]);
+		    SPECTRA['excitation'].multiplyBy(SPECTRA[exFilter]);
 		}
 	    }
 	}
-	e_eff = SPECTRA['_excitation_'].area() / SPECTRA[excitation].area()
+	e_eff = SPECTRA['excitation'].area() / SPECTRA[excitation].area()
     }
-
     
     // Calculate transmission.
     if (dye) {
@@ -415,7 +414,11 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         }
     }
     if (excitation) {
-        skeys.push('_excitation_');
+	if (exFilters.length >= 1) {
+	    skeys.push('excitation');
+	} else {
+	    skeys.push(excitation);
+	}
     }
 
     skeys.push.apply(skeys, filters);
@@ -441,6 +444,11 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         var hue = wavelengthToHue(SPECTRA[key].peakwl());
         switch (key) {
             case excitation:
+                bg = `hsla(${hue}, 100%, 50%, 1)`
+                fg = `hsla(${hue}, 100%, 50%, 1)`
+                var addToChart = x => CHART.data.datasets.splice(1, 0, x);
+                break
+            case 'excitation':
                 bg = `hsla(${hue}, 100%, 50%, 1)`
                 fg = `hsla(${hue}, 100%, 50%, 1)`
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
@@ -585,25 +593,25 @@ function addFilterToSet(filter, mode) {
 
 function addExFilterToSet(filter, mode) {
     // Add a filter to the active filter set.
-    var el = $(`<div><label>${filter}</label></div>`).addClass('activeExFilter');
+    var exl = $(`<div><label>${filter}</label></div>`).addClass('activeExFilter');
     mode = mode.toLowerCase()
-    el.data('mode', mode);
-    el.data('key', filter)
-    var buttons = $( "<span></span>").appendTo(el);
+    exl.data('mode', mode);
+    exl.data('key', filter)
+    var buttons = $( "<span></span>").appendTo(exl);
     var modeBtn = $(`<button class="modeButton">${mode}</button>`).appendTo(buttons);
     modeBtn.button()
     modeBtn.click(function(){
-        var newMode = {'t':'r', 'r':'t'}[el.data('mode')];
-        el.data('mode', newMode);
+        var newMode = {'t':'r', 'r':'t'}[exl.data('mode')];
+        exl.data('mode', newMode);
         $( this ).text(newMode);
         updatePlot();
     });
     var delBtn = $(`<button class="delButton">x</button>`).appendTo(buttons);
     delBtn.button();
     delBtn.click(function(){
-        el.remove();
+        exl.remove();
         updatePlot();});
-    $( "#exset" ).append(el);
+    $( "#exset" ).append(exl);
 }
 
 
