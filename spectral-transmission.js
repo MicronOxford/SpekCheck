@@ -557,14 +557,27 @@ function parseSets( txt ) {
         if (line.length <=1 || line.match(/^\s*(\/{2,2}|#|\/\*).*/)) {
             continue;
         }
-        var csv = line.split(/[\t,:;]/);
-        var filters = csv.slice(2).map( (_) => _.trim().split(/ +/)).map(
-                                            (_) => {return{filter:_[0], mode:_[1]||'t'}});
+	var emAndEx = line.split("::");
+	if (emAndEx.length === 1) {
+            var csv = line.split(/[\t,:;]/);
+	    var filters = csv.slice(2).map( (_) => _.trim().split(/ +/)).map(
+		(_) => {return{filter:_[0], mode:_[1]||'t'}});
+	    var exFilters=[]
+	} else {
+	    var csv = emAndEx[0].toString().split(/[\t,:;]/);
+	    var filters = csv.slice(2).map( (_) => _.trim().split(/ +/)).map(
+		(_) => {return{filter:_[0], mode:_[1]||'t'}});
+	    var exs=emAndEx.slice(1).toString().split(/[\t,:;]/);
+	    var exFilters=exs.slice(0).map( (_) => _.trim().split(/ +/)).map(
+		(_) => {return{filter:_[0], mode:_[1]||'t'}});
+	}
         sets.push({name: csv[0].trim(),
                    dye: csv[1].trim(),
-                   filters: filters});
+                   filters: filters,
+		   exFilters: exFilters});
     }
-    return sets.sort((a,b) => (a.name > b.name));
+    return sets;
+	//.sort((a,b) => (a.name > b.name));
 }
 
 
@@ -678,6 +691,9 @@ function selectFilterSet(event, set) {
         $(".activeFilter").remove()
         for (filter of set.filters) {
             addFilterToSet(filter.filter, filter.mode);
+        }
+        for (exFilter of set.exFilters) {
+            addExFilterToSet(exFilter.filter, exFilter.mode);
         }
         if (set.dye) {
             $('#dyes .selected').removeClass('selected');
