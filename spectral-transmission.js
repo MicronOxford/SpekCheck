@@ -639,8 +639,7 @@ function parseSets( txt ) {
                    filters: filters,
 		   exFilters: exFilters});
     }
-    return sets;
-	//.sort((a,b) => (a.name > b.name));
+    return sets.sort((a,b) => (a.name > b.name));
 }
 
 
@@ -736,6 +735,48 @@ function selectDye(event, key) {
     updatePlot();
 }
 
+
+function optDyes(event){
+    //optomise dye selection
+    console.log("optomise dyes");
+    var dyes = [];
+    var efficiency=[];
+    var excitation;
+    $( "#dyes .selectable").each(function() {dyes.push($(this).data().key)});
+    $( "#excitation .selected").each(function() {excitation=($(this).data().key)});
+    for (dye of dyes) {
+	//console.log(dye)
+	efficiency.push(calcDyeEfficency(dye, excitation));
+    }
+    console.log(efficiency);
+    //    for (d of dye) {
+//	console.log(d.name)
+//   }
+        
+}
+
+function calcDyeEfficency(dye, excitation){
+    //caclulate the exciation, emmission efficiency and brightness
+    //with this dye. 
+
+    //need to check we have a spectra called 'tranmitted'
+    var t_eff;
+    var e_eff;
+    var bright
+    var t_eff = SPECTRA['transmitted'].area() / SPECTRA[dye].area();
+    
+    // Calculate excitation. need to know what our excitation is
+    // if not defined we get a null back.
+    if (excitation) {
+	e_eff = SPECTRA['excitation'].area() / SPECTRA[excitation].area();
+    }
+    if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
+        bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
+		  ALEXABRIGHT) * 10.0 ;
+    }
+
+    return([e_eff,t_eff,bright]);
+}
 
 function selectExcitation(event, key) {
     // Update on excitation selection.
