@@ -560,12 +560,12 @@ function parseSets( txt ) {
 	var emAndEx = line.split("::");
 	if (emAndEx.length === 1) {
             var csv = line.split(/[\t,:;]/);
-	    var filters = csv.slice(2).map( (_) => _.trim().split(/ +/)).map(
+	    var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
 		(_) => {return{filter:_[0], mode:_[1]||'t'}});
 	    var exFilters=[]
 	} else {
 	    var csv = emAndEx[0].toString().split(/[\t,:;]/);
-	    var filters = csv.slice(2).map( (_) => _.trim().split(/ +/)).map(
+	    var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
 		(_) => {return{filter:_[0], mode:_[1]||'t'}});
 	    var exs=emAndEx.slice(1).toString().split(/[\t,:;]/);
 	    var exFilters=exs.slice(0).map( (_) => _.trim().split(/ +/)).map(
@@ -573,6 +573,7 @@ function parseSets( txt ) {
 	}
         sets.push({name: csv[0].trim(),
                    dye: csv[1].trim(),
+		   exsource: csv[2].trim(),
                    filters: filters,
 		   exFilters: exFilters});
     }
@@ -685,10 +686,16 @@ function selectFilterSet(event, set) {
     } else if (set === '_empty_') {
         $(".advanced").hide()
         $(".activeFilter").remove()
+	$(".activeExFilter").remove()
+	$('#excitation .selected').removeClass('selected');
+	$('#dyes .selected').removeClass('selected');
     } else {
         // Load a pre-defined filter set.
         $(".advanced").hide()
         $(".activeFilter").remove()
+	$(".activeExFilter").remove()
+	$('#excitation .selected').removeClass('selected');
+	$('#dyes .selected').removeClass('selected');
         for (filter of set.filters) {
             addFilterToSet(filter.filter, filter.mode);
         }
@@ -700,6 +707,11 @@ function selectFilterSet(event, set) {
             $('#dyes .selectable').filter(function() {
                 return $(this).data('key') == set.dye}).addClass("selected")
         }
+	if (set.exsource) {
+	    $('#excitation .selected').removeClass('selected');
+            $('#excitation .selectable').filter(function() {
+                return $(this).data('key') == set.exsource}).addClass("selected")
+	}
     }
     // Highlight loaded filter set
     let target = $(event.target);
