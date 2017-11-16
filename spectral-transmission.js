@@ -31,6 +31,8 @@ var ALEXABRIGHT= 0.92*73000
 // The set of active filters.
 var CHART = null;
 var SPECTRA = {};
+var EXSET = new FilterSet();
+var EMSET = new FilterSet();
 // Interpolation parameters.
 var WLMIN = 300.0;
 var WLMAX = 800.0;
@@ -66,6 +68,7 @@ function Spectrum(name) {
     this.qyield=null;       // quantum yield 
     this.extcoeff=null;     // extinction coefficent
 }
+
 
 Spectrum.prototype.interpolate = function () {
     // Resample raw data. Assumes input data is sorted by wavelength.
@@ -177,6 +180,20 @@ Spectrum.prototype.points = function () {
         })
     }
 }
+
+
+//Prototype sets object for staroing exciation and emission sets.
+function FilterSet(name){
+    this;
+}
+
+FilterSet.prototype = new Array();
+
+FilterSet.prototype.addfilter = function(filter, mode); {
+    this.push({'filter':filter, 'mode':mode})
+}
+
+			      
 
 
 // === ServerSpectrum - spectrum with data from server === //
