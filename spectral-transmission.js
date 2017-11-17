@@ -31,8 +31,6 @@ var ALEXABRIGHT= 0.92*73000
 // The set of active filters.
 var CHART = null;
 var SPECTRA = {};
-var EXSET = new FilterSet();
-var EMSET = new FilterSet();
 // Interpolation parameters.
 var WLMIN = 300.0;
 var WLMAX = 800.0;
@@ -183,7 +181,7 @@ Spectrum.prototype.points = function () {
 
 
 //Prototype sets object for staroing exciation and emission sets.
-function FilterSet(name){
+function FilterSet(){
     this;
 }
 
@@ -194,28 +192,34 @@ FilterSet.prototype.addFilter = function(filter, mode) {
 }
 
 FilterSet.prototype.removeFilter = function(filter){
-    var i = this.name.indexOf(filter);
-    delete this[i];
+    this.forEach(function(element){
+	if (element.filter === filter) {
+	    console.log('found filter');
+	}
+    });
 }
 
-FilterSet.prototype.efficency = function( ){
+FilterSet.prototype.efficiency = function( ){
     //return the ratio of area in first element to that of multiplying
     //though all elements, and the final spectra.
-    var initArea = SPECTRA(this[0].name).area()
-    var calcSpectra  =SPECTRA(this[0].name).copy()
+    var initArea = SPECTRA[this[0].filter].area()
+    console.log(initArea)
+
+    var calcSpectra  =SPECTRA[this[0].filter].copy()
     this.slice(1).forEach(function(element){
 	var refl = ['r','R'].indexOf(element.mode) > -1;
 	if (refl) {
-	    var mult = SPECTRA[element.name].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
+	    var mult = SPECTRA[element.filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
 	    calcSpectra.multiplyBy(mult);
 	} else {
-	    calcSpectra.multiplyBy(SPECTRA[element.name]);
+	    calcSpectra.multiplyBy(SPECTRA[element.filter]);
 	}
     });
-    var efficency=calcSpectra.area/initArea;
-    return (efficency,calcSpectra);
+    var efficency=calcSpectra.area()/initArea;
+    return {efficency: efficency, spectrum: calcSpectra};
+}
 
-    
+
 // === ServerSpectrum - spectrum with data from server === //
 function ServerSpectrum(source, name) {
     Spectrum.call(this, name);
@@ -590,6 +594,7 @@ function parseSources( sources )  {
 function parseSets( txt ) {
     // Parse pre-defined filter sets.
     var sets = [];
+
     for (line of txt.split(/\n/)) {
         if (line.length <=1 || line.match(/^\s*(\/{2,2}|#|\/\*).*/)) {
             continue;
@@ -897,3 +902,7 @@ $( document ).ready(function() {
     });
     // To do - parse URL to select dye and populate fset.
 });
+
+//Global containers for exciation and emission sets. 
+var EXSET = new FilterSet();
+var EMSET = new FilterSet();
