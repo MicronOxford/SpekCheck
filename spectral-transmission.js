@@ -189,13 +189,33 @@ function FilterSet(name){
 
 FilterSet.prototype = new Array();
 
-FilterSet.prototype.addfilter = function(filter, mode); {
+FilterSet.prototype.addFilter = function(filter, mode) {
     this.push({'filter':filter, 'mode':mode})
 }
 
-			      
+FilterSet.prototype.removeFilter = function(filter){
+    var i = this.name.indexOf(filter);
+    delete this[i];
+}
 
+FilterSet.prototype.efficency = function( ){
+    //return the ratio of area in first element to that of multiplying
+    //though all elements, and the final spectra.
+    var initArea = SPECTRA(this[0].name).area()
+    var calcSpectra  =SPECTRA(this[0].name).copy()
+    this.slice(1).forEach(function(element){
+	var refl = ['r','R'].indexOf(element.mode) > -1;
+	if (refl) {
+	    var mult = SPECTRA[element.name].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
+	    calcSpectra.multiplyBy(mult);
+	} else {
+	    calcSpectra.multiplyBy(SPECTRA[element.name]);
+	}
+    });
+    var efficency=calcSpectra.area/initArea;
+    return (efficency,calcSpectra);
 
+    
 // === ServerSpectrum - spectrum with data from server === //
 function ServerSpectrum(source, name) {
     Spectrum.call(this, name);
