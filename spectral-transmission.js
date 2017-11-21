@@ -192,31 +192,50 @@ FilterSet.prototype.addFilter = function(filter, mode) {
 }
 
 FilterSet.prototype.removeFilter = function(filter){
-    this.forEach(function(element){
-	if (element.filter === filter) {
-	    console.log('found filter');
+    var filternum = this.findIndex(function(element){
+	if (element) {
+	    return (element.filter === filter);
 	}
     });
+    
+    if (filternum > -1){
+	delete this[filternum];
+	console.log('removed element ' + filternum);
+    }
 }
 
 FilterSet.prototype.efficiency = function( ){
     //return the ratio of area in first element to that of multiplying
     //though all elements, and the final spectra.
-    var initArea = SPECTRA[this[0].filter].area()
-    console.log(initArea)
+    //in EMSET first element must be a dye
+    //in EXSET first element must be a light source
 
-    var calcSpectra  =SPECTRA[this[0].filter].copy()
-    this.slice(1).forEach(function(element){
-	var refl = ['r','R'].indexOf(element.mode) > -1;
-	if (refl) {
-	    var mult = SPECTRA[element.filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
-	    calcSpectra.multiplyBy(mult);
-	} else {
-	    calcSpectra.multiplyBy(SPECTRA[element.filter]);
+    // Fetch all data with concurrent calls.
+    var defer = [];
+    for (var f of this) {
+	if(f.filter > -1) {
+            defer.push(SPECTRA[f.filter].fetch());
 	}
-    });
-    var efficency=calcSpectra.area()/initArea;
-    return {efficency: efficency, spectrum: calcSpectra};
+    }
+    // When all the data is ready, do the calculation. 
+
+    $.when.apply(null, defer).then(function(){
+	var initArea = SPECTRA[this[0].filter].area()
+	console.log(initArea)
+
+	var calcSpectra  =SPECTRA[this[0].filter].copy()
+	this.slice(1).forEach(function(element){
+	    var refl = ['r','R'].indexOf(element.mode) > -1;
+	    if (refl) {
+		var mult = SPECTRA[element.filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
+		calcSpectra.multiplyBy(mult);
+	    } else {
+		calcSpectra.multiplyBy(SPECTRA[element.filter]);
+	    }
+	});
+	var efficency=calcSpectra.area()/initArea;
+	return {efficency: efficency, spectrum: calcSpectra};
+    })
 }
 
 
