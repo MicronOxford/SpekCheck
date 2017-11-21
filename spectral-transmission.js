@@ -204,6 +204,24 @@ FilterSet.prototype.removeFilter = function(filter){
     }
 }
 
+FilterSet.prototype.doEfficiencyCalc = function () {
+    var initArea = SPECTRA[this[0].filter].area();
+    console.log(initArea);
+    var calcSpectra  =SPECTRA[this[0].filter].copy();
+    this.slice(1).forEach(function(element){
+        var refl = ['r','R'].indexOf(element.mode) > -1;
+        if (refl) {
+            var mult = SPECTRA[element.filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
+            calcSpectra.multiplyBy(mult);
+        } else {
+            calcSpectra.multiplyBy(SPECTRA[element.filter]);
+        }
+    });
+    var efficency=calcSpectra.area()/initArea;
+    return {efficency: efficency, spectrum: calcSpectra};
+}
+
+
 FilterSet.prototype.efficiency = function( ){
     //return the ratio of area in first element to that of multiplying
     //though all elements, and the final spectra.
@@ -218,24 +236,7 @@ FilterSet.prototype.efficiency = function( ){
 	}
     }
     // When all the data is ready, do the calculation. 
-
-    $.when.apply(null, defer).then(function(){
-	var initArea = SPECTRA[this[0].filter].area()
-	console.log(initArea)
-
-	var calcSpectra  =SPECTRA[this[0].filter].copy()
-	this.slice(1).forEach(function(element){
-	    var refl = ['r','R'].indexOf(element.mode) > -1;
-	    if (refl) {
-		var mult = SPECTRA[element.filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
-		calcSpectra.multiplyBy(mult);
-	    } else {
-		calcSpectra.multiplyBy(SPECTRA[element.filter]);
-	    }
-	});
-	var efficency=calcSpectra.area()/initArea;
-	return {efficency: efficency, spectrum: calcSpectra};
-    })
+    $.when.apply(null, defer).then( this.doEfficiencyCalc );
 }
 
 
