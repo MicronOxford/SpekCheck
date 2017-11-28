@@ -231,12 +231,15 @@ FilterSet.prototype.efficiency = function( ){
     // Fetch all data with concurrent calls.
     var defer = [];
     for (var f of this) {
-	if(f.filter > -1) {
-            defer.push(SPECTRA[f.filter].fetch());
+	//RemoveFilter leaves an undfined entry so skip these
+	if(f) {
+	    if(f.filter) {
+		defer.push(SPECTRA[f.filter].fetch());
+	    }
 	}
     }
-    // When all the data is ready, do the calculation. 
-    $.when.apply(null, defer).then( this.doEfficiencyCalc );
+    // When all the data is ready, do the calculation.
+    $.when.apply(null, defer).then( this.doEfficiencyCalc() );
 }
 
 
