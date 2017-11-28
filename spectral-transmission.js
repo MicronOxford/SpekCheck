@@ -70,7 +70,6 @@ function Spectrum(name) {
 
 Spectrum.prototype.interpolate = function () {
     // Resample raw data. Assumes input data is sorted by wavelength.
-    console.log(this)
     if (!this._interp ||
         this._interp[0][0] !== WLMIN ||
         this._interp[0][this._interp[0].length-1] !== WLMAX ||
@@ -183,12 +182,18 @@ Spectrum.prototype.points = function () {
 
 //Prototype sets object for staroing exciation and emission sets.
 function FilterSet(){
-    this;
+    //transmission is the total transmission efficiency of the
+    //set of filters
+    //spectrum is the resulting spectrum after the filter stack is applied 
+    this.transmission = null;
+    this.spectrum = null;
 }
 
 FilterSet.prototype = new Array();
 
 FilterSet.prototype.addFilter = function(filter, mode) {
+    //filter is the filter name,
+    //mode is 'r' or 't' for reflection or transmission
     this.push({'filter':filter, 'mode':mode})
 }
 
@@ -218,14 +223,13 @@ FilterSet.prototype.doEfficiencyCalc = function () {
             calcSpectra.multiplyBy(SPECTRA[element.filter]);
         }
     });
-    var efficency=calcSpectra.area()/initArea;
-    return {efficency: efficency, spectrum: calcSpectra};
+    this.transmission=calcSpectra.area()/initArea;
+    this.spectrum=calcSpectra
 }
 
 
 FilterSet.prototype.efficiency = function( ){
-    //return the ratio of area in first element to that of multiplying
-    //though all elements, and the final spectra.
+    //populate the tramsssion and spectrum elements of the filter set
     //in EMSET first element must be a dye
     //in EXSET first element must be a light source
 
@@ -240,8 +244,7 @@ FilterSet.prototype.efficiency = function( ){
 	}
     }
     // When all the data is ready, do the calculation.
-    $.when.apply(null, defer).then( ret=this.doEfficiencyCalc());
-    return (ret);
+    $.when.apply(null, defer).then( () => this.doEfficiencyCalc() );
 }
 
 
@@ -337,7 +340,8 @@ function updatePlot() {
     var exFilterModes = [];
     
     // Fetch configuration from UI.
-    $( "#dyes .selected").each(function() {dye.push($(this).data().key)})
+    $( "#dyes .selected").each(function() {dye.push($(this).data().key);
+					   EXSET[0].filter = $(this).data().key})
     $( "#excitation .selected").each(function() {excitation.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filters.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
@@ -763,22 +767,25 @@ function selectFilterSet(event, set) {
 	$(".activeExFilter").remove()
 	$('#excitation .selected').removeClass('selected');
 	$('#dyes .selected').removeClass('selected');
+        if (set.dye) {
+	    EMSET[0]=set.dye
+            $('#dyes .selected').removeClass('selected');
+            $('#dyes .selectable').filter(function() {
+                return $(this).data('key') == set.dye}).addClass("selected")
+        }
+	if (set.exsource) {
+	    EXSET[0]=set.exsource
+	    $('#excitation .selected').removeClass('selected');
+            $('#excitation .selectable').filter(function() {
+                return $(this).data('key') == set.exsource}).addClass("selected")
+	}
+
         for (filter of set.filters) {
             addFilterToSet(filter.filter, filter.mode);
         }
         for (exFilter of set.exFilters) {
             addExFilterToSet(exFilter.filter, exFilter.mode);
         }
-        if (set.dye) {
-            $('#dyes .selected').removeClass('selected');
-            $('#dyes .selectable').filter(function() {
-                return $(this).data('key') == set.dye}).addClass("selected")
-        }
-	if (set.exsource) {
-	    $('#excitation .selected').removeClass('selected');
-            $('#excitation .selectable').filter(function() {
-                return $(this).data('key') == set.exsource}).addClass("selected")
-	}
     }
     // Highlight loaded filter set
     let target = $(event.target);
