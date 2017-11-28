@@ -70,6 +70,7 @@ function Spectrum(name) {
 
 Spectrum.prototype.interpolate = function () {
     // Resample raw data. Assumes input data is sorted by wavelength.
+    console.log(this)
     if (!this._interp ||
         this._interp[0][0] !== WLMIN ||
         this._interp[0][this._interp[0].length-1] !== WLMAX ||
@@ -239,7 +240,8 @@ FilterSet.prototype.efficiency = function( ){
 	}
     }
     // When all the data is ready, do the calculation.
-    $.when.apply(null, defer).then( this.doEfficiencyCalc() );
+    $.when.apply(null, defer).then( ret=this.doEfficiencyCalc());
+    return (ret);
 }
 
 
