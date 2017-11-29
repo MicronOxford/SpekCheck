@@ -194,7 +194,7 @@ FilterSet.prototype = new Array();
 FilterSet.prototype.addFilter = function(filter, mode) {
     //filter is the filter name,
     //mode is 'r' or 't' for reflection or transmission
-    this.push({'filter':filter, 'mode':mode})
+    this.push({'filter':filter, 'mode':mode});
 }
 
 FilterSet.prototype.removeFilter = function(filter){
@@ -209,6 +209,19 @@ FilterSet.prototype.removeFilter = function(filter){
 	console.log('removed element ' + filternum);
     }
 }
+
+FilterSet.prototype.changeMode = function(filter,mode){
+    var filternum = this.findIndex(function(element){
+	if (element) {
+	    return (element.filter === filter);
+	}
+    });
+    
+    if (filternum > -1){
+	this[filternum].mode = mode;
+    }
+}
+
 
 FilterSet.prototype.doEfficiencyCalc = function () {
     var initArea = SPECTRA[this[0].filter].area();
@@ -340,8 +353,7 @@ function updatePlot() {
     var exFilterModes = [];
     
     // Fetch configuration from UI.
-    $( "#dyes .selected").each(function() {dye.push($(this).data().key);
-					   EXSET[0].filter = $(this).data().key})
+    $( "#dyes .selected").each(function() {dye.push($(this).data().key)})
     $( "#excitation .selected").each(function() {excitation.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filters.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
@@ -671,6 +683,7 @@ function dropExFilter( event, ui) {
 function addFilterToSet(filter, mode) {
     // Add a filter to the active filter set.
     var el = $(`<div><label>${filter}</label></div>`).addClass('activeFilter');
+    EMSET.addFilter(filter, mode)
     mode = mode.toLowerCase()
     el.data('mode', mode);
     el.data('key', filter)
@@ -679,6 +692,7 @@ function addFilterToSet(filter, mode) {
     modeBtn.button()
     modeBtn.click(function(){
         var newMode = {'t':'r', 'r':'t'}[el.data('mode')];
+	EMSET.changeMode(filter,newMode);
         el.data('mode', newMode);
         $( this ).text(newMode);
         updatePlot();
@@ -686,6 +700,7 @@ function addFilterToSet(filter, mode) {
     var delBtn = $(`<button class="delButton">x</button>`).appendTo(buttons);
     delBtn.button();
     delBtn.click(function(){
+	EMSET.removeFilter(filter);
         el.remove();
         updatePlot();});
     $( "#fset" ).append(el);
@@ -695,6 +710,7 @@ function addFilterToSet(filter, mode) {
 function addExFilterToSet(filter, mode) {
     // Add a filter to the active filter set.
     var exl = $(`<div><label>${filter}</label></div>`).addClass('activeExFilter');
+    EXSET.addFilter(filter, mode)
     mode = mode.toLowerCase()
     exl.data('mode', mode);
     exl.data('key', filter)
@@ -703,6 +719,7 @@ function addExFilterToSet(filter, mode) {
     modeBtn.button()
     modeBtn.click(function(){
         var newMode = {'t':'r', 'r':'t'}[exl.data('mode')];
+	EXSET.changeMode(filter,newMode);
         exl.data('mode', newMode);
         $( this ).text(newMode);
         updatePlot();
@@ -710,6 +727,7 @@ function addExFilterToSet(filter, mode) {
     var delBtn = $(`<button class="delButton">x</button>`).appendTo(buttons);
     delBtn.button();
     delBtn.click(function(){
+	EXSET.removeFilter(filter);
         exl.remove();
         updatePlot();});
     $( "#exset" ).append(exl);
@@ -768,31 +786,36 @@ function selectFilterSet(event, set) {
 	$('#excitation .selected').removeClass('selected');
 	$('#dyes .selected').removeClass('selected');
         if (set.dye) {
-	    EMSET[0]=set.dye
+	    if (EMSET.length == 0) {
+		EMSET.push({'filter':set.dye, 'mode':null});
+	    } else {
+		EMSET[0].filter = set.dye;
+	    }
             $('#dyes .selected').removeClass('selected');
             $('#dyes .selectable').filter(function() {
                 return $(this).data('key') == set.dye}).addClass("selected")
-        } else {
+        } else if (EMSET.length > 0) {
 	    //EMSET[0] must be the dye, otherwise it is null.
 	    EMSET[0].filter = null;
 	}
 	if (set.exsource) {
-	    EXSET[0]=set.exsource
+	    if( EXSET.length == 0) {
+		EXSET.push({'filter':set.exsource, 'mode':null});
+	    } else {
+		EXSET[0].filter=set.exsource;
+	    }
 	    $('#excitation .selected').removeClass('selected');
             $('#excitation .selectable').filter(function() {
                 return $(this).data('key') == set.exsource}).addClass("selected")
-	} else {
+	} else if (EXSET.length >0) {
 	    //EXSET[0] must be excitation source, else null.
 	    EXSET[0].filter = null;
 	}
         for (filter of set.filters) {
             addFilterToSet(filter.filter, filter.mode);
-	    EMSET.addFilter(filter.filter, filter.mode);
         }
         for (exFilter of set.exFilters) {
             addExFilterToSet(exFilter.filter, exFilter.mode);
-	    EXSET.addFilter(exFilter.filter, exFilter.mode);
-	    
         }
     }
     // Highlight loaded filter set
