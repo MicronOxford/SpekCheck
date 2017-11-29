@@ -832,7 +832,7 @@ $( document ).ready(function() {
         $("<input>").data("search", "#sets").keyup(refineList));
 
     var div = $(`<div><label>CUSTOM</label></div>` );
-    div.addClass("searchable").addClass("selectable");
+    div.addClass("selectable");
     div.click((_) => {selectFilterSet(_, '_adv_')});
     div.appendTo($("#sets"));
 
