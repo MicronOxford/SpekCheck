@@ -206,7 +206,6 @@ FilterSet.prototype.removeFilter = function(filter){
     
     if (filternum > -1){
 	delete this[filternum];
-	console.log('removed element ' + filternum);
     }
 }
 
@@ -225,7 +224,6 @@ FilterSet.prototype.changeMode = function(filter,mode){
 
 FilterSet.prototype.doEfficiencyCalc = function () {
     var initArea = SPECTRA[this[0].filter].area();
-    console.log(initArea);
     var calcSpectra  =SPECTRA[this[0].filter].copy();
     this.slice(1).forEach(function(element){
         var refl = ['r','R'].indexOf(element.mode) > -1;
@@ -478,7 +476,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     // Caclulate efficiency.
     EMSET.efficiency();
     var t_eff = EMSET.transmission;
-    SPECTRA['tranmitted']=EMSET.spectrum;
+    SPECTRA['transmitted']=EMSET.spectrum;
     // if (dye) {
     //     var t_eff = SPECTRA['transmitted'].area() / SPECTRA[dye].area();
     // }
