@@ -431,53 +431,57 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     }
 
     // Calculate excitation.
-    var e_eff;
-    if (excitation) {
-	SPECTRA['excitation']= SPECTRA[excitation].copy();
+    EXSET.efficiency();
+    var e_eff = EXSET.transmission;
+    SPECTRA['excitation'] = EXSET.spectrum;
+    // if (excitation) {
+    // 	SPECTRA['excitation']= SPECTRA[excitation].copy();
 
-	if (dye && SPECTRA[dye + EXSUFFIX]) {
-	    SPECTRA['excitation'].multiplyBy(SPECTRA[dye + EXSUFFIX]);
-	}
-	if (exFilters.length >= 1) {
-	    for([exfindex,exFilter] of exFilters.entries()){
-		var refl = ['r','R'].indexOf(exFilterModes[exfindex]) > -1;
-		if (refl) {
-		    var mult = SPECTRA[exFilter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
-		    SPECTRA['excitation'].multiplyBy(mult);
-		} else {
-		    SPECTRA['excitation'].multiplyBy(SPECTRA[exFilter]);
-		}
-	    }
-	}
-	e_eff = SPECTRA['excitation'].area() / SPECTRA[excitation].area()
-    }
+    // 	if (dye && SPECTRA[dye + EXSUFFIX]) {
+    // 	    SPECTRA['excitation'].multiplyBy(SPECTRA[dye + EXSUFFIX]);
+    // 	}
+    // 	if (exFilters.length >= 1) {
+    // 	    for([exfindex,exFilter] of exFilters.entries()){
+    // 		var refl = ['r','R'].indexOf(exFilterModes[exfindex]) > -1;
+    // 		if (refl) {
+    // 		    var mult = SPECTRA[exFilter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
+    // 		    SPECTRA['excitation'].multiplyBy(mult);
+    // 		} else {
+    // 		    SPECTRA['excitation'].multiplyBy(SPECTRA[exFilter]);
+    // 		}
+    // 	    }
+    // 	}
+    // 	e_eff = SPECTRA['excitation'].area() / SPECTRA[excitation].area()
+    // }
     
     // Calculate transmission.
-    if (dye) {
-        SPECTRA['transmitted'] = SPECTRA[dye].copy();
-    } else if (filters.length === 0) {
-        SPECTRA['transmitted'] = new Spectrum();
-    }
-    for ([findex, filter] of filters.entries()) {
-        if (findex === 0 && !dye) {
-            // If there was no dye, initialize from first filter.
-            SPECTRA['transmitted'] = SPECTRA[filter].copy();
-            continue
-        }
-        var refl = ['r','R'].indexOf(filterModes[findex]) > -1;
-        if (refl) {
-            var mult = SPECTRA[filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
-            SPECTRA['transmitted'].multiplyBy(mult);
-        } else {
-            SPECTRA['transmitted'].multiplyBy(SPECTRA[filter]);
-        }
-    }
+    // if (dye) {
+    //     SPECTRA['transmitted'] = SPECTRA[dye].copy();
+    // } else if (filters.length === 0) {
+    //     SPECTRA['transmitted'] = new Spectrum();
+    // }
+    // for ([findex, filter] of filters.entries()) {
+    //     if (findex === 0 && !dye) {
+    //         // If there was no dye, initialize from first filter.
+    //         SPECTRA['transmitted'] = SPECTRA[filter].copy();
+    //         continue
+    //     }
+    //     var refl = ['r','R'].indexOf(filterModes[findex]) > -1;
+    //     if (refl) {
+    //         var mult = SPECTRA[filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
+    //         SPECTRA['transmitted'].multiplyBy(mult);
+    //     } else {
+    //         SPECTRA['transmitted'].multiplyBy(SPECTRA[filter]);
+    //     }
+    // }
 
     // Caclulate efficiency.
-    var t_eff;
-    if (dye) {
-        var t_eff = SPECTRA['transmitted'].area() / SPECTRA[dye].area();
-    }
+    EMSET.efficiency();
+    var t_eff = EMSET.transmission;
+    SPECTRA['tranmitted']=EMSET.spectrum;
+    // if (dye) {
+    //     var t_eff = SPECTRA['transmitted'].area() / SPECTRA[dye].area();
+    // }
 
     //calculate relative brightness compared to alexa-448 at 100% excitation.
     var bright = null;
@@ -740,12 +744,17 @@ function selectDye(event, key) {
     // Update on dye selection.
     s = event.target.closest(".selectable")
     cl = s.classList
-
     if( cl && cl.value.includes("selected")) {
         $(s).removeClass("selected");
+	EMSET[0].filter = null;
     }
     else
     {
+	if (EMSET.length == 0) {
+	    EMSET.push({'filter':key, 'mode':null});
+	} else {
+	    EMSET[0].filter = key
+	}
         $('#dyes .selected').removeClass('selected');
         $(s).addClass('selected');
     }
@@ -759,11 +768,17 @@ function selectExcitation(event, key) {
     cl = s.classList
     if( cl && cl.value.includes("selected")) {
         $(s).removeClass("selected");
+	EXSET[0].filter = null;
     }
     else
     {
         $('#excitation .selected').removeClass('selected');
         $(s).addClass('selected');
+	if (EXSET.length == 0) {
+	    EXSET.push({'filter':key, 'mode':null});
+	} else {
+	    EXSET[0].filter = key
+	}
     }
     updatePlot();
 }
