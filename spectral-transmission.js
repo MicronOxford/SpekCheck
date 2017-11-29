@@ -428,58 +428,20 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         $(window).resize(resizeChart);
     }
 
-    // Calculate excitation.
+    // Calculate excitation efficiency and spectra.
     EXSET.efficiency();
     var e_eff = EXSET.transmission;
-    SPECTRA['excitation'] = EXSET.spectrum;
-    // if (excitation) {
-    // 	SPECTRA['excitation']= SPECTRA[excitation].copy();
-
-    // 	if (dye && SPECTRA[dye + EXSUFFIX]) {
-    // 	    SPECTRA['excitation'].multiplyBy(SPECTRA[dye + EXSUFFIX]);
-    // 	}
-    // 	if (exFilters.length >= 1) {
-    // 	    for([exfindex,exFilter] of exFilters.entries()){
-    // 		var refl = ['r','R'].indexOf(exFilterModes[exfindex]) > -1;
-    // 		if (refl) {
-    // 		    var mult = SPECTRA[exFilter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
-    // 		    SPECTRA['excitation'].multiplyBy(mult);
-    // 		} else {
-    // 		    SPECTRA['excitation'].multiplyBy(SPECTRA[exFilter]);
-    // 		}
-    // 	    }
-    // 	}
-    // 	e_eff = SPECTRA['excitation'].area() / SPECTRA[excitation].area()
-    // }
-    
-    // Calculate transmission.
-    // if (dye) {
-    //     SPECTRA['transmitted'] = SPECTRA[dye].copy();
-    // } else if (filters.length === 0) {
-    //     SPECTRA['transmitted'] = new Spectrum();
-    // }
-    // for ([findex, filter] of filters.entries()) {
-    //     if (findex === 0 && !dye) {
-    //         // If there was no dye, initialize from first filter.
-    //         SPECTRA['transmitted'] = SPECTRA[filter].copy();
-    //         continue
-    //     }
-    //     var refl = ['r','R'].indexOf(filterModes[findex]) > -1;
-    //     if (refl) {
-    //         var mult = SPECTRA[filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
-    //         SPECTRA['transmitted'].multiplyBy(mult);
-    //     } else {
-    //         SPECTRA['transmitted'].multiplyBy(SPECTRA[filter]);
-    //     }
-    // }
-
-    // Caclulate efficiency.
+    SPECTRA['excitation'] = EXSET.spectrum.copy();
+    //test if we have a dye selected, and it has an excitation spectra
+    //if so multiply excitation spectra by this. 
+    if(EMSET[0].filter && SPECTRA[EMSET[0].filter + EXSUFFIX]) {
+	EXSET.spectrum.multiplyBy(SPECTRA[EMSET[0].filter + EXSUFFIX])
+	e_eff = e_eff * (EXSET.spectrum.area()/SPECTRA['excitation'].area());
+    }
+    //calculate emission efficiency and spectra.
     EMSET.efficiency();
     var t_eff = EMSET.transmission;
     SPECTRA['transmitted']=EMSET.spectrum;
-    // if (dye) {
-    //     var t_eff = SPECTRA['transmitted'].area() / SPECTRA[dye].area();
-    // }
 
     //calculate relative brightness compared to alexa-448 at 100% excitation.
     var bright = null;
