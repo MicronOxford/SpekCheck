@@ -772,19 +772,27 @@ function selectFilterSet(event, set) {
             $('#dyes .selected').removeClass('selected');
             $('#dyes .selectable').filter(function() {
                 return $(this).data('key') == set.dye}).addClass("selected")
-        }
+        } else {
+	    //EMSET[0] must be the dye, otherwise it is null.
+	    EMSET[0].filter = null;
+	}
 	if (set.exsource) {
 	    EXSET[0]=set.exsource
 	    $('#excitation .selected').removeClass('selected');
             $('#excitation .selectable').filter(function() {
                 return $(this).data('key') == set.exsource}).addClass("selected")
+	} else {
+	    //EXSET[0] must be excitation source, else null.
+	    EXSET[0].filter = null;
 	}
-
         for (filter of set.filters) {
             addFilterToSet(filter.filter, filter.mode);
+	    EMSET.addFilter(filter.filter, filter.mode);
         }
         for (exFilter of set.exFilters) {
             addExFilterToSet(exFilter.filter, exFilter.mode);
+	    EXSET.addFilter(exFilter.filter, exFilter.mode);
+	    
         }
     }
     // Highlight loaded filter set
