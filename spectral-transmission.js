@@ -964,7 +964,7 @@ $( document ).ready(function() {
 	$("#searchSets")[0].value = searchFilterSets ;
 	//this doesn't actually work and I don't know why - IMD 20171130
 	var event = new Event('keyup',{});
-	$("#searchSets")[0].dispatchEvent(event);
+	setTimeout(function(){$("#searchSets")[0].dispatchEvent(event)}, 100);
     }
 });
 
