@@ -56,6 +56,16 @@ DASHES = function* () {
     }
 }()
 
+//extract url queiers.
+function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
 
 // ==== Spectrum base === //
 function Spectrum(name) {
@@ -429,20 +439,25 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     }
 
     // Calculate excitation efficiency and spectra.
-    EXSET.efficiency();
-    var e_eff = EXSET.transmission;
-    SPECTRA['excitation'] = EXSET.spectrum.copy();
-    //test if we have a dye selected, and it has an excitation spectra
-    //if so multiply excitation spectra by this. 
-    if(EMSET[0].filter && SPECTRA[EMSET[0].filter + EXSUFFIX]) {
-	EXSET.spectrum.multiplyBy(SPECTRA[EMSET[0].filter + EXSUFFIX])
-	e_eff = e_eff * (EXSET.spectrum.area()/SPECTRA['excitation'].area());
+    var e_eff;
+    if (EXSET.length > 0) {
+	EXSET.efficiency();
+	e_eff = EXSET.transmission;
+	SPECTRA['excitation'] = EXSET.spectrum.copy();
+	//test if we have a dye selected, and it has an excitation spectra
+	//if so multiply excitation spectra by this. 
+	if(EMSET[0].filter && SPECTRA[EMSET[0].filter + EXSUFFIX]) {
+	    EXSET.spectrum.multiplyBy(SPECTRA[EMSET[0].filter + EXSUFFIX])
+	    e_eff = e_eff * (EXSET.spectrum.area()/SPECTRA['excitation'].area());
+	}
     }
     //calculate emission efficiency and spectra.
-    EMSET.efficiency();
-    var t_eff = EMSET.transmission;
-    SPECTRA['transmitted']=EMSET.spectrum;
-
+    var t_eff;
+    if (EMSET.length > 0) {
+	EMSET.efficiency();
+	t_eff = EMSET.transmission;
+	SPECTRA['transmitted']=EMSET.spectrum;
+    }
     //calculate relative brightness compared to alexa-448 at 100% excitation.
     var bright = null;
     // mulitple by 10 to give resasonable range of values.
@@ -753,6 +768,8 @@ function selectFilterSet(event, set) {
 	$(".activeExFilter").remove()
 	$('#excitation .selected').removeClass('selected');
 	$('#dyes .selected').removeClass('selected');
+	EMSET.splice(0);
+	EXSET.splice(0);
     } else {
         // Load a pre-defined filter set.
         $(".advanced").hide()
@@ -760,6 +777,8 @@ function selectFilterSet(event, set) {
 	$(".activeExFilter").remove()
 	$('#excitation .selected').removeClass('selected');
 	$('#dyes .selected').removeClass('selected');
+	EMSET.splice(0);
+	EXSET.splice(0);
         if (set.dye) {
 	    if (EMSET.length == 0) {
 		EMSET.push({'filter':set.dye, 'mode':null});
@@ -829,8 +848,8 @@ $( document ).ready(function() {
     $(".advanced").hide()
     // Populate list of filter sets.
     $("<div>").insertBefore($("#sets")).html(
-        $("<input>").data("search", "#sets").keyup(refineList));
-
+        $("<input>").attr("id", "searchSets").data("search",
+						   "#sets").keyup(refineList));
     var div = $(`<div><label>CUSTOM</label></div>` );
     div.addClass("selectable");
     div.click((_) => {selectFilterSet(_, '_adv_')});
@@ -858,7 +877,15 @@ $( document ).ready(function() {
             }
         }
     );
+    //set search field if in URL
+    var searchFilterSets = getParameterByName('searchFilterSets'); 
+    if(searchFilterSets) {
+	console.log(searchFilterSets);
+	//load filterset search field with the value from the URL. 
+	$("#searchSets")[0].value = searchFilterSets
+    }
 
+    
     // Populate list of filters, and store SPECTRA key on the div.data
     $("<div>").insertBefore($("#filters")).html(
         $("<input>").data("search", "#filters").keyup(refineList));
