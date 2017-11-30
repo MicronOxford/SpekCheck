@@ -877,14 +877,6 @@ $( document ).ready(function() {
             }
         }
     );
-    //set search field if in URL
-    var searchFilterSets = getParameterByName('searchFilterSets'); 
-    if(searchFilterSets) {
-	console.log(searchFilterSets);
-	//load filterset search field with the value from the URL. 
-	$("#searchSets")[0].value = searchFilterSets
-    }
-
     
     // Populate list of filters, and store SPECTRA key on the div.data
     $("<div>").insertBefore($("#filters")).html(
@@ -965,7 +957,15 @@ $( document ).ready(function() {
             $( "#dyes" ).append(divs);
         ;}
     });
-    // To do - parse URL to select dye and populate fset.
+    //set search field if in URL
+    var searchFilterSets = getParameterByName('searchFilterSets'); 
+    if(searchFilterSets) {
+	//load filterset search field with the value from the URL. 
+	$("#searchSets")[0].value = searchFilterSets ;
+	//this doesn't actually work and I don't know why - IMD 20171130
+	var event = new Event('keyup',{});
+	$("#searchSets")[0].dispatchEvent(event);
+    }
 });
 
 //Global containers for exciation and emission sets. 
