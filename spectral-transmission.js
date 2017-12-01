@@ -738,44 +738,24 @@ function selectDye(event, key) {
 
 function optDyes(event){
     //optomise dye selection
-    console.log("optomise dyes");
     var dyes = [];
     var efficiency=[];
     var excitation;
     $( "#dyes .selectable").each(function() {dyes.push($(this).data().key)});
     $( "#excitation .selected").each(function() {excitation=($(this).data().key)});
+
+    var savedDye = EMSET[0].filter
+    
     for (dye of dyes) {
-	//console.log(dye)
-	efficiency.push(calcDyeEfficency(dye, excitation));
+	EMSET[0].filter = dye
+	EMSET.efficiency()
+	efficiency.push([dye,EMSET.transmission]);
     }
     console.log(efficiency);
     //    for (d of dye) {
 //	console.log(d.name)
 //   }
         
-}
-
-function calcDyeEfficency(dye, excitation){
-    //caclulate the exciation, emmission efficiency and brightness
-    //with this dye. 
-
-    //need to check we have a spectra called 'tranmitted'
-    var t_eff;
-    var e_eff;
-    var bright
-    var t_eff = SPECTRA['transmitted'].area() / SPECTRA[dye].area();
-    
-    // Calculate excitation. need to know what our excitation is
-    // if not defined we get a null back.
-    if (excitation) {
-	e_eff = SPECTRA['excitation'].area() / SPECTRA[excitation].area();
-    }
-    if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
-        bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
-		  ALEXABRIGHT) * 10.0 ;
-    }
-
-    return([e_eff,t_eff,bright]);
 }
 
 function selectExcitation(event, key) {
@@ -883,6 +863,16 @@ function refineList(event) {
     }
 }
 
+function setSearch() {
+    var searchFilterSets = getParameterByName('searchFilterSets'); 
+    if(searchFilterSets) {
+	//load filterset search field with the value from the URL. 
+	$("#searchSets")[0].value = searchFilterSets ;
+	//this doesn't actually work and I don't know why - IMD 20171130
+	var event = new Event('keyup',{});
+	$("#searchSets")[0].dispatchEvent(event);
+    }
+}
 
 //Use url parameter to preload filter sets search
 function preloadFilterSetsSearch() {
@@ -1011,14 +1001,6 @@ $( document ).ready(function() {
         ;}
     });
     //set search field if in URL
-    var searchFilterSets = getParameterByName('searchFilterSets'); 
-    if(searchFilterSets) {
-	//load filterset search field with the value from the URL. 
-	$("#searchSets")[0].value = searchFilterSets ;
-	//this doesn't actually work and I don't know why - IMD 20171130
-	var event = new Event('keyup',{});
-	setTimeout(function(){$("#searchSets")[0].dispatchEvent(event)}, 100);
-    }
 });
 
 //Global containers for exciation and emission sets. 
