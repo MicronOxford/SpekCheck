@@ -843,6 +843,18 @@ function refineList(event) {
 }
 
 
+//Use url parameter to preload filter sets search
+function preloadFilterSetsSearch() {
+    var searchFilterSets = getParameterByName('searchFilterSets'); 
+    if(searchFilterSets) {
+	//load filterset search field with the value from the URL. 
+	$("#searchSets")[0].value = searchFilterSets ;
+	//this doesn't actually work and I don't know why - IMD 20171130
+	var event = new Event('keyup',{});
+	$("#searchSets")[0].dispatchEvent(event);
+    }
+}
+
 //=== DOCUMENT READY===//
 $( document ).ready(function() {
     $(".advanced").hide()
@@ -876,7 +888,7 @@ $( document ).ready(function() {
             $( "#sets" ).append(divs);
             }
         }
-    );
+    ).then( () =>  {preloadFilterSetsSearch()});
     
     // Populate list of filters, and store SPECTRA key on the div.data
     $("<div>").insertBefore($("#filters")).html(
