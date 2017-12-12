@@ -268,6 +268,36 @@ FilterSet.prototype.efficiency = function( ){
     $.when.apply(null, defer).then( () => this.doEfficiencyCalc() );
 }
 
+// calculate the excitation, emission and brightness of a config. 
+function calcEfficiency(exset,emset) {
+    var e_eff,t_eff,bright;
+    //Excitation efficiency
+    if (exset.length > 0) {
+	$.when.apply(null, exset.efficiency()).then( ()=> console.log('done'));
+	e_eff = exset.transmission;
+	SPECTRA['excitation'] = exset.spectrum.copy();
+	//test if we have a dye selected, and it has an excitation spectra
+	//if so multiply excitation spectra by this. 
+	if(emset[0].filter && SPECTRA[emset[0].filter + EXSUFFIX]) {
+	    exset.spectrum.multiplyBy(SPECTRA[emset[0].filter + EXSUFFIX])
+	    e_eff = e_eff * (exset.spectrum.area()/SPECTRA['excitation'].area());
+	}
+    }
+    //calculate emission efficiency and spectra.
+    if (emset.length > 0) {
+	EMSET.efficiency();
+	t_eff = emset.transmission;
+	SPECTRA['transmitted']=emset.spectrum;
+    }
+    //calculate relative brightness compared to alexa-448 at 100% excitation.
+    // mulitple by 10 to give resasonable range of values.
+    var dye = emset[0].filter
+    if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
+        bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
+		  ALEXABRIGHT) * 10.0;
+    }
+    return (e_eff,t_eff,bright);
+}
 
 // === ServerSpectrum - spectrum with data from server === //
 function ServerSpectrum(source, name) {
@@ -439,7 +469,8 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     }
 
     // Calculate excitation efficiency and spectra.
-    var e_eff;
+    var e_eff, t_eff, bright;
+//    (e_eff,t_eff,bright)=calcEfficency(EXSET,EMSET)
     if (EXSET.length > 0) {
 	EXSET.efficiency();
 	e_eff = EXSET.transmission;
@@ -737,25 +768,23 @@ function selectDye(event, key) {
 
 
 function optDyes(event){
-    //optomise dye selection
+    //optimise dye selection
     var dyes = [];
     var efficiency=[];
     var excitation;
     $( "#dyes .selectable").each(function() {dyes.push($(this).data().key)});
-    $( "#excitation .selected").each(function() {excitation=($(this).data().key)});
 
     var savedDye = EMSET[0].filter
     
     for (dye of dyes) {
-	EMSET[0].filter = dye
-	EMSET.efficiency()
-	efficiency.push([dye,EMSET.transmission]);
+	EMSET[0].filter = dye;
+	efficiency.push(dye,calcEfficiency(EXSET,EMSET));
     }
     console.log(efficiency);
-    //    for (d of dye) {
-//	console.log(d.name)
-//   }
-        
+
+    EMSET[0].filter = savedDye
+    calcEfficiency(EXSET,EMSET)
+    updatePlot();
 }
 
 function selectExcitation(event, key) {
@@ -863,24 +892,12 @@ function refineList(event) {
     }
 }
 
-function setSearch() {
-    var searchFilterSets = getParameterByName('searchFilterSets'); 
-    if(searchFilterSets) {
-	//load filterset search field with the value from the URL. 
-	$("#searchSets")[0].value = searchFilterSets ;
-	//this doesn't actually work and I don't know why - IMD 20171130
-	var event = new Event('keyup',{});
-	$("#searchSets")[0].dispatchEvent(event);
-    }
-}
-
 //Use url parameter to preload filter sets search
 function preloadFilterSetsSearch() {
     var searchFilterSets = getParameterByName('searchFilterSets'); 
     if(searchFilterSets) {
 	//load filterset search field with the value from the URL. 
 	$("#searchSets")[0].value = searchFilterSets ;
-	//this doesn't actually work and I don't know why - IMD 20171130
 	var event = new Event('keyup',{});
 	$("#searchSets")[0].dispatchEvent(event);
     }
