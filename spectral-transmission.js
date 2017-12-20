@@ -273,7 +273,7 @@ function calcEfficiency(exset,emset) {
     var e_eff,t_eff,bright;
     //Excitation efficiency
     if (exset.length > 0) {
-	$.when.apply(null, exset.efficiency()).then( ()=> console.log('done'));
+	exset.efficiency()
 	e_eff = exset.transmission;
 	SPECTRA['excitation'] = exset.spectrum.copy();
 	//test if we have a dye selected, and it has an excitation spectra
@@ -802,10 +802,11 @@ function optDyes(dyes){
 	return (b[1].t_eff-a[1].t_eff)}).slice(0,3);
     var bestBright = efficiency.sort(function(a,b){
 	return (b[1].bright-a[1].bright)}).slice(0,3);
-    console.log(bestEx, bestEm,bestBright)
+//    console.log(bestEx, bestEm,bestBright)
+    alert("Best Excitation "+bestEx[0][0]+", "+bestEx[0][1].e_eff*100+"%\n"
+	  +"Best Emission "+bestEm[0][0]+", "+bestEm[0][1].t_eff*100+"%\n"
+	 +"Brightest "+bestBright[0][0]+", "+bestBright[0][1].bright)
     
-//    console.log(efficiency.sort(function(a,b){return (a.t_eff-b.t_eff)}))
- //   console.log(efficiency.sort(function(a,b){return (a.bright-b.bright)}))
     EMSET[0].filter = savedDye
 }
 
