@@ -296,8 +296,24 @@ function calcEfficiency(exset,emset) {
         bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
 		  ALEXABRIGHT) * 10.0;
     }
-    return (e_eff,t_eff,bright);
+    return ({e_eff,t_eff,bright});
 }
+
+
+//Function to load all the dyes prior to calling the dye optimisation code.
+function loadAllDyes() {
+    var dyes=[]
+    $( "#dyes .selectable").each(function() {dyes.push($(this).data().key)});
+
+    // Fetch all dyes with concurrent calls.
+    var defer = [];
+    for (dye of dyes) {
+        defer.push(SPECTRA[dye].fetch());
+    }
+    // When all the data is ready call the optimise dyes
+    $.when.apply(null, defer).then(function(){optDyes(dyes)});
+}
+
 
 // === ServerSpectrum - spectrum with data from server === //
 function ServerSpectrum(source, name) {
@@ -767,24 +783,30 @@ function selectDye(event, key) {
 }
 
 
-function optDyes(event){
+function optDyes(dyes){
     //optimise dye selection
-    var dyes = [];
     var efficiency=[];
     var excitation;
-    $( "#dyes .selectable").each(function() {dyes.push($(this).data().key)});
-
     var savedDye = EMSET[0].filter
     
     for (dye of dyes) {
 	EMSET[0].filter = dye;
-	efficiency.push(dye,calcEfficiency(EXSET,EMSET));
+	
+	efficiency.push([dye,calcEfficiency(EXSET,EMSET)]);
     }
-    console.log(efficiency);
-
+  //  console.log(efficiency)
+    
+    var bestEx = efficiency.sort(function(a,b){
+	return (b[1].e_eff-a[1].e_eff)}).slice(0,3);
+    var bestEm = efficiency.sort(function(a,b){
+	return (b[1].t_eff-a[1].t_eff)}).slice(0,3);
+    var bestBright = efficiency.sort(function(a,b){
+	return (b[1].bright-a[1].bright)}).slice(0,3);
+    console.log(bestEx, bestEm,bestBright)
+    
+//    console.log(efficiency.sort(function(a,b){return (a.t_eff-b.t_eff)}))
+ //   console.log(efficiency.sort(function(a,b){return (a.bright-b.bright)}))
     EMSET[0].filter = savedDye
-    calcEfficiency(EXSET,EMSET)
-    updatePlot();
 }
 
 function selectExcitation(event, key) {
