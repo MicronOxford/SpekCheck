@@ -797,16 +797,16 @@ function optDyes(dyes){
   //  console.log(efficiency)
     
     var bestEx = efficiency.sort(function(a,b){
-	if (a === undefined) {return (-1);};
-	if (b === undefined) {return (1);};
+	if (a[1].e_eff === undefined) {return (1);};
+	if (b[1].e_eff === undefined) {return (-1);};
 	return (b[1].e_eff-a[1].e_eff)}).slice(0,3);
     var bestEm = efficiency.sort(function(a,b){
-	if (a === undefined) {return (-1);}
-	if (b === undefined) {return (1);}
+	if (a[1].t_eff === undefined) {return (1);}
+	if (b[1].t_eff === undefined) {return (-1);}
 	return (b[1].t_eff-a[1].t_eff)}).slice(0,3);
     var bestBright = efficiency.sort(function(a,b){
-	if (a === undefined) {return (-1);}
-	if (b === undefined) {return (1);}
+	if (a[1].bright === undefined) {return (1);}
+	if (b[1].bright === undefined) {return (-1);}
 	return (b[1].bright-a[1].bright)}).slice(0,3);
 //    console.log(bestEx, bestEm,bestBright)
     alert("Best Excitation: "+bestEx[0][0]+" - "+
