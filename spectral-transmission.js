@@ -809,10 +809,24 @@ function optDyes(dyes){
 	if (b === undefined) {return (1);}
 	return (b[1].bright-a[1].bright)}).slice(0,3);
 //    console.log(bestEx, bestEm,bestBright)
-    alert("Best Excitation "+bestEx[0][0]+", "+bestEx[0][1].e_eff*100+"%\n"
-	  +"Best Emission "+bestEm[0][0]+", "+bestEm[0][1].t_eff*100+"%\n"
-	 +"Brightest "+bestBright[0][0]+", "+bestBright[0][1].bright)
-    
+    alert("Best Excitation: "+bestEx[0][0]+" - "+
+	  (bestEx[0][1].e_eff*100).toFixed(1)+"% ; "+
+	  bestEx[1][0]+" - "+
+	  (bestEx[1][1].e_eff*100).toFixed(1)+"% ; "+
+	  bestEx[2][0]+" - "+
+	  (bestEx[2][1].e_eff*100).toFixed(1)+"%\n"
+	  +"Best Emission: "+bestEm[0][0]+" - "+
+	  (bestEm[0][1].t_eff*100).toFixed(1)+"% ; "+
+	  bestEm[1][0]+" - "+
+	  (bestEm[1][1].t_eff*100).toFixed(1)+"% ; "+
+	  bestEm[2][0]+" - "+
+	  (bestEm[2][1].t_eff*100).toFixed(1)+"%\n"
+	  +"Brightest "+bestBright[0][0]+" - "+
+	  (bestBright[0][1].bright).toFixed(2)+" ; "+
+	  bestBright[1][0]+" - "+
+	  (bestBright[1][1].bright).toFixed(2)+" ; "+
+          bestBright[2][0]+" - "+
+	  (bestBright[2][1].bright).toFixed(2))
     EMSET[0].filter = savedDye
 }
 
