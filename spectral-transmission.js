@@ -43,6 +43,7 @@ var EXSUFFIX = '_ex'
  * #fset    - the active filter set
  * #filters - a list of available filters
  * #dyes    - a list of available dyes
+ * #exset   - excitation filter set
  */
 
 // Dash styles generator.
@@ -55,6 +56,16 @@ DASHES = function* () {
     }
 }()
 
+//extract url queiers.
+function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
 
 // ==== Spectrum base === //
 function Spectrum(name) {
@@ -65,6 +76,7 @@ function Spectrum(name) {
     this.qyield=null;       // quantum yield 
     this.extcoeff=null;     // extinction coefficent
 }
+
 
 Spectrum.prototype.interpolate = function () {
     // Resample raw data. Assumes input data is sorted by wavelength.
@@ -178,6 +190,85 @@ Spectrum.prototype.points = function () {
 }
 
 
+//Prototype sets object for staroing exciation and emission sets.
+function FilterSet(){
+    //transmission is the total transmission efficiency of the
+    //set of filters
+    //spectrum is the resulting spectrum after the filter stack is applied 
+    this.transmission = null;
+    this.spectrum = null;
+}
+
+FilterSet.prototype = new Array();
+
+FilterSet.prototype.addFilter = function(filter, mode) {
+    //filter is the filter name,
+    //mode is 'r' or 't' for reflection or transmission
+    this.push({'filter':filter, 'mode':mode});
+}
+
+FilterSet.prototype.removeFilter = function(filter){
+    var filternum = this.findIndex(function(element){
+	if (element) {
+	    return (element.filter === filter);
+	}
+    });
+    
+    if (filternum > -1){
+	delete this[filternum];
+    }
+}
+
+FilterSet.prototype.changeMode = function(filter,mode){
+    var filternum = this.findIndex(function(element){
+	if (element) {
+	    return (element.filter === filter);
+	}
+    });
+    
+    if (filternum > -1){
+	this[filternum].mode = mode;
+    }
+}
+
+
+FilterSet.prototype.doEfficiencyCalc = function () {
+    var initArea = SPECTRA[this[0].filter].area();
+    var calcSpectra  =SPECTRA[this[0].filter].copy();
+    this.slice(1).forEach(function(element){
+        var refl = ['r','R'].indexOf(element.mode) > -1;
+        if (refl) {
+            var mult = SPECTRA[element.filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
+            calcSpectra.multiplyBy(mult);
+        } else {
+            calcSpectra.multiplyBy(SPECTRA[element.filter]);
+        }
+    });
+    this.transmission=calcSpectra.area()/initArea;
+    this.spectrum=calcSpectra
+}
+
+
+FilterSet.prototype.efficiency = function( ){
+    //populate the tramsssion and spectrum elements of the filter set
+    //in EMSET first element must be a dye
+    //in EXSET first element must be a light source
+
+    // Fetch all data with concurrent calls.
+    var defer = [];
+    for (var f of this) {
+	//RemoveFilter leaves an undfined entry so skip these
+	if(f) {
+	    if(f.filter) {
+		defer.push(SPECTRA[f.filter].fetch());
+	    }
+	}
+    }
+    // When all the data is ready, do the calculation.
+    $.when.apply(null, defer).then( () => this.doEfficiencyCalc() );
+}
+
+
 // === ServerSpectrum - spectrum with data from server === //
 function ServerSpectrum(source, name) {
     Spectrum.call(this, name);
@@ -266,12 +357,17 @@ function updatePlot() {
     var excitation = [];
     var filters = [];
     var filterModes = [];
-
+    var exFilters = [];
+    var exFilterModes = [];
+    
     // Fetch configuration from UI.
     $( "#dyes .selected").each(function() {dye.push($(this).data().key)})
     $( "#excitation .selected").each(function() {excitation.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filters.push($(this).data().key)})
     $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
+    //exciation filter sets.
+    $( "#exset .activeExFilter").each(function() {exFilters.push($(this).data().key)})
+    $( "#exset .activeExFilter").each(function() {exFilterModes.push($(this).data().mode)})
 
     // Fetch all data with concurrent calls.
     var defer = [];
@@ -284,10 +380,13 @@ function updatePlot() {
     for (var f of filters) {
         defer.push(SPECTRA[f].fetch());
     }
+    for (var f of exFilters) {
+	defer.push(SPECTRA[f].fetch());
+    }
 
     // When all the data is ready, do the calculation and draw the plot.
 
-    $.when.apply(null, defer).then(function(){drawPlot(dye[0], excitation[0], filters, filterModes)});
+    $.when.apply(null, defer).then(function(){drawPlot(dye[0], excitation[0], filters, filterModes,exFilters,exFilterModes)});
 }
 
 
@@ -305,7 +404,7 @@ function deepCopy( src ) {
     }
 }
 
-function drawPlot(dye, excitation, filters, filterModes) {
+function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterModes) {
     // Create chart if it doesn't exist.
     if (!CHART) {
         var ctx = $( "#chart" )[0].getContext('2d');
@@ -339,42 +438,26 @@ function drawPlot(dye, excitation, filters, filterModes) {
         $(window).resize(resizeChart);
     }
 
-    // Calculate excitation.
+    // Calculate excitation efficiency and spectra.
     var e_eff;
-    if (excitation && dye && SPECTRA[dye + EXSUFFIX]) {
-        SPECTRA['_excitation_'] = SPECTRA[dye + EXSUFFIX].copy();
-        SPECTRA['_excitation_'].multiplyBy(SPECTRA[excitation]);
-        e_eff = SPECTRA['_excitation_'].area() / SPECTRA[excitation].area()
+    if (EXSET.length > 0) {
+	EXSET.efficiency();
+	e_eff = EXSET.transmission;
+	SPECTRA['excitation'] = EXSET.spectrum.copy();
+	//test if we have a dye selected, and it has an excitation spectra
+	//if so multiply excitation spectra by this. 
+	if(EMSET[0].filter && SPECTRA[EMSET[0].filter + EXSUFFIX]) {
+	    EXSET.spectrum.multiplyBy(SPECTRA[EMSET[0].filter + EXSUFFIX])
+	    e_eff = e_eff * (EXSET.spectrum.area()/SPECTRA['excitation'].area());
+	}
     }
-
-
-    // Calculate transmission.
-    if (dye) {
-        SPECTRA['transmitted'] = SPECTRA[dye].copy();
-    } else if (filters.length === 0) {
-        SPECTRA['transmitted'] = new Spectrum();
-    }
-    for ([findex, filter] of filters.entries()) {
-        if (findex === 0 && !dye) {
-            // If there was no dye, initialize from first filter.
-            SPECTRA['transmitted'] = SPECTRA[filter].copy();
-            continue
-        }
-        var refl = ['r','R'].indexOf(filterModes[findex]) > -1;
-        if (refl) {
-            var mult = SPECTRA[filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
-            SPECTRA['transmitted'].multiplyBy(mult);
-        } else {
-            SPECTRA['transmitted'].multiplyBy(SPECTRA[filter]);
-        }
-    }
-
-    // Caclulate efficiency.
+    //calculate emission efficiency and spectra.
     var t_eff;
-    if (dye) {
-        var t_eff = SPECTRA['transmitted'].area() / SPECTRA[dye].area();
+    if (EMSET.length > 0) {
+	EMSET.efficiency();
+	t_eff = EMSET.transmission;
+	SPECTRA['transmitted']=EMSET.spectrum;
     }
-
     //calculate relative brightness compared to alexa-448 at 100% excitation.
     var bright = null;
     // mulitple by 10 to give resasonable range of values.
@@ -392,7 +475,11 @@ function drawPlot(dye, excitation, filters, filterModes) {
         }
     }
     if (excitation) {
-        skeys.push(excitation);
+	if (exFilters.length >= 1) {
+	    skeys.push('excitation');
+	} else {
+	    skeys.push(excitation);
+	}
     }
 
     skeys.push.apply(skeys, filters);
@@ -418,6 +505,11 @@ function drawPlot(dye, excitation, filters, filterModes) {
         var hue = wavelengthToHue(SPECTRA[key].peakwl());
         switch (key) {
             case excitation:
+                bg = `hsla(${hue}, 100%, 50%, 1)`
+	        fg = `hsla(${hue}, 100%, 50%, 1)`
+                var addToChart = x => CHART.data.datasets.splice(1, 0, x);
+                break
+            case 'excitation':
                 bg = `hsla(${hue}, 100%, 50%, 1)`
                 fg = `hsla(${hue}, 100%, 50%, 1)`
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
@@ -466,7 +558,23 @@ function drawPlot(dye, excitation, filters, filterModes) {
     var hue = wavelengthToHue(SPECTRA['transmitted'].peakwl());
     transTrace.data = SPECTRA['transmitted'].points();
     transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
-
+    // // Update the excitation trace.
+    if (excitation) {
+	if (exFilters.length >= 1) {
+	    var extTrace = CHART.data.datasets.filter( item => item.label == 'excitation')[0]
+    	    var hue = wavelengthToHue(SPECTRA['excitation'].peakwl());
+    	    extTrace.data = SPECTRA['excitation'].points();
+    	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
+	    extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
+	} else {
+	    var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0]
+    	    var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
+    	    extTrace.data = SPECTRA[excitation].points();
+    	    extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`
+	}
+    }
+    // if(excitation) {
+    
     if (t_eff != null && e_eff != null && bright != null) {
        CHART.options.title = {display: true,
                                text: 'Efficiency: ex ' + (100*e_eff).toFixed(1) + '%, em ' + (100*t_eff).toFixed(1) + '%' + ', brightness ' + bright.toFixed(2),
@@ -506,18 +614,33 @@ function parseSources( sources )  {
 function parseSets( txt ) {
     // Parse pre-defined filter sets.
     var sets = [];
+
     for (line of txt.split(/\n/)) {
         if (line.length <=1 || line.match(/^\s*(\/{2,2}|#|\/\*).*/)) {
             continue;
         }
-        var csv = line.split(/[\t,:;]/);
-        var filters = csv.slice(2).map( (_) => _.trim().split(/ +/)).map(
-                                            (_) => {return{filter:_[0], mode:_[1]||'t'}});
+	var emAndEx = line.split("::");
+	if (emAndEx.length === 1) {
+            var csv = line.split(/[\t,:;]/);
+	    var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
+		(_) => {return{filter:_[0], mode:_[1]||'t'}});
+	    var exFilters=[]
+	} else {
+	    var csv = emAndEx[0].toString().split(/[\t,:;]/);
+	    var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
+		(_) => {return{filter:_[0], mode:_[1]||'t'}});
+	    var exs=emAndEx.slice(1).toString().split(/[\t,:;]/);
+	    var exFilters=exs.slice(0).map( (_) => _.trim().split(/ +/)).map(
+		(_) => {return{filter:_[0], mode:_[1]||'t'}});
+	}
         sets.push({name: csv[0].trim(),
                    dye: csv[1].trim(),
-                   filters: filters});
+		   exsource: csv[2].trim(),
+                   filters: filters,
+		   exFilters: exFilters});
     }
-    return sets.sort((a,b) => (a.name > b.name));
+    return sets;
+	//.sort((a,b) => (a.name > b.name));
 }
 
 
@@ -529,9 +652,17 @@ function dropFilter( event, ui) {
     updatePlot();
 }
 
+function dropExFilter( event, ui) {
+    // Add the dropped filter to the active filter set.
+    addExFilterToSet(ui.draggable.data('key'), 't');
+    updatePlot();
+}
+
+
 function addFilterToSet(filter, mode) {
     // Add a filter to the active filter set.
     var el = $(`<div><label>${filter}</label></div>`).addClass('activeFilter');
+    EMSET.addFilter(filter, mode)
     mode = mode.toLowerCase()
     el.data('mode', mode);
     el.data('key', filter)
@@ -540,6 +671,7 @@ function addFilterToSet(filter, mode) {
     modeBtn.button()
     modeBtn.click(function(){
         var newMode = {'t':'r', 'r':'t'}[el.data('mode')];
+	EMSET.changeMode(filter,newMode);
         el.data('mode', newMode);
         $( this ).text(newMode);
         updatePlot();
@@ -547,10 +679,39 @@ function addFilterToSet(filter, mode) {
     var delBtn = $(`<button class="delButton">x</button>`).appendTo(buttons);
     delBtn.button();
     delBtn.click(function(){
+	EMSET.removeFilter(filter);
         el.remove();
         updatePlot();});
     $( "#fset" ).append(el);
 }
+
+
+function addExFilterToSet(filter, mode) {
+    // Add a filter to the active filter set.
+    var exl = $(`<div><label>${filter}</label></div>`).addClass('activeExFilter');
+    EXSET.addFilter(filter, mode)
+    mode = mode.toLowerCase()
+    exl.data('mode', mode);
+    exl.data('key', filter)
+    var buttons = $( "<span></span>").appendTo(exl);
+    var modeBtn = $(`<button class="modeButton">${mode}</button>`).appendTo(buttons);
+    modeBtn.button()
+    modeBtn.click(function(){
+        var newMode = {'t':'r', 'r':'t'}[exl.data('mode')];
+	EXSET.changeMode(filter,newMode);
+        exl.data('mode', newMode);
+        $( this ).text(newMode);
+        updatePlot();
+    });
+    var delBtn = $(`<button class="delButton">x</button>`).appendTo(buttons);
+    delBtn.button();
+    delBtn.click(function(){
+	EXSET.removeFilter(filter);
+        exl.remove();
+        updatePlot();});
+    $( "#exset" ).append(exl);
+}
+
 
 EVT = null;
 
@@ -558,12 +719,17 @@ function selectDye(event, key) {
     // Update on dye selection.
     s = event.target.closest(".selectable")
     cl = s.classList
-
     if( cl && cl.value.includes("selected")) {
         $(s).removeClass("selected");
+	EMSET[0].filter = null;
     }
     else
     {
+	if (EMSET.length == 0) {
+	    EMSET.push({'filter':key, 'mode':null});
+	} else {
+	    EMSET[0].filter = key
+	}
         $('#dyes .selected').removeClass('selected');
         $(s).addClass('selected');
     }
@@ -577,11 +743,17 @@ function selectExcitation(event, key) {
     cl = s.classList
     if( cl && cl.value.includes("selected")) {
         $(s).removeClass("selected");
+	EXSET[0].filter = null;
     }
     else
     {
         $('#excitation .selected').removeClass('selected');
         $(s).addClass('selected');
+	if (EXSET.length == 0) {
+	    EXSET.push({'filter':key, 'mode':null});
+	} else {
+	    EXSET[0].filter = key
+	}
     }
     updatePlot();
 }
@@ -593,17 +765,51 @@ function selectFilterSet(event, set) {
     } else if (set === '_empty_') {
         $(".advanced").hide()
         $(".activeFilter").remove()
+	$(".activeExFilter").remove()
+	$('#excitation .selected').removeClass('selected');
+	$('#dyes .selected').removeClass('selected');
+	EMSET.splice(0);
+	EXSET.splice(0);
     } else {
         // Load a pre-defined filter set.
         $(".advanced").hide()
         $(".activeFilter").remove()
-        for (filter of set.filters) {
-            addFilterToSet(filter.filter, filter.mode);
-        }
+	$(".activeExFilter").remove()
+	$('#excitation .selected').removeClass('selected');
+	$('#dyes .selected').removeClass('selected');
+	EMSET.splice(0);
+	EXSET.splice(0);
         if (set.dye) {
+	    if (EMSET.length == 0) {
+		EMSET.push({'filter':set.dye, 'mode':null});
+	    } else {
+		EMSET[0].filter = set.dye;
+	    }
             $('#dyes .selected').removeClass('selected');
             $('#dyes .selectable').filter(function() {
                 return $(this).data('key') == set.dye}).addClass("selected")
+        } else if (EMSET.length > 0) {
+	    //EMSET[0] must be the dye, otherwise it is null.
+	    EMSET[0].filter = null;
+	}
+	if (set.exsource) {
+	    if( EXSET.length == 0) {
+		EXSET.push({'filter':set.exsource, 'mode':null});
+	    } else {
+		EXSET[0].filter=set.exsource;
+	    }
+	    $('#excitation .selected').removeClass('selected');
+            $('#excitation .selectable').filter(function() {
+                return $(this).data('key') == set.exsource}).addClass("selected")
+	} else if (EXSET.length >0) {
+	    //EXSET[0] must be excitation source, else null.
+	    EXSET[0].filter = null;
+	}
+        for (filter of set.filters) {
+            addFilterToSet(filter.filter, filter.mode);
+        }
+        for (exFilter of set.exFilters) {
+            addExFilterToSet(exFilter.filter, exFilter.mode);
         }
     }
     // Highlight loaded filter set
@@ -637,15 +843,27 @@ function refineList(event) {
 }
 
 
+//Use url parameter to preload filter sets search
+function preloadFilterSetsSearch() {
+    var searchFilterSets = getParameterByName('searchFilterSets'); 
+    if(searchFilterSets) {
+	//load filterset search field with the value from the URL. 
+	$("#searchSets")[0].value = searchFilterSets ;
+	//this doesn't actually work and I don't know why - IMD 20171130
+	var event = new Event('keyup',{});
+	$("#searchSets")[0].dispatchEvent(event);
+    }
+}
+
 //=== DOCUMENT READY===//
 $( document ).ready(function() {
     $(".advanced").hide()
     // Populate list of filter sets.
     $("<div>").insertBefore($("#sets")).html(
-        $("<input>").data("search", "#sets").keyup(refineList));
-
+        $("<input>").attr("id", "searchSets").data("search",
+						   "#sets").keyup(refineList));
     var div = $(`<div><label>CUSTOM</label></div>` );
-    div.addClass("searchable").addClass("selectable");
+    div.addClass("selectable");
     div.click((_) => {selectFilterSet(_, '_adv_')});
     div.appendTo($("#sets"));
 
@@ -670,8 +888,8 @@ $( document ).ready(function() {
             $( "#sets" ).append(divs);
             }
         }
-    );
-
+    ).then( () =>  {preloadFilterSetsSearch()});
+    
     // Populate list of filters, and store SPECTRA key on the div.data
     $("<div>").insertBefore($("#filters")).html(
         $("<input>").data("search", "#filters").keyup(refineList));
@@ -697,6 +915,12 @@ $( document ).ready(function() {
     $( "#fset").droppable({
         accept: ".filterSpec",
         drop: dropFilter
+    });
+    
+    //excitation filter set list
+    $( "#exset").droppable({
+        accept: ".filterSpec",
+        drop: dropExFilter
     });
 
     // Populate list of excitation sources.
@@ -745,5 +969,17 @@ $( document ).ready(function() {
             $( "#dyes" ).append(divs);
         ;}
     });
-    // To do - parse URL to select dye and populate fset.
+    //set search field if in URL
+    var searchFilterSets = getParameterByName('searchFilterSets'); 
+    if(searchFilterSets) {
+	//load filterset search field with the value from the URL. 
+	$("#searchSets")[0].value = searchFilterSets ;
+	//this doesn't actually work and I don't know why - IMD 20171130
+	var event = new Event('keyup',{});
+	setTimeout(function(){$("#searchSets")[0].dispatchEvent(event)}, 100);
+    }
 });
+
+//Global containers for exciation and emission sets. 
+var EXSET = new FilterSet();
+var EMSET = new FilterSet();

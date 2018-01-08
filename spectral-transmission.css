@@ -8,10 +8,15 @@ body {
     background: #999;
 }
 
-#dyes, #filters, #fset, #sets, #excitation {
+#dyes, #filters, #sets, #excitation {
     overflow-y: scroll;
     border: ridge;
     height: 12em;
+}
+#fset, #exset {
+    overflow-y: scroll;
+    border: ridge;
+    height: 5em;
 }
 
 
@@ -30,6 +35,13 @@ label {
     justify-content: space-between;
     width: 12em;
 }
+
+#exset > * {
+    display: flex;
+    justify-content: space-between;
+    width: 12em;
+}
+
 
 label {
     display: inline-block;
