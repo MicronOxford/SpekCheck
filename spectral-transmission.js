@@ -37,6 +37,8 @@ var WLMAX = 800.0;
 var WLSTEP = 1.0;
 // Suffix for excitation spectra
 var EXSUFFIX = '_ex'
+// How many top dyes to return
+var NUMTOPDYES = 3;
 
 /* Required page elements:
  * #sets    - a list of predefined filter sets
@@ -686,7 +688,18 @@ function parseSets( txt ) {
                    filters: filters,
 		   exFilters: exFilters});
     }
-    return sets.sort((a,b) => (a.name > b.name));
+    return sets.sort(function(a, b) {
+	var nameA = a.name.toUpperCase(); // ignore upper and lowercase
+	var nameB = b.name.toUpperCase(); // ignore upper and lowercase
+	if (nameA < nameB) {
+	    return -1;
+	}
+	if (nameA > nameB) {
+	    return 1;
+	}
+	// names must be equal
+	return 0;
+    });
 }
 
 
@@ -808,25 +821,20 @@ function optDyes(dyes){
 	if (a[1].bright === undefined) {return (1);}
 	if (b[1].bright === undefined) {return (-1);}
 	return (b[1].bright-a[1].bright)}).slice(0,3);
-//    console.log(bestEx, bestEm,bestBright)
-    alert("Best Excitation: "+bestEx[0][0]+" - "+
-	  (bestEx[0][1].e_eff*100).toFixed(1)+"% ; "+
-	  bestEx[1][0]+" - "+
-	  (bestEx[1][1].e_eff*100).toFixed(1)+"% ; "+
-	  bestEx[2][0]+" - "+
-	  (bestEx[2][1].e_eff*100).toFixed(1)+"%\n"
-	  +"Best Emission: "+bestEm[0][0]+" - "+
-	  (bestEm[0][1].t_eff*100).toFixed(1)+"% ; "+
-	  bestEm[1][0]+" - "+
-	  (bestEm[1][1].t_eff*100).toFixed(1)+"% ; "+
-	  bestEm[2][0]+" - "+
-	  (bestEm[2][1].t_eff*100).toFixed(1)+"%\n"
-	  +"Brightest "+bestBright[0][0]+" - "+
-	  (bestBright[0][1].bright).toFixed(2)+" ; "+
-	  bestBright[1][0]+" - "+
-	  (bestBright[1][1].bright).toFixed(2)+" ; "+
-          bestBright[2][0]+" - "+
-	  (bestBright[2][1].bright).toFixed(2))
+    var bestExString = "Best Excitation:\t ";
+    var bestEmString = "\nBest Emission:\t ";
+    var bestBrightString = "\nBrightest:\t ";
+
+    for (var i=0; i < NUMTOPDYES; i++) {
+	bestExString = (bestExString + bestEx[i][0]+" - "+
+			(bestEx[i][1].e_eff*100).toFixed(1)+"% ; ");
+	bestEmString = (bestEmString + bestEm[i][0]+" - "+
+			(bestEm[i][1].t_eff*100).toFixed(1)+"% ; ");
+	bestBrightString = (bestBrightString + bestBright[i][0]+" - "+
+			    (bestBright[i][1].bright).toFixed(2)+" ; ");
+    }
+    //    console.log(bestEx, bestEm,bestBright)
+    alert(bestExString + bestEmString + bestBrightString)
     EMSET[0].filter = savedDye
 }
 
