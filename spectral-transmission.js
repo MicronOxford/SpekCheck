@@ -252,9 +252,6 @@ FilterSet.prototype.doEfficiencyCalc = function () {
 
 
 FilterSet.prototype.efficiency = function( ){
-    //populate the tramsssion and spectrum elements of the filter set
-    //in EMSET first element must be a dye
-    //in EXSET first element must be a light source
 
     // Fetch all data with concurrent calls.
     var defer = [];
@@ -271,7 +268,10 @@ FilterSet.prototype.efficiency = function( ){
 }
 
 // calculate the excitation, emission and brightness of a config. 
-function calcEfficiency(exset,emset) {
+function calcEffAndBright(exset,emset) {
+    //populate the tramsssion and spectrum elements of the filter set
+    //in emset first element must be a dye
+    //in exset first element must be a light source
     var e_eff,t_eff,bright;
     //Excitation efficiency
     if (exset.length > 0) {
@@ -287,7 +287,7 @@ function calcEfficiency(exset,emset) {
     }
     //calculate emission efficiency and spectra.
     if (emset.length > 0) {
-	EMSET.efficiency();
+	emset.efficiency();
 	t_eff = emset.transmission;
 	SPECTRA['transmitted']=emset.spectrum;
     }
@@ -487,35 +487,12 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         $(window).resize(resizeChart);
     }
 
-    // Calculate excitation efficiency and spectra.
-    var e_eff, t_eff, bright;
-//    (e_eff,t_eff,bright)=calcEfficency(EXSET,EMSET)
-    if (EXSET.length > 0) {
-	EXSET.efficiency();
-	e_eff = EXSET.transmission;
-	SPECTRA['excitation'] = EXSET.spectrum.copy();
-	//test if we have a dye selected, and it has an excitation spectra
-	//if so multiply excitation spectra by this. 
-	if(EMSET[0].filter && SPECTRA[EMSET[0].filter + EXSUFFIX]) {
-	    EXSET.spectrum.multiplyBy(SPECTRA[EMSET[0].filter + EXSUFFIX])
-	    e_eff = e_eff * (EXSET.spectrum.area()/SPECTRA['excitation'].area());
-	}
-    }
-    //calculate emission efficiency and spectra.
-    var t_eff;
-    if (EMSET.length > 0) {
-	EMSET.efficiency();
-	t_eff = EMSET.transmission;
-	SPECTRA['transmitted']=EMSET.spectrum;
-    }
-    //calculate relative brightness compared to alexa-448 at 100% excitation.
-    var bright = null;
-    // mulitple by 10 to give resasonable range of values.
-    if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
-        bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
-          ALEXABRIGHT) * 10.0 
-    }
-
+    // Calculate excitation emission efficiency, brightness and spectra.
+    var effBright = calcEffAndBright(EXSET,EMSET);
+    var e_eff = effBright.e_eff ;
+    var t_eff = effBright.t_eff ;
+    var bright = effBright.bright ;
+    
     var skeys = []; // all active keys (filters + dye)
     dye = $("#dyes .selected").data("key");
     if (dye) {
@@ -806,7 +783,7 @@ function processAllDyes(dyes){
     for (dye of dyes) {
 	EMSET[0].filter = dye;
 	//calculate efficency and push results.
-	efficiency.push([dye,calcEfficiency(EXSET,EMSET)]);
+	efficiency.push([dye,calcEffAndBright(EXSET,EMSET)]);
     }
     //sort loist for best excitation
     var bestEx = efficiency.sort(function(a,b){
