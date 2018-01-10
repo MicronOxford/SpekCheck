@@ -667,8 +667,8 @@ function parseSets( txt ) {
 		   exFilters: exFilters});
     }
     return sets.sort(function(a, b) {
-	var nameA = a.name.toUpperCase(); // ignore upper and lowercase
-	var nameB = b.name.toUpperCase(); // ignore upper and lowercase
+	var nameA = a.name.toLowerCase(); // ignore upper and lowercase
+	var nameB = b.name.toLowerCase(); // ignore upper and lowercase
 	if (nameA < nameB) {
 	    return -1;
 	}
