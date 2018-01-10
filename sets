@@ -29,4 +29,8 @@ DeepSIM Green, GFP,488-laser , ZT405-488-561-647-22.5deg R, zt561rdc-xr R, EM-52
 DeepSIM Red, mCherry,561-laser , ZT405-488-561-647-22.5deg R, zt561rdc-xr T, EM-600-50m T
 //DV Elite
 DVelite GFP, GFP, lumencor-FITC, DV-SSI-Quad T, DV-EM-FITC T :: DV-SSI-Quad R
+//NanoImager
+NanoImager Ch1f1, Alexa-546, 532-laser , NI-EX-dichroic T, NI-EM-splitter R, NI-ch1f1 T:: NI-EX-dichroic R
+NanoImager Ch1f2, Alexa-546, 532-laser , NI-EX-dichroic T, NI-EM-splitter R, NI-ch1f2 T:: NI-EX-dichroic R
+NanoImager Ch1f1, Alexa-647, 647-laser , NI-EX-dichroic T, NI-EM-splitter T, NI-ch2f1 T:: NI-EX-dichroic R
 
