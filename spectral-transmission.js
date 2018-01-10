@@ -302,8 +302,9 @@ function calcEfficiency(exset,emset) {
 }
 
 
-//Function to load all the dyes prior to calling the dye optimisation code.
-function loadAllDyes() {
+//Function to try all possible dyes and optimise which is "best"
+function optimiseDyes() {
+    //First load all the dyes prior to calling the dye optimisation code.
     var dyes=[]
     $( "#dyes .selectable").each(function() {dyes.push($(this).data().key)});
 
@@ -313,7 +314,7 @@ function loadAllDyes() {
         defer.push(SPECTRA[dye].fetch());
     }
     // When all the data is ready call the optimise dyes
-    $.when.apply(null, defer).then(function(){optDyes(dyes)});
+    $.when.apply(null, defer).then(function(){processAllDyes(dyes)});
 }
 
 
@@ -795,36 +796,39 @@ function selectDye(event, key) {
     updatePlot();
 }
 
-
-function optDyes(dyes){
-    //optimise dye selection
+//go through all dyes to calc efficencies/brightness
+function processAllDyes(dyes){
     var efficiency=[];
     var excitation;
+    //save current dye so we can restore it at the end. 
     var savedDye = EMSET[0].filter
-    
+    //loop through all dyes and use each in turn
     for (dye of dyes) {
 	EMSET[0].filter = dye;
-	
+	//calculate efficency and push results.
 	efficiency.push([dye,calcEfficiency(EXSET,EMSET)]);
     }
-  //  console.log(efficiency)
-    
+    //sort loist for best excitation
     var bestEx = efficiency.sort(function(a,b){
 	if (a[1].e_eff === undefined) {return (1);};
 	if (b[1].e_eff === undefined) {return (-1);};
 	return (b[1].e_eff-a[1].e_eff)}).slice(0,3);
+    //sort list for best emmission
     var bestEm = efficiency.sort(function(a,b){
 	if (a[1].t_eff === undefined) {return (1);}
 	if (b[1].t_eff === undefined) {return (-1);}
 	return (b[1].t_eff-a[1].t_eff)}).slice(0,3);
+    //sort list for best brightness
     var bestBright = efficiency.sort(function(a,b){
 	if (a[1].bright === undefined) {return (1);}
 	if (b[1].bright === undefined) {return (-1);}
 	return (b[1].bright-a[1].bright)}).slice(0,3);
+    //construct output dialog string.
     var bestExString = "Best Excitation:\t ";
     var bestEmString = "\nBest Emission:\t ";
     var bestBrightString = "\nBrightest:\t ";
 
+    //add NUMOPTDYES to each "best" string.
     for (var i=0; i < NUMTOPDYES; i++) {
 	bestExString = (bestExString + bestEx[i][0]+" - "+
 			(bestEx[i][1].e_eff*100).toFixed(1)+"% ; ");
@@ -834,7 +838,9 @@ function optDyes(dyes){
 			    (bestBright[i][1].bright).toFixed(2)+" ; ");
     }
     //    console.log(bestEx, bestEm,bestBright)
+    //display alert with optimised lists. 
     alert(bestExString + bestEmString + bestBrightString)
+    //Restore saved dye.
     EMSET[0].filter = savedDye
 }
 
