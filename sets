@@ -28,15 +28,15 @@ OMXv3 GR_Green, GFP,488-laser , ZT488_592 R, EM540-80x T
 DeepSIM Green, GFP,488-laser , ZT405-488-561-647-22.5deg R, zt561rdc-xr R, EM-525-50 T
 DeepSIM Red, mCherry,561-laser , ZT405-488-561-647-22.5deg R, zt561rdc-xr T, EM-600-50m T
 //DV Elite QUAD
-DVelite-Quad DAPI, DAPI, lumencor-DAPI, DV-SSI-Quad T, DV-EM-FITC T :: DV-SSI-Quad R
+DVelite-Quad DAPI, DAPI, lumencor-DAPI, DV-SSI-Quad T, DV-EM-DAPI T :: DV-SSI-Quad R
 DVelite-Quad GFP, GFP, lumencor-FITC, DV-SSI-Quad T, DV-EM-FITC T :: DV-SSI-Quad R
 DVelite-Quad TRITC, Alexa-568, lumencor-TRITC, DV-SSI-Quad T, DV-EM-tritc T :: DV-SSI-Quad R
 DVelite-Quad Cy5, Cy5, lumencor-Cy5, DV-SSI-Quad T, DV-EM-Cy5 T :: DV-SSI-Quad R
 
 //DV Elite QUADmC
-DVelite-QmC DAPI, DAPI, lumencor-DAPI, DV-SSI-Quad-mCh T, DV-EM-FITC T :: DV-SSI-Quad-mCh R
+DVelite-QmC DAPI, DAPI, lumencor-DAPI, DV-SSI-Quad-mCh T, DV-EM-DAPI T :: DV-SSI-Quad-mCh R
 DVelite-QmC GFP, GFP, lumencor-FITC, DV-SSI-Quad-mCh T, DV-EM-FITC T :: DV-SSI-Quad-mCh R
-DVelite-QmC mCherry, mCherry, lumencor-mCherry, DV-SSI-Quad-mCh T, DV-EM-tritc T :: DV-SSI-Quad-mCh R
+DVelite-QmC mCherry, mCherry, lumencor-mCherry, DV-SSI-Quad-mCh T, DV-EM-mCherry T :: DV-SSI-Quad-mCh R
 DVelite-QmC Cy5, Cy5, lumencor-Cy5, DV-SSI-Quad-mCh T, DV-EM-Cy5 T :: DV-SSI-Quad-mCh R
 
 
