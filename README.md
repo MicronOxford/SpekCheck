@@ -9,7 +9,7 @@ efficiency, enabling easy comparison between different possible
 filter/dichroic combinations. 
 
 If the dye has absorption spectra it will calculate the
-excitation efficiency and quantum yeild will allow calculation of the
+excitation efficiency and quantum yield will allow calculation of the
 relative brightness (where 100% of Alexa-488 is 10.0). 
 
 . This currently is not passed through any
@@ -19,7 +19,7 @@ relative brightness. We make no account of illumination intensity,
 just the efficiency with which the dye is excited, its quantum yield and
 the light collection efficiency. 
 
-You can prefilter the visible filterset using a URL of the form
+You can pre-filter the visible filter sets using a URL of the form
 http://www.micron.ox.ac.uk/software/spekcheck/?searchFilterSets=OMX
 to search for filters with OMX in the name.
 
