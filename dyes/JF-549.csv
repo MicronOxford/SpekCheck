@@ -1,6 +1,6 @@
 Type: Dye
 Name: JF-549.csv
-Extinction coefficient: 10100
+Extinction coefficient: 101000
 Quantum Yield: 0.88
 wavelength,excitation,emission
 300.000000,0.141558,0.000000

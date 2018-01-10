@@ -37,6 +37,8 @@ var WLMAX = 800.0;
 var WLSTEP = 1.0;
 // Suffix for excitation spectra
 var EXSUFFIX = '_ex'
+// How many top dyes to return
+var NUMTOPDYES = 3;
 
 /* Required page elements:
  * #sets    - a list of predefined filter sets
@@ -250,9 +252,6 @@ FilterSet.prototype.doEfficiencyCalc = function () {
 
 
 FilterSet.prototype.efficiency = function( ){
-    //populate the tramsssion and spectrum elements of the filter set
-    //in EMSET first element must be a dye
-    //in EXSET first element must be a light source
 
     // Fetch all data with concurrent calls.
     var defer = [];
@@ -266,6 +265,56 @@ FilterSet.prototype.efficiency = function( ){
     }
     // When all the data is ready, do the calculation.
     $.when.apply(null, defer).then( () => this.doEfficiencyCalc() );
+}
+
+// calculate the excitation, emission and brightness of a config. 
+function calcEffAndBright(exset,emset) {
+    //populate the tramsssion and spectrum elements of the filter set
+    //in emset first element must be a dye
+    //in exset first element must be a light source
+    var e_eff,t_eff,bright;
+    //Excitation efficiency
+    if (exset.length > 0) {
+	exset.efficiency()
+	e_eff = exset.transmission;
+	SPECTRA['excitation'] = exset.spectrum.copy();
+	//test if we have a dye selected, and it has an excitation spectra
+	//if so multiply excitation spectra by this. 
+	if(emset[0].filter && SPECTRA[emset[0].filter + EXSUFFIX]) {
+	    exset.spectrum.multiplyBy(SPECTRA[emset[0].filter + EXSUFFIX])
+	    e_eff = e_eff * (exset.spectrum.area()/SPECTRA['excitation'].area());
+	}
+    }
+    //calculate emission efficiency and spectra.
+    if (emset.length > 0) {
+	emset.efficiency();
+	t_eff = emset.transmission;
+	SPECTRA['transmitted']=emset.spectrum;
+    }
+    //calculate relative brightness compared to alexa-448 at 100% excitation.
+    // mulitple by 10 to give resasonable range of values.
+    var dye = emset[0].filter
+    if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
+        bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
+		  ALEXABRIGHT) * 10.0;
+    }
+    return ({e_eff,t_eff,bright});
+}
+
+
+//Function to try all possible dyes and optimise which is "best"
+function optimiseDyes() {
+    //First load all the dyes prior to calling the dye optimisation code.
+    var dyes=[]
+    $( "#dyes .selectable").each(function() {dyes.push($(this).data().key)});
+
+    // Fetch all dyes with concurrent calls.
+    var defer = [];
+    for (dye of dyes) {
+        defer.push(SPECTRA[dye].fetch());
+    }
+    // When all the data is ready call the optimise dyes
+    $.when.apply(null, defer).then(function(){processAllDyes(dyes)});
 }
 
 
@@ -438,34 +487,12 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         $(window).resize(resizeChart);
     }
 
-    // Calculate excitation efficiency and spectra.
-    var e_eff;
-    if (EXSET.length > 0) {
-	EXSET.efficiency();
-	e_eff = EXSET.transmission;
-	SPECTRA['excitation'] = EXSET.spectrum.copy();
-	//test if we have a dye selected, and it has an excitation spectra
-	//if so multiply excitation spectra by this. 
-	if(EMSET[0].filter && SPECTRA[EMSET[0].filter + EXSUFFIX]) {
-	    EXSET.spectrum.multiplyBy(SPECTRA[EMSET[0].filter + EXSUFFIX])
-	    e_eff = e_eff * (EXSET.spectrum.area()/SPECTRA['excitation'].area());
-	}
-    }
-    //calculate emission efficiency and spectra.
-    var t_eff;
-    if (EMSET.length > 0) {
-	EMSET.efficiency();
-	t_eff = EMSET.transmission;
-	SPECTRA['transmitted']=EMSET.spectrum;
-    }
-    //calculate relative brightness compared to alexa-448 at 100% excitation.
-    var bright = null;
-    // mulitple by 10 to give resasonable range of values.
-    if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
-        bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
-          ALEXABRIGHT) * 10.0 
-    }
-
+    // Calculate excitation emission efficiency, brightness and spectra.
+    var effBright = calcEffAndBright(EXSET,EMSET);
+    var e_eff = effBright.e_eff ;
+    var t_eff = effBright.t_eff ;
+    var bright = effBright.bright ;
+    
     var skeys = []; // all active keys (filters + dye)
     dye = $("#dyes .selected").data("key");
     if (dye) {
@@ -639,8 +666,18 @@ function parseSets( txt ) {
                    filters: filters,
 		   exFilters: exFilters});
     }
-    return sets;
-	//.sort((a,b) => (a.name > b.name));
+    return sets.sort(function(a, b) {
+	var nameA = a.name.toLowerCase(); // ignore upper and lowercase
+	var nameB = b.name.toLowerCase(); // ignore upper and lowercase
+	if (nameA < nameB) {
+	    return -1;
+	}
+	if (nameA > nameB) {
+	    return 1;
+	}
+	// names must be equal
+	return 0;
+    });
 }
 
 
@@ -736,6 +773,53 @@ function selectDye(event, key) {
     updatePlot();
 }
 
+//go through all dyes to calc efficencies/brightness
+function processAllDyes(dyes){
+    var efficiency=[];
+    var excitation;
+    //save current dye so we can restore it at the end. 
+    var savedDye = EMSET[0].filter
+    //loop through all dyes and use each in turn
+    for (dye of dyes) {
+	EMSET[0].filter = dye;
+	//calculate efficency and push results.
+	efficiency.push([dye,calcEffAndBright(EXSET,EMSET)]);
+    }
+    //sort loist for best excitation
+    var bestEx = efficiency.sort(function(a,b){
+	if (a[1].e_eff === undefined) {return (1);};
+	if (b[1].e_eff === undefined) {return (-1);};
+	return (b[1].e_eff-a[1].e_eff)}).slice(0,3);
+    //sort list for best emmission
+    var bestEm = efficiency.sort(function(a,b){
+	if (a[1].t_eff === undefined) {return (1);}
+	if (b[1].t_eff === undefined) {return (-1);}
+	return (b[1].t_eff-a[1].t_eff)}).slice(0,3);
+    //sort list for best brightness
+    var bestBright = efficiency.sort(function(a,b){
+	if (a[1].bright === undefined) {return (1);}
+	if (b[1].bright === undefined) {return (-1);}
+	return (b[1].bright-a[1].bright)}).slice(0,3);
+    //construct output dialog string.
+    var bestExString = "Best Excitation:\t ";
+    var bestEmString = "\nBest Emission:\t ";
+    var bestBrightString = "\nBrightest:\t ";
+
+    //add NUMOPTDYES to each "best" string.
+    for (var i=0; i < NUMTOPDYES; i++) {
+	bestExString = (bestExString + bestEx[i][0]+" - "+
+			(bestEx[i][1].e_eff*100).toFixed(1)+"% ; ");
+	bestEmString = (bestEmString + bestEm[i][0]+" - "+
+			(bestEm[i][1].t_eff*100).toFixed(1)+"% ; ");
+	bestBrightString = (bestBrightString + bestBright[i][0]+" - "+
+			    (bestBright[i][1].bright).toFixed(2)+" ; ");
+    }
+    //    console.log(bestEx, bestEm,bestBright)
+    //display alert with optimised lists. 
+    alert(bestExString + bestEmString + bestBrightString)
+    //Restore saved dye.
+    EMSET[0].filter = savedDye
+}
 
 function selectExcitation(event, key) {
     // Update on excitation selection.
@@ -842,14 +926,12 @@ function refineList(event) {
     }
 }
 
-
 //Use url parameter to preload filter sets search
 function preloadFilterSetsSearch() {
     var searchFilterSets = getParameterByName('searchFilterSets'); 
     if(searchFilterSets) {
 	//load filterset search field with the value from the URL. 
 	$("#searchSets")[0].value = searchFilterSets ;
-	//this doesn't actually work and I don't know why - IMD 20171130
 	var event = new Event('keyup',{});
 	$("#searchSets")[0].dispatchEvent(event);
     }
@@ -970,14 +1052,6 @@ $( document ).ready(function() {
         ;}
     });
     //set search field if in URL
-    var searchFilterSets = getParameterByName('searchFilterSets'); 
-    if(searchFilterSets) {
-	//load filterset search field with the value from the URL. 
-	$("#searchSets")[0].value = searchFilterSets ;
-	//this doesn't actually work and I don't know why - IMD 20171130
-	var event = new Event('keyup',{});
-	setTimeout(function(){$("#searchSets")[0].dispatchEvent(event)}, 100);
-    }
 });
 
 //Global containers for exciation and emission sets. 
