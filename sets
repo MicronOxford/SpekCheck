@@ -48,4 +48,5 @@ DVelite-CYmC-YFP, YFP, lumencor-YFP, DV-SSI-C-YFP-mCh T, DV-EM-YFP T :: DV-SSI-C
 NanoImager Ch1f1, Alexa-546, 532-laser , NI-EX-dichroic T, NI-EM-splitter R, NI-ch1f1 T:: NI-EX-dichroic R
 NanoImager Ch1f2, Alexa-546, 532-laser , NI-EX-dichroic T, NI-EM-splitter R, NI-ch1f2 T:: NI-EX-dichroic R
 NanoImager Ch2f1, Alexa-647, 647-laser , NI-EX-dichroic T, NI-EM-splitter T, NI-ch2f1 T:: NI-EX-dichroic R
+NanoImager Ch2f2, Alexa-647, 647-laser , NI-EX-dichroic T, NI-EM-splitter T, NI-ch2f1 T:: NI-EX-dichroic R
 
