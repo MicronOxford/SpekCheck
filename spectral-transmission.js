@@ -18,16 +18,16 @@
  */
 
 // Extensions to strip from source filenames, and files to exclude.
-var FN_EXCLUDE = ['.csv', '.Csv', 'CSV', 'index.html'];
+var FN_EXCLUDE = [".csv", ".Csv", "CSV", "index.html"];
 // regex strings
 // match a floating point number
-FLOATMATCH = /([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
+FLOATMATCH = /([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/;
 // match a quantum yield entry
-QYIELDMATCH = /[Qq]uantum [Yy]ield:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
+QYIELDMATCH = /[Qq]uantum [Yy]ield:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/;
 // match an exctinction coefficient entry
-EXTCOEFFMATCH = /[Ee]xtinction [Cc]oefficient:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/
+EXTCOEFFMATCH = /[Ee]xtinction [Cc]oefficient:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/;
 // Alexa-488 birghtness for relative brightness calculations
-var ALEXABRIGHT= 0.92*73000    
+var ALEXABRIGHT= 0.92*73000;
 // The set of active filters.
 var CHART = null;
 var SPECTRA = {};
@@ -36,7 +36,7 @@ var WLMIN = 300.0;
 var WLMAX = 800.0;
 var WLSTEP = 1.0;
 // Suffix for excitation spectra
-var EXSUFFIX = '_ex'
+var EXSUFFIX = "_ex";
 // How many top dyes to return
 var NUMTOPDYES = 3;
 
@@ -56,7 +56,7 @@ DASHES = function* () {
         index = (index+1) % styles.length;
         yield styles[index];
     }
-}()
+}();
 
 //extract url queiers.
 function getParameterByName(name, url) {
@@ -65,7 +65,7 @@ function getParameterByName(name, url) {
     var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
         results = regex.exec(url);
     if (!results) return null;
-    if (!results[2]) return '';
+    if (!results[2]) return "";
     return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
 
@@ -75,7 +75,7 @@ function Spectrum(name) {
     this.raw=null;          // raw data after fetch
     this._interp=null;      // cache for interpolated data
     this._points=null;      // cache for points as [{x: , y:}, ...]
-    this.qyield=null;       // quantum yield 
+    this.qyield=null;       // quantum yield
     this.extcoeff=null;     // extinction coefficent
 }
 
@@ -97,7 +97,7 @@ Spectrum.prototype.interpolate = function () {
         for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
             var val;
             var t;
-            if (wl < wls[0] | wl > wls[wls.length-1]){
+            if (wl < wls[0] || wl > wls[wls.length-1]){
                 val = 0;
             } else {
                 if (wl > wls[i]) {
@@ -106,24 +106,24 @@ Spectrum.prototype.interpolate = function () {
                     }
                 }
                 t = (wl - wls[i-1]) / (wls[i] - wls[i-1]);
-                val = (1-t)*vals[i-1]+t*vals[i]
+                val = (1-t)*vals[i-1]+t*vals[i];
             }
             this._interp[0].push(wl);
             this._interp[1].push(val);
         }
     }
     return this._interp;
-}
+};
 
 Spectrum.prototype.rescale = function() {
     // Find max. intensity in spectrum.
-    if (this.raw[1].reduce( (peak, val) => val > peak ? val : peak) > 10.) {
+    if (this.raw[1].reduce( (peak, val) => val > peak ? val : peak) > 10.0) {
         // Spectrum is probably in percent
         for (var i = 0; i < this.raw[1].length; i++) {
             this.raw[1][i] = this.raw[1][i] / 100;
         }
     }
-}
+};
 
 Spectrum.prototype.area = function (name) {
     // Return the area of the spectrum.
@@ -136,7 +136,7 @@ Spectrum.prototype.area = function (name) {
         area += 0.5 * (Math.max(0, v[i]) + Math.max(0, v[i-1]))*(w[i] - w[i-1]);
     }
     return area;
-}
+};
 
 Spectrum.prototype.copy = function (name) {
     // Create a copy of this spectrum.
@@ -145,14 +145,14 @@ Spectrum.prototype.copy = function (name) {
     copy._interp = deepCopy(this.interpolate());
 
     return copy;
-}
+};
 
 Spectrum.prototype.multiplyBy = function (other) {
     // multiplies this spectrum by other
     // invalidates previously calculated _points
     this._points = null;
     this.interpolate();
-    var oldMax = Math.max(...this._interp[1])
+    var oldMax = Math.max(...this._interp[1]);
     if (other instanceof Spectrum) {
         var m = other.interpolate()[1];
         for (var i = 0; i < this._interp[1].length; i ++) {
@@ -167,7 +167,7 @@ Spectrum.prototype.multiplyBy = function (other) {
             this._interp[1][i] *= other;
         }
     }
-}
+};
 
 
 Spectrum.prototype.peakwl = function () {
@@ -176,7 +176,7 @@ Spectrum.prototype.peakwl = function () {
         var peakidx = this._interp[1].indexOf(Math.max(...this._interp[1]));
         return this._interp[0][peakidx];
     }
-}
+};
 
 
 Spectrum.prototype.points = function () {
@@ -187,16 +187,16 @@ Spectrum.prototype.points = function () {
         var data = this.interpolate();
         return data[0].map(function (v, i) {
             return {x: v, y:data[1][i]};
-        })
+        });
     }
-}
+};
 
 
 //Prototype sets object for staroing exciation and emission sets.
 function FilterSet(){
     //transmission is the total transmission efficiency of the
     //set of filters
-    //spectrum is the resulting spectrum after the filter stack is applied 
+    //spectrum is the resulting spectrum after the filter stack is applied
     this.transmission = null;
     this.spectrum = null;
 }
@@ -205,40 +205,40 @@ FilterSet.prototype = new Array();
 
 FilterSet.prototype.addFilter = function(filter, mode) {
     //filter is the filter name,
-    //mode is 'r' or 't' for reflection or transmission
-    this.push({'filter':filter, 'mode':mode});
-}
+    //mode is "r" or "t" for reflection or transmission
+    this.push({"filter":filter, "mode":mode});
+};
 
 FilterSet.prototype.removeFilter = function(filter){
     var filternum = this.findIndex(function(element){
-	if (element) {
-	    return (element.filter === filter);
-	}
+        if (element) {
+            return (element.filter === filter);
+        }
     });
-    
+
     if (filternum > -1){
-	delete this[filternum];
+        delete this[filternum];
     }
-}
+};
 
 FilterSet.prototype.changeMode = function(filter,mode){
     var filternum = this.findIndex(function(element){
-	if (element) {
-	    return (element.filter === filter);
-	}
+        if (element) {
+            return (element.filter === filter);
+        }
     });
-    
+
     if (filternum > -1){
-	this[filternum].mode = mode;
+        this[filternum].mode = mode;
     }
-}
+};
 
 
 FilterSet.prototype.doEfficiencyCalc = function () {
     var initArea = SPECTRA[this[0].filter].area();
     var calcSpectra  =SPECTRA[this[0].filter].copy();
     this.slice(1).forEach(function(element){
-        var refl = ['r','R'].indexOf(element.mode) > -1;
+        var refl = ["r","R"].indexOf(element.mode) > -1;
         if (refl) {
             var mult = SPECTRA[element.filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
             calcSpectra.multiplyBy(mult);
@@ -247,8 +247,8 @@ FilterSet.prototype.doEfficiencyCalc = function () {
         }
     });
     this.transmission=calcSpectra.area()/initArea;
-    this.spectrum=calcSpectra
-}
+    this.spectrum=calcSpectra;
+};
 
 
 FilterSet.prototype.efficiency = function( ){
@@ -256,18 +256,18 @@ FilterSet.prototype.efficiency = function( ){
     // Fetch all data with concurrent calls.
     var defer = [];
     for (var f of this) {
-	//RemoveFilter leaves an undfined entry so skip these
-	if(f) {
-	    if(f.filter) {
-		defer.push(SPECTRA[f.filter].fetch());
-	    }
-	}
+        //RemoveFilter leaves an undfined entry so skip these
+        if(f) {
+            if(f.filter) {
+                defer.push(SPECTRA[f.filter].fetch());
+            }
+        }
     }
     // When all the data is ready, do the calculation.
     $.when.apply(null, defer).then( () => this.doEfficiencyCalc() );
-}
+};
 
-// calculate the excitation, emission and brightness of a config. 
+// calculate the excitation, emission and brightness of a config.
 function calcEffAndBright(exset,emset) {
     //populate the tramsssion and spectrum elements of the filter set
     //in emset first element must be a dye
@@ -275,28 +275,28 @@ function calcEffAndBright(exset,emset) {
     var e_eff,t_eff,bright;
     //Excitation efficiency
     if (exset.length > 0) {
-	exset.efficiency()
-	e_eff = exset.transmission;
-	SPECTRA['excitation'] = exset.spectrum.copy();
-	//test if we have a dye selected, and it has an excitation spectra
-	//if so multiply excitation spectra by this. 
-	if(emset[0].filter && SPECTRA[emset[0].filter + EXSUFFIX]) {
-	    exset.spectrum.multiplyBy(SPECTRA[emset[0].filter + EXSUFFIX])
-	    e_eff = e_eff * (exset.spectrum.area()/SPECTRA['excitation'].area());
-	}
+        exset.efficiency();
+        e_eff = exset.transmission;
+        SPECTRA["excitation"] = exset.spectrum.copy();
+        //test if we have a dye selected, and it has an excitation spectra
+        //if so multiply excitation spectra by this.
+        if(emset[0].filter && SPECTRA[emset[0].filter + EXSUFFIX]) {
+            exset.spectrum.multiplyBy(SPECTRA[emset[0].filter + EXSUFFIX]);
+            e_eff = e_eff * (exset.spectrum.area()/SPECTRA["excitation"].area());
+        }
     }
     //calculate emission efficiency and spectra.
     if (emset.length > 0) {
-	emset.efficiency();
-	t_eff = emset.transmission;
-	SPECTRA['transmitted']=emset.spectrum;
+        emset.efficiency();
+        t_eff = emset.transmission;
+        SPECTRA["transmitted"]=emset.spectrum;
     }
     //calculate relative brightness compared to alexa-448 at 100% excitation.
     // mulitple by 10 to give resasonable range of values.
-    var dye = emset[0].filter
+    var dye = emset[0].filter;
     if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
         bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
-		  ALEXABRIGHT) * 10.0;
+                   ALEXABRIGHT) * 10.0;
     }
     return ({e_eff,t_eff,bright});
 }
@@ -305,16 +305,16 @@ function calcEffAndBright(exset,emset) {
 //Function to try all possible dyes and optimise which is "best"
 function optimiseDyes() {
     //First load all the dyes prior to calling the dye optimisation code.
-    var dyes=[]
-    $( "#dyes .selectable").each(function() {dyes.push($(this).data().key)});
+    var dyes=[];
+    $( "#dyes .selectable").each(function() {dyes.push($(this).data().key);});
 
     // Fetch all dyes with concurrent calls.
     var defer = [];
-    for (dye of dyes) {
+    for (var dye of dyes) {
         defer.push(SPECTRA[dye].fetch());
     }
     // When all the data is ready call the optimise dyes
-    $.when.apply(null, defer).then(function(){processAllDyes(dyes)});
+    $.when.apply(null, defer).then(function(){processAllDyes(dyes);});
 }
 
 
@@ -334,30 +334,30 @@ ServerSpectrum.prototype.fetch = function ( ){
     $.get(this.source,
         $.proxy(function(resp){
             // Parse csv.
-            var csv = resp.split('\n');
-            var wls = [] // wavelength
-            var val0s = [] // value0
-            var val1s = [] // aux. value
+            var csv = resp.split("\n");
+            var wls = []; // wavelength
+            var val0s = []; // value0
+            var val1s = []; // aux. value
             for (let [index, line] of csv.entries()) {
-                let strings = line.split(FLOATMATCH)
-                let sepstrings = strings.filter((el, i, arr) => i%2 === 0)
+                let strings = line.split(FLOATMATCH);
+                let sepstrings = strings.filter((el, i, arr) => i%2 === 0);
                 // Skip header lines.
-                if(!sepstrings.every( v => v === "" || /^[\s,;:]+$/.test(v))){
+                if(!sepstrings.every( v => v === "" || (/^[\s,;:]+$/).test(v))){
                     // Match Qyield and Extcoeff values.
                     // this data gets added to the emission spectra as
                     // we dont know yet if this is 2 column or 3 column data.
-                    let strings = line.match(QYIELDMATCH)
+                    let strings = line.match(QYIELDMATCH);
                     if (strings){
-                        this.qyield=strings[1]
+                        this.qyield=strings[1];
                         continue;
                     }
-                    strings = line.match(EXTCOEFFMATCH)
+                    strings = line.match(EXTCOEFFMATCH);
                     if (strings){
-                        this.extcoeff=strings[1]
+                        this.extcoeff=strings[1];
                     }
                     continue;
                 }
-                let floatstrings = strings.filter((el, i, arr) => i%2 === 1)
+                let floatstrings = strings.filter((el, i, arr) => i%2 === 1);
                 let [wl, val0, val1] = floatstrings.map( v => parseFloat(v));
                 if (wl != null && val0 != null) {
                     wls.push(wl);
@@ -384,19 +384,19 @@ ServerSpectrum.prototype.fetch = function ( ){
             }
             d.resolve();
         }, this),
-        'text');
+        "text");
     } else {
         d.resolve();
     }
     return d;
-}
+};
 
 // === End of prototype definitions === //
 
 
 function wavelengthToHue(wl) {
     // Convert a wavelength to HSL-alpha string.
-    return Math.max(0., Math.min(300, 650-wl)) * 0.96;
+    return Math.max(0.0, Math.min(300, 650-wl)) * 0.96;
 }
 
 
@@ -408,15 +408,15 @@ function updatePlot() {
     var filterModes = [];
     var exFilters = [];
     var exFilterModes = [];
-    
+
     // Fetch configuration from UI.
-    $( "#dyes .selected").each(function() {dye.push($(this).data().key)})
-    $( "#excitation .selected").each(function() {excitation.push($(this).data().key)})
-    $( "#fset .activeFilter").each(function() {filters.push($(this).data().key)})
-    $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
+    $( "#dyes .selected").each(function() {dye.push($(this).data().key);});
+    $( "#excitation .selected").each(function() {excitation.push($(this).data().key);});
+    $( "#fset .activeFilter").each(function() {filters.push($(this).data().key);});
+    $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode);});
     //exciation filter sets.
-    $( "#exset .activeExFilter").each(function() {exFilters.push($(this).data().key)})
-    $( "#exset .activeExFilter").each(function() {exFilterModes.push($(this).data().mode)})
+    $( "#exset .activeExFilter").each(function() {exFilters.push($(this).data().key);});
+    $( "#exset .activeExFilter").each(function() {exFilterModes.push($(this).data().mode);});
 
     // Fetch all data with concurrent calls.
     var defer = [];
@@ -430,12 +430,12 @@ function updatePlot() {
         defer.push(SPECTRA[f].fetch());
     }
     for (var f of exFilters) {
-	defer.push(SPECTRA[f].fetch());
+        defer.push(SPECTRA[f].fetch());
     }
 
     // When all the data is ready, do the calculation and draw the plot.
 
-    $.when.apply(null, defer).then(function(){drawPlot(dye[0], excitation[0], filters, filterModes,exFilters,exFilterModes)});
+    $.when.apply(null, defer).then(function(){drawPlot(dye[0], excitation[0], filters, filterModes,exFilters,exFilterModes);});
 }
 
 
@@ -456,13 +456,13 @@ function deepCopy( src ) {
 function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterModes) {
     // Create chart if it doesn't exist.
     if (!CHART) {
-        var ctx = $( "#chart" )[0].getContext('2d');
+        var ctx = $( "#chart" )[0].getContext("2d");
         CHART = new Chart(ctx, {
-            type: 'scatter',
+            type: "scatter",
             height: `100%`,
             data: {
                 datasets: [{
-                    label: 'transmitted',
+                    label: "transmitted",
                     data: [],
                     borderWidth: 4,
                     borderColor: `rgba(0, 0, 0, 0.5)`,
@@ -482,7 +482,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
                 (1- $( CHART.canvas ).position().top / $( window ).height()),
                 $( CHART.canvas ).width() / $( window ).height()));
             CHART.canvas.parentNode.style.height = `${frac}vh`;
-        }
+        };
         resizeChart();
         $(window).resize(resizeChart);
     }
@@ -492,7 +492,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     var e_eff = effBright.e_eff ;
     var t_eff = effBright.t_eff ;
     var bright = effBright.bright ;
-    
+
     var skeys = []; // all active keys (filters + dye)
     dye = $("#dyes .selected").data("key");
     if (dye) {
@@ -502,11 +502,11 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         }
     }
     if (excitation) {
-	if (exFilters.length >= 1) {
-	    skeys.push('excitation');
-	} else {
-	    skeys.push(excitation);
-	}
+        if (exFilters.length >= 1) {
+            skeys.push("excitation");
+        } else {
+            skeys.push(excitation);
+        }
     }
 
     skeys.push.apply(skeys, filters);
@@ -517,7 +517,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
 
     // Remove traces that are no longer needed.
     for (var key of toRemove) {
-        if (key == 'transmitted') { continue }
+        if (key == "transmitted") { continue; }
         CHART.data.datasets.splice(
             CHART.data.datasets.indexOf(
                 CHART.data.datasets.filter(item => item.label == key)[0]), 1);
@@ -532,28 +532,28 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         var hue = wavelengthToHue(SPECTRA[key].peakwl());
         switch (key) {
             case excitation:
-                bg = `hsla(${hue}, 100%, 50%, 1)`
-	        fg = `hsla(${hue}, 100%, 50%, 1)`
+                bg = `hsla(${hue}, 100%, 50%, 1)`;
+                fg = `hsla(${hue}, 100%, 50%, 1)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
-                break
-            case 'excitation':
-                bg = `hsla(${hue}, 100%, 50%, 1)`
-                fg = `hsla(${hue}, 100%, 50%, 1)`
+                break;
+            case "excitation":
+                bg = `hsla(${hue}, 100%, 50%, 1)`;
+                fg = `hsla(${hue}, 100%, 50%, 1)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
-                break
+                break;
             case dye:
-                bg = `hsla(${hue}, 100%, 50%, 0.2)`
-                fg = `rgba(0, 0, 255, 0.5)`
+                bg = `hsla(${hue}, 100%, 50%, 0.2)`;
+                fg = `rgba(0, 0, 255, 0.5)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
                 break;
             case dye + EXSUFFIX:
-                bg = `hsla(${hue}, 100%, 50%, 0.2)`
-                fg = `rgba(255, 0, 0, 0.5)`
+                bg = `hsla(${hue}, 100%, 50%, 0.2)`;
+                fg = `rgba(255, 0, 0, 0.5)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
-                break
+                break;
             default:
-                bg = `hsla(${hue}, 100%, 50%, 0.1)`
-                fg = `hsla(${hue}, 100%, 50%, 0.5)`
+                bg = `hsla(${hue}, 100%, 50%, 0.1)`;
+                fg = `hsla(${hue}, 100%, 50%, 0.5)`;
                 borderDash = DASHES.next().value;
                 var addToChart = x => CHART.data.datasets.push(x);
         }
@@ -573,50 +573,50 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     for (var i=0; i < CHART.data.datasets.length; i++) {
         var idx = filters.indexOf(CHART.data.datasets[i].label);
         if (idx === -1) { continue; }
-        if (['r','R'].indexOf(filterModes[idx]) > -1) {
-            CHART.data.datasets[i].fill = 'end';
+        if (["r","R"].indexOf(filterModes[idx]) > -1) {
+            CHART.data.datasets[i].fill = "end";
         } else {
-            CHART.data.datasets[i].fill = 'start';
+            CHART.data.datasets[i].fill = "start";
         }
     }
 
     // Update the transmission trace.
-    var transTrace = CHART.data.datasets.filter( item => item.label == 'transmitted')[0]
-    var hue = wavelengthToHue(SPECTRA['transmitted'].peakwl());
-    transTrace.data = SPECTRA['transmitted'].points();
-    transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
+    var transTrace = CHART.data.datasets.filter( item => item.label == "transmitted")[0];
+    var hue = wavelengthToHue(SPECTRA["transmitted"].peakwl());
+    transTrace.data = SPECTRA["transmitted"].points();
+    transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
     // // Update the excitation trace.
     if (excitation) {
-	if (exFilters.length >= 1) {
-	    var extTrace = CHART.data.datasets.filter( item => item.label == 'excitation')[0]
-    	    var hue = wavelengthToHue(SPECTRA['excitation'].peakwl());
-    	    extTrace.data = SPECTRA['excitation'].points();
-    	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
-	    extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
-	} else {
-	    var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0]
-    	    var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
-    	    extTrace.data = SPECTRA[excitation].points();
-    	    extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`
-	}
+        if (exFilters.length >= 1) {
+            var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0];
+            var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
+            extTrace.data = SPECTRA["excitation"].points();
+            extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+            extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+        } else {
+            var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
+            var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
+            extTrace.data = SPECTRA[excitation].points();
+            extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
+        }
     }
     // if(excitation) {
-    
+
     if (t_eff != null && e_eff != null && bright != null) {
        CHART.options.title = {display: true,
-                               text: 'Efficiency: ex ' + (100*e_eff).toFixed(1) + '%, em ' + (100*t_eff).toFixed(1) + '%' + ', brightness ' + bright.toFixed(2),
+                               text: "Efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%" + ", brightness " + bright.toFixed(2),
                                fontSize: 24};
     } else if (t_eff != null && e_eff != null) {
         CHART.options.title = {display: true,
-                               text: 'Efficiency: ex ' + (100*e_eff).toFixed(1) + '%, em ' + (100*t_eff).toFixed(1) + '%',
+                               text: "Efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%",
                                fontSize: 24};
     } else if (t_eff != null) {
         CHART.options.title = {display: true,
-                               text: 'Efficiency:  ' + (100*t_eff).toFixed(1) + '%',
+                               text: "Efficiency:  " + (100*t_eff).toFixed(1) + "%",
                                fontSize: 24};
     } else {
         CHART.options.title = {display: false,
-                               text: ''};
+                               text: ""};
     }
 
     CHART.update();
@@ -626,7 +626,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
 function parseSources( sources )  {
     // Parse a \n-separated list of source files.
     var filters = {};
-    for (var file of sources.split('\n')) {
+    for (var file of sources.split("\n")) {
         var name = file;
         for (var excl of FN_EXCLUDE) {
             name = name.split(excl).join("").trim();
@@ -635,48 +635,48 @@ function parseSources( sources )  {
             filters[name] = file;
         }
     }
-    return filters
+    return filters;
 }
 
 function parseSets( txt ) {
     // Parse pre-defined filter sets.
     var sets = [];
 
-    for (line of txt.split(/\n/)) {
+    for (var line of txt.split(/\n/)) {
         if (line.length <=1 || line.match(/^\s*(\/{2,2}|#|\/\*).*/)) {
             continue;
         }
-	var emAndEx = line.split("::");
-	if (emAndEx.length === 1) {
+        var emAndEx = line.split("::");
+        if (emAndEx.length === 1) {
             var csv = line.split(/[\t,:;]/);
-	    var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
-		(_) => {return{filter:_[0], mode:_[1]||'t'}});
-	    var exFilters=[]
-	} else {
-	    var csv = emAndEx[0].toString().split(/[\t,:;]/);
-	    var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
-		(_) => {return{filter:_[0], mode:_[1]||'t'}});
-	    var exs=emAndEx.slice(1).toString().split(/[\t,:;]/);
-	    var exFilters=exs.slice(0).map( (_) => _.trim().split(/ +/)).map(
-		(_) => {return{filter:_[0], mode:_[1]||'t'}});
-	}
+            var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
+                (_) => {return{filter:_[0], mode:_[1]||"t"};});
+            var exFilters=[];
+        } else {
+            var csv = emAndEx[0].toString().split(/[\t,:;]/);
+            var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
+                (_) => {return{filter:_[0], mode:_[1]||"t"};});
+            var exs=emAndEx.slice(1).toString().split(/[\t,:;]/);
+            var exFilters=exs.slice(0).map( (_) => _.trim().split(/ +/)).map(
+                (_) => {return{filter:_[0], mode:_[1]||"t"};});
+        }
         sets.push({name: csv[0].trim(),
                    dye: csv[1].trim(),
-		   exsource: csv[2].trim(),
+                   exsource: csv[2].trim(),
                    filters: filters,
-		   exFilters: exFilters});
+                   exFilters: exFilters});
     }
     return sets.sort(function(a, b) {
-	var nameA = a.name.toLowerCase(); // ignore upper and lowercase
-	var nameB = b.name.toLowerCase(); // ignore upper and lowercase
-	if (nameA < nameB) {
-	    return -1;
-	}
-	if (nameA > nameB) {
-	    return 1;
-	}
-	// names must be equal
-	return 0;
+        var nameA = a.name.toLowerCase(); // ignore upper and lowercase
+        var nameB = b.name.toLowerCase(); // ignore upper and lowercase
+        if (nameA < nameB) {
+            return -1;
+        }
+        if (nameA > nameB) {
+            return 1;
+        }
+        // names must be equal
+        return 0;
     });
 }
 
@@ -685,38 +685,38 @@ function parseSets( txt ) {
 //=== UI INTERACTION FUNCTIONS ===//
 function dropFilter( event, ui) {
     // Add the dropped filter to the active filter set.
-    addFilterToSet(ui.draggable.data('key'), 't');
+    addFilterToSet(ui.draggable.data("key"), "t");
     updatePlot();
 }
 
 function dropExFilter( event, ui) {
     // Add the dropped filter to the active filter set.
-    addExFilterToSet(ui.draggable.data('key'), 't');
+    addExFilterToSet(ui.draggable.data("key"), "t");
     updatePlot();
 }
 
 
 function addFilterToSet(filter, mode) {
     // Add a filter to the active filter set.
-    var el = $(`<div><label>${filter}</label></div>`).addClass('activeFilter');
-    EMSET.addFilter(filter, mode)
-    mode = mode.toLowerCase()
-    el.data('mode', mode);
-    el.data('key', filter)
+    var el = $(`<div><label>${filter}</label></div>`).addClass("activeFilter");
+    EMSET.addFilter(filter, mode);
+    mode = mode.toLowerCase();
+    el.data("mode", mode);
+    el.data("key", filter);
     var buttons = $( "<span></span>").appendTo(el);
     var modeBtn = $(`<button class="modeButton">${mode}</button>`).appendTo(buttons);
-    modeBtn.button()
+    modeBtn.button();
     modeBtn.click(function(){
-        var newMode = {'t':'r', 'r':'t'}[el.data('mode')];
-	EMSET.changeMode(filter,newMode);
-        el.data('mode', newMode);
+        var newMode = {"t":"r", "r":"t"}[el.data("mode")];
+        EMSET.changeMode(filter,newMode);
+        el.data("mode", newMode);
         $( this ).text(newMode);
         updatePlot();
     });
     var delBtn = $(`<button class="delButton">x</button>`).appendTo(buttons);
     delBtn.button();
     delBtn.click(function(){
-	EMSET.removeFilter(filter);
+        EMSET.removeFilter(filter);
         el.remove();
         updatePlot();});
     $( "#fset" ).append(el);
@@ -725,25 +725,25 @@ function addFilterToSet(filter, mode) {
 
 function addExFilterToSet(filter, mode) {
     // Add a filter to the active filter set.
-    var exl = $(`<div><label>${filter}</label></div>`).addClass('activeExFilter');
-    EXSET.addFilter(filter, mode)
-    mode = mode.toLowerCase()
-    exl.data('mode', mode);
-    exl.data('key', filter)
+    var exl = $(`<div><label>${filter}</label></div>`).addClass("activeExFilter");
+    EXSET.addFilter(filter, mode);
+    mode = mode.toLowerCase();
+    exl.data("mode", mode);
+    exl.data("key", filter);
     var buttons = $( "<span></span>").appendTo(exl);
     var modeBtn = $(`<button class="modeButton">${mode}</button>`).appendTo(buttons);
-    modeBtn.button()
+    modeBtn.button();
     modeBtn.click(function(){
-        var newMode = {'t':'r', 'r':'t'}[exl.data('mode')];
-	EXSET.changeMode(filter,newMode);
-        exl.data('mode', newMode);
+        var newMode = {"t":"r", "r":"t"}[exl.data("mode")];
+        EXSET.changeMode(filter,newMode);
+        exl.data("mode", newMode);
         $( this ).text(newMode);
         updatePlot();
     });
     var delBtn = $(`<button class="delButton">x</button>`).appendTo(buttons);
     delBtn.button();
     delBtn.click(function(){
-	EXSET.removeFilter(filter);
+        EXSET.removeFilter(filter);
         exl.remove();
         updatePlot();});
     $( "#exset" ).append(exl);
@@ -754,21 +754,21 @@ EVT = null;
 
 function selectDye(event, key) {
     // Update on dye selection.
-    s = event.target.closest(".selectable")
-    cl = s.classList
+    s = event.target.closest(".selectable");
+    cl = s.classList;
     if( cl && cl.value.includes("selected")) {
         $(s).removeClass("selected");
-	EMSET[0].filter = null;
+        EMSET[0].filter = null;
     }
     else
     {
-	if (EMSET.length == 0) {
-	    EMSET.push({'filter':key, 'mode':null});
-	} else {
-	    EMSET[0].filter = key
-	}
-        $('#dyes .selected').removeClass('selected');
-        $(s).addClass('selected');
+        if (EMSET.length === 0) {
+            EMSET.push({"filter":key, "mode":null});
+        } else {
+            EMSET[0].filter = key;
+        }
+        $("#dyes .selected").removeClass("selected");
+        $(s).addClass("selected");
     }
     updatePlot();
 }
@@ -777,29 +777,29 @@ function selectDye(event, key) {
 function processAllDyes(dyes){
     var efficiency=[];
     var excitation;
-    //save current dye so we can restore it at the end. 
-    var savedDye = EMSET[0].filter
+    //save current dye so we can restore it at the end.
+    var savedDye = EMSET[0].filter;
     //loop through all dyes and use each in turn
-    for (dye of dyes) {
-	EMSET[0].filter = dye;
-	//calculate efficency and push results.
-	efficiency.push([dye,calcEffAndBright(EXSET,EMSET)]);
+    for (var dye of dyes) {
+        EMSET[0].filter = dye;
+        //calculate efficency and push results.
+        efficiency.push([dye,calcEffAndBright(EXSET,EMSET)]);
     }
     //sort loist for best excitation
     var bestEx = efficiency.sort(function(a,b){
-	if (a[1].e_eff === undefined) {return (1);};
-	if (b[1].e_eff === undefined) {return (-1);};
-	return (b[1].e_eff-a[1].e_eff)}).slice(0,3);
+        if (a[1].e_eff === undefined) {return (1);}
+        if (b[1].e_eff === undefined) {return (-1);}
+        return (b[1].e_eff-a[1].e_eff);}).slice(0,3);
     //sort list for best emmission
     var bestEm = efficiency.sort(function(a,b){
-	if (a[1].t_eff === undefined) {return (1);}
-	if (b[1].t_eff === undefined) {return (-1);}
-	return (b[1].t_eff-a[1].t_eff)}).slice(0,3);
+        if (a[1].t_eff === undefined) {return (1);}
+        if (b[1].t_eff === undefined) {return (-1);}
+        return (b[1].t_eff-a[1].t_eff);}).slice(0,3);
     //sort list for best brightness
     var bestBright = efficiency.sort(function(a,b){
-	if (a[1].bright === undefined) {return (1);}
-	if (b[1].bright === undefined) {return (-1);}
-	return (b[1].bright-a[1].bright)}).slice(0,3);
+        if (a[1].bright === undefined) {return (1);}
+        if (b[1].bright === undefined) {return (-1);}
+        return (b[1].bright-a[1].bright);}).slice(0,3);
     //construct output dialog string.
     var bestExString = "Best Excitation:\t ";
     var bestEmString = "\nBest Emission:\t ";
@@ -807,92 +807,92 @@ function processAllDyes(dyes){
 
     //add NUMOPTDYES to each "best" string.
     for (var i=0; i < NUMTOPDYES; i++) {
-	bestExString = (bestExString + bestEx[i][0]+" - "+
-			(bestEx[i][1].e_eff*100).toFixed(1)+"% ; ");
-	bestEmString = (bestEmString + bestEm[i][0]+" - "+
-			(bestEm[i][1].t_eff*100).toFixed(1)+"% ; ");
-	bestBrightString = (bestBrightString + bestBright[i][0]+" - "+
-			    (bestBright[i][1].bright).toFixed(2)+" ; ");
+        bestExString = (bestExString + bestEx[i][0]+" - "+
+                        (bestEx[i][1].e_eff*100).toFixed(1)+"% ; ");
+        bestEmString = (bestEmString + bestEm[i][0]+" - "+
+                        (bestEm[i][1].t_eff*100).toFixed(1)+"% ; ");
+        bestBrightString = (bestBrightString + bestBright[i][0]+" - "+
+                            (bestBright[i][1].bright).toFixed(2)+" ; ");
     }
     //    console.log(bestEx, bestEm,bestBright)
-    //display alert with optimised lists. 
-    alert(bestExString + bestEmString + bestBrightString)
+    //display alert with optimised lists.
+    alert(bestExString + bestEmString + bestBrightString);
     //Restore saved dye.
-    EMSET[0].filter = savedDye
+    EMSET[0].filter = savedDye;
 }
 
 function selectExcitation(event, key) {
     // Update on excitation selection.
-    s = event.target.closest(".selectable")
-    cl = s.classList
+    s = event.target.closest(".selectable");
+    cl = s.classList;
     if( cl && cl.value.includes("selected")) {
         $(s).removeClass("selected");
-	EXSET[0].filter = null;
+        EXSET[0].filter = null;
     }
     else
     {
-        $('#excitation .selected').removeClass('selected');
-        $(s).addClass('selected');
-	if (EXSET.length == 0) {
-	    EXSET.push({'filter':key, 'mode':null});
-	} else {
-	    EXSET[0].filter = key
-	}
+        $("#excitation .selected").removeClass("selected");
+        $(s).addClass("selected");
+        if (EXSET.length === 0) {
+            EXSET.push({"filter":key, "mode":null});
+        } else {
+            EXSET[0].filter = key;
+        }
     }
     updatePlot();
 }
 
 
 function selectFilterSet(event, set) {
-    if (set === '_adv_') {
-        $(".advanced").show()
-    } else if (set === '_empty_') {
-        $(".advanced").hide()
-        $(".activeFilter").remove()
-	$(".activeExFilter").remove()
-	$('#excitation .selected').removeClass('selected');
-	$('#dyes .selected').removeClass('selected');
-	EMSET.splice(0);
-	EXSET.splice(0);
+    if (set === "_adv_") {
+        $(".advanced").show();
+    } else if (set === "_empty_") {
+        $(".advanced").hide();
+        $(".activeFilter").remove();
+        $(".activeExFilter").remove();
+        $("#excitation .selected").removeClass("selected");
+        $("#dyes .selected").removeClass("selected");
+        EMSET.splice(0);
+        EXSET.splice(0);
     } else {
         // Load a pre-defined filter set.
-        $(".advanced").hide()
-        $(".activeFilter").remove()
-	$(".activeExFilter").remove()
-	$('#excitation .selected').removeClass('selected');
-	$('#dyes .selected').removeClass('selected');
-	EMSET.splice(0);
-	EXSET.splice(0);
+        $(".advanced").hide();
+        $(".activeFilter").remove();
+        $(".activeExFilter").remove();
+        $("#excitation .selected").removeClass("selected");
+        $("#dyes .selected").removeClass("selected");
+        EMSET.splice(0);
+        EXSET.splice(0);
         if (set.dye) {
-	    if (EMSET.length == 0) {
-		EMSET.push({'filter':set.dye, 'mode':null});
-	    } else {
-		EMSET[0].filter = set.dye;
-	    }
-            $('#dyes .selected').removeClass('selected');
-            $('#dyes .selectable').filter(function() {
-                return $(this).data('key') == set.dye}).addClass("selected")
+            if (EMSET.length === 0) {
+                EMSET.push({"filter":set.dye, "mode":null});
+            } else {
+                EMSET[0].filter = set.dye;
+                }
+            $("#dyes .selected").removeClass("selected");
+            $("#dyes .selectable").filter(function() {
+                return $(this).data("key") == set.dye;}).addClass("selected");
         } else if (EMSET.length > 0) {
-	    //EMSET[0] must be the dye, otherwise it is null.
-	    EMSET[0].filter = null;
-	}
-	if (set.exsource) {
-	    if( EXSET.length == 0) {
-		EXSET.push({'filter':set.exsource, 'mode':null});
-	    } else {
-		EXSET[0].filter=set.exsource;
-	    }
-	    $('#excitation .selected').removeClass('selected');
-            $('#excitation .selectable').filter(function() {
-                return $(this).data('key') == set.exsource}).addClass("selected")
-	} else if (EXSET.length >0) {
-	    //EXSET[0] must be excitation source, else null.
-	    EXSET[0].filter = null;
-	}
-        for (filter of set.filters) {
+            //EMSET[0] must be the dye, otherwise it is null.
+            EMSET[0].filter = null;
+        }
+        if (set.exsource) {
+            if( EXSET.length === 0) {
+                EXSET.push({"filter":set.exsource, "mode":null});
+            } else {
+                EXSET[0].filter=set.exsource;
+            }
+            $("#excitation .selected").removeClass("selected");
+            $("#excitation .selectable").filter(function() {
+                return $(this).data("key") == set.exsource;}).addClass("selected");
+        } else if (EXSET.length >0) {
+            //EXSET[0] must be excitation source, else null.
+            EXSET[0].filter = null;
+        }
+        for (var filter of set.filters) {
             addFilterToSet(filter.filter, filter.mode);
         }
-        for (exFilter of set.exFilters) {
+        for (var exFilter of set.exFilters) {
             addExFilterToSet(exFilter.filter, exFilter.mode);
         }
     }
@@ -904,7 +904,7 @@ function selectFilterSet(event, set) {
 }
 
 
-// Case-insensitive 'contains' selector.
+// Case-insensitive "contains" selector.
 $.extend($.expr[":"], {
     "icontains": function(el, i, m, arr) {
         return (el.textContent || el.innerText || "").toLowerCase().indexOf((m[3] || "").toLowerCase()) >= 0;
@@ -915,43 +915,43 @@ $.extend($.expr[":"], {
 function refineList(event) {
     // Show and hide searchable items based on search key.
     let target = $(event.target);
-    let items = $(target.data("search")).children('.searchable');
-    if(event.key === 'Escape') {
-        target.val('');
-        items.show()
+    let items = $(target.data("search")).children(".searchable");
+    if(event.key === "Escape") {
+        target.val("");
+        items.show();
     } else {
         let val = target.val();
-        items.filter(':icontains(' + val + ')').show();
-        items.not(':icontains(' + val + ')').hide();
+        items.filter(":icontains(" + val + ")").show();
+        items.not(":icontains(" + val + ")").hide();
     }
 }
 
 //Use url parameter to preload filter sets search
 function preloadFilterSetsSearch() {
-    var searchFilterSets = getParameterByName('searchFilterSets'); 
+    var searchFilterSets = getParameterByName("searchFilterSets");
     if(searchFilterSets) {
-	//load filterset search field with the value from the URL. 
-	$("#searchSets")[0].value = searchFilterSets ;
-	var event = new Event('keyup',{});
-	$("#searchSets")[0].dispatchEvent(event);
+        //load filterset search field with the value from the URL.
+        $("#searchSets")[0].value = searchFilterSets ;
+        var event = new Event("keyup",{});
+        $("#searchSets")[0].dispatchEvent(event);
     }
 }
 
 //=== DOCUMENT READY===//
 $( document ).ready(function() {
-    $(".advanced").hide()
+    $(".advanced").hide();
     // Populate list of filter sets.
     $("<div>").insertBefore($("#sets")).html(
         $("<input>").attr("id", "searchSets").data("search",
-						   "#sets").keyup(refineList));
+                                                   "#sets").keyup(refineList));
     var div = $(`<div><label>CUSTOM</label></div>` );
     div.addClass("selectable");
-    div.click((_) => {selectFilterSet(_, '_adv_')});
+    div.click((_) => {selectFilterSet(_, "_adv_");});
     div.appendTo($("#sets"));
 
     div = $(`<div><label>EMPTY</label></div>` );
     div.addClass("searchable").addClass("selectable");
-    div.click((_) => {selectFilterSet(_, '_empty_')});
+    div.click((_) => {selectFilterSet(_, "_empty_");});
     div.appendTo($("#sets"));
 
     $.ajax(
@@ -970,8 +970,8 @@ $( document ).ready(function() {
             $( "#sets" ).append(divs);
             }
         }
-    ).then( () =>  {preloadFilterSetsSearch()});
-    
+    ).then( () =>  {preloadFilterSetsSearch();});
+
     // Populate list of filters, and store SPECTRA key on the div.data
     $("<div>").insertBefore($("#filters")).html(
         $("<input>").data("search", "#filters").keyup(refineList));
@@ -980,14 +980,14 @@ $( document ).ready(function() {
          data: "",
          dataType: "text",
          success: function( resp ) {
-            var filters = parseSources(resp);
-            var divs = []
+             var filters = parseSources(resp);
+             var divs = [];
             $.each(filters, function(key, value) {
                 SPECTRA[key] = new ServerSpectrum(`filters/${value}`, key);
                 var div = $( `<div><label>${key}</label></div>`);
                 div.addClass( "filterSpec" );
                 div.addClass( "searchable" );
-                div.data('key', key);
+                div.data("key", key);
                 divs.push(div);
             });
             $( "#filters" ).append(divs);
@@ -998,7 +998,7 @@ $( document ).ready(function() {
         accept: ".filterSpec",
         drop: dropFilter
     });
-    
+
     //excitation filter set list
     $( "#exset").droppable({
         accept: ".filterSpec",
@@ -1013,19 +1013,19 @@ $( document ).ready(function() {
          data: "",
          dataType: "text",
          success: function( data ) {
-            var excitations = parseSources(data);
-            var divs = []
+             var excitations = parseSources(data);
+             var divs = [];
             $.each(excitations, function(key, value) {
                 var div = $(`<div><label>${key}</label></div>`);
                 SPECTRA[key] = new ServerSpectrum(`excitation/${value}`, key);
-                div.data('key', key);
+                div.data("key", key);
                 div.addClass("searchable");
                 div.addClass("selectable");
                 div.click((_) => {selectExcitation(_, key);});
                 divs.push(div);
             });
             $( "#excitation" ).append(divs);
-        ;}
+        }
     });
 
 
@@ -1037,23 +1037,23 @@ $( document ).ready(function() {
          data: "",
          dataType: "text",
          success: function( data ) {
-            var dyes = parseSources(data);
-            var divs = []
+             var dyes = parseSources(data);
+             var divs = [];
             $.each(dyes, function(key, value) {
                 var div = $(`<div><label>${key}</label></div>`);
                 SPECTRA[key] = new ServerSpectrum(`dyes/${value}`, key);
-                div.data('key', key);
+                div.data("key", key);
                 div.addClass("searchable");
                 div.addClass("selectable");
                 div.click((_) => {selectDye(_, key);});
                 divs.push(div);
             });
             $( "#dyes" ).append(divs);
-        ;}
+        }
     });
     //set search field if in URL
 });
 
-//Global containers for exciation and emission sets. 
+//Global containers for exciation and emission sets.
 var EXSET = new FilterSet();
 var EMSET = new FilterSet();
