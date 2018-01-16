@@ -342,7 +342,7 @@ ServerSpectrum.prototype.fetch = function ( ){
                 let strings = line.split(FLOATMATCH)
                 let sepstrings = strings.filter((el, i, arr) => i%2 === 0)
                 // Skip header lines.
-                if(!sepstrings.every( v => v === "" || /^[\s,;:]+$/.test(v))){
+                if(!sepstrings.every( v => v === "" || (/^[\s,;:]+$/).test(v))){
                     // Match Qyield and Extcoeff values.
                     // this data gets added to the emission spectra as
                     // we dont know yet if this is 2 column or 3 column data.
@@ -601,7 +601,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         }
     }
     // if(excitation) {
-    
+
     if (t_eff != null && e_eff != null && bright != null) {
        CHART.options.title = {display: true,
                                text: "Efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%" + ", brightness " + bright.toFixed(2),
@@ -672,7 +672,7 @@ function parseSets( txt ) {
         if (nameA < nameB) {
             return -1;
         }
-	if (nameA > nameB) {
+        if (nameA > nameB) {
             return 1;
         }
         // names must be equal
@@ -765,7 +765,7 @@ function selectDye(event, key) {
         if (EMSET.length == 0) {
             EMSET.push({"filter":key, "mode":null});
         } else {
-	    EMSET[0].filter = key
+            EMSET[0].filter = key
         }
         $("#dyes .selected").removeClass("selected");
         $(s).addClass("selected");
@@ -928,12 +928,12 @@ function refineList(event) {
 
 //Use url parameter to preload filter sets search
 function preloadFilterSetsSearch() {
-    var searchFilterSets = getParameterByName("searchFilterSets"); 
+    var searchFilterSets = getParameterByName("searchFilterSets");
     if(searchFilterSets) {
-	//load filterset search field with the value from the URL. 
-	$("#searchSets")[0].value = searchFilterSets ;
-	var event = new Event("keyup",{});
-	$("#searchSets")[0].dispatchEvent(event);
+        //load filterset search field with the value from the URL.
+        $("#searchSets")[0].value = searchFilterSets ;
+        var event = new Event("keyup",{});
+        $("#searchSets")[0].dispatchEvent(event);
     }
 }
 
@@ -943,7 +943,7 @@ $( document ).ready(function() {
     // Populate list of filter sets.
     $("<div>").insertBefore($("#sets")).html(
         $("<input>").attr("id", "searchSets").data("search",
-						   "#sets").keyup(refineList));
+                                                   "#sets").keyup(refineList));
     var div = $(`<div><label>CUSTOM</label></div>` );
     div.addClass("selectable");
     div.click((_) => {selectFilterSet(_, "_adv_")});
@@ -971,7 +971,7 @@ $( document ).ready(function() {
             }
         }
     ).then( () =>  {preloadFilterSetsSearch()});
-    
+
     // Populate list of filters, and store SPECTRA key on the div.data
     $("<div>").insertBefore($("#filters")).html(
         $("<input>").data("search", "#filters").keyup(refineList));
@@ -998,7 +998,7 @@ $( document ).ready(function() {
         accept: ".filterSpec",
         drop: dropFilter
     });
-    
+
     //excitation filter set list
     $( "#exset").droppable({
         accept: ".filterSpec",
@@ -1054,6 +1054,6 @@ $( document ).ready(function() {
     //set search field if in URL
 });
 
-//Global containers for exciation and emission sets. 
+//Global containers for exciation and emission sets.
 var EXSET = new FilterSet();
 var EMSET = new FilterSet();
