@@ -187,7 +187,7 @@ Spectrum.prototype.points = function () {
         var data = this.interpolate();
         return data[0].map(function (v, i) {
             return {x: v, y:data[1][i]};
-        })
+        });
     }
 };
 
@@ -348,12 +348,12 @@ ServerSpectrum.prototype.fetch = function ( ){
                     // we dont know yet if this is 2 column or 3 column data.
                     let strings = line.match(QYIELDMATCH);
                     if (strings){
-                        this.qyield=strings[1]
+                        this.qyield=strings[1];
                         continue;
                     }
-                    strings = line.match(EXTCOEFFMATCH)
+                    strings = line.match(EXTCOEFFMATCH);
                     if (strings){
-                        this.extcoeff=strings[1]
+                        this.extcoeff=strings[1];
                     }
                     continue;
                 }
@@ -410,13 +410,13 @@ function updatePlot() {
     var exFilterModes = [];
 
     // Fetch configuration from UI.
-    $( "#dyes .selected").each(function() {dye.push($(this).data().key)})
-    $( "#excitation .selected").each(function() {excitation.push($(this).data().key)})
-    $( "#fset .activeFilter").each(function() {filters.push($(this).data().key)})
-    $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode)})
+    $( "#dyes .selected").each(function() {dye.push($(this).data().key);})
+    $( "#excitation .selected").each(function() {excitation.push($(this).data().key);})
+    $( "#fset .activeFilter").each(function() {filters.push($(this).data().key);})
+    $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode);})
     //exciation filter sets.
-    $( "#exset .activeExFilter").each(function() {exFilters.push($(this).data().key)})
-    $( "#exset .activeExFilter").each(function() {exFilterModes.push($(this).data().mode)})
+    $( "#exset .activeExFilter").each(function() {exFilters.push($(this).data().key);})
+    $( "#exset .activeExFilter").each(function() {exFilterModes.push($(this).data().mode);})
 
     // Fetch all data with concurrent calls.
     var defer = [];
@@ -435,7 +435,7 @@ function updatePlot() {
 
     // When all the data is ready, do the calculation and draw the plot.
 
-    $.when.apply(null, defer).then(function(){drawPlot(dye[0], excitation[0], filters, filterModes,exFilters,exFilterModes)});
+    $.when.apply(null, defer).then(function(){drawPlot(dye[0], excitation[0], filters, filterModes,exFilters,exFilterModes);});
 }
 
 
@@ -517,7 +517,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
 
     // Remove traces that are no longer needed.
     for (var key of toRemove) {
-        if (key == "transmitted") { continue }
+        if (key == "transmitted") { continue; }
         CHART.data.datasets.splice(
             CHART.data.datasets.indexOf(
                 CHART.data.datasets.filter(item => item.label == key)[0]), 1);
@@ -532,28 +532,28 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         var hue = wavelengthToHue(SPECTRA[key].peakwl());
         switch (key) {
             case excitation:
-                bg = `hsla(${hue}, 100%, 50%, 1)`
-                fg = `hsla(${hue}, 100%, 50%, 1)`
+                bg = `hsla(${hue}, 100%, 50%, 1)`;
+                fg = `hsla(${hue}, 100%, 50%, 1)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
-                break
+                break;
             case "excitation":
-                bg = `hsla(${hue}, 100%, 50%, 1)`
-                fg = `hsla(${hue}, 100%, 50%, 1)`
+                bg = `hsla(${hue}, 100%, 50%, 1)`;
+                fg = `hsla(${hue}, 100%, 50%, 1)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
-                break
+                break;
             case dye:
-                bg = `hsla(${hue}, 100%, 50%, 0.2)`
-                fg = `rgba(0, 0, 255, 0.5)`
+                bg = `hsla(${hue}, 100%, 50%, 0.2)`;
+                fg = `rgba(0, 0, 255, 0.5)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
                 break;
             case dye + EXSUFFIX:
-                bg = `hsla(${hue}, 100%, 50%, 0.2)`
-                fg = `rgba(255, 0, 0, 0.5)`
+                bg = `hsla(${hue}, 100%, 50%, 0.2)`;
+                fg = `rgba(255, 0, 0, 0.5)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
-                break
+                break;
             default:
-                bg = `hsla(${hue}, 100%, 50%, 0.1)`
-                fg = `hsla(${hue}, 100%, 50%, 0.5)`
+                bg = `hsla(${hue}, 100%, 50%, 0.1)`;
+                fg = `hsla(${hue}, 100%, 50%, 0.5)`;
                 borderDash = DASHES.next().value;
                 var addToChart = x => CHART.data.datasets.push(x);
         }
