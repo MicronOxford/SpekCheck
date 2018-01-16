@@ -97,7 +97,7 @@ Spectrum.prototype.interpolate = function () {
         for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
             var val;
             var t;
-            if (wl < wls[0] | wl > wls[wls.length-1]){
+            if (wl < wls[0] || wl > wls[wls.length-1]){
                 val = 0;
             } else {
                 if (wl > wls[i]) {
@@ -299,7 +299,7 @@ function calcEffAndBright(exset,emset) {
                    ALEXABRIGHT) * 10.0;
     }
     return ({e_eff,t_eff,bright});
-};
+}
 
 
 //Function to try all possible dyes and optimise which is "best"
@@ -315,7 +315,7 @@ function optimiseDyes() {
     }
     // When all the data is ready call the optimise dyes
     $.when.apply(null, defer).then(function(){processAllDyes(dyes);});
-};
+}
 
 
 // === ServerSpectrum - spectrum with data from server === //
@@ -357,7 +357,7 @@ ServerSpectrum.prototype.fetch = function ( ){
                     }
                     continue;
                 }
-                let floatstrings = strings.filter((el, i, arr) => i%2 === 1)
+                let floatstrings = strings.filter((el, i, arr) => i%2 === 1);
                 let [wl, val0, val1] = floatstrings.map( v => parseFloat(v));
                 if (wl != null && val0 != null) {
                     wls.push(wl);
@@ -410,13 +410,13 @@ function updatePlot() {
     var exFilterModes = [];
 
     // Fetch configuration from UI.
-    $( "#dyes .selected").each(function() {dye.push($(this).data().key);})
-    $( "#excitation .selected").each(function() {excitation.push($(this).data().key);})
-    $( "#fset .activeFilter").each(function() {filters.push($(this).data().key);})
-    $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode);})
+    $( "#dyes .selected").each(function() {dye.push($(this).data().key);});
+    $( "#excitation .selected").each(function() {excitation.push($(this).data().key);});
+    $( "#fset .activeFilter").each(function() {filters.push($(this).data().key);});
+    $( "#fset .activeFilter").each(function() {filterModes.push($(this).data().mode);});
     //exciation filter sets.
-    $( "#exset .activeExFilter").each(function() {exFilters.push($(this).data().key);})
-    $( "#exset .activeExFilter").each(function() {exFilterModes.push($(this).data().mode);})
+    $( "#exset .activeExFilter").each(function() {exFilters.push($(this).data().key);});
+    $( "#exset .activeExFilter").each(function() {exFilterModes.push($(this).data().mode);});
 
     // Fetch all data with concurrent calls.
     var defer = [];
@@ -482,7 +482,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
                 (1- $( CHART.canvas ).position().top / $( window ).height()),
                 $( CHART.canvas ).width() / $( window ).height()));
             CHART.canvas.parentNode.style.height = `${frac}vh`;
-        }
+        };
         resizeChart();
         $(window).resize(resizeChart);
     }
@@ -594,7 +594,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
             extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
             extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
         } else {
-            var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0]
+            var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
             var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
             extTrace.data = SPECTRA[excitation].points();
             extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
@@ -650,7 +650,7 @@ function parseSets( txt ) {
         if (emAndEx.length === 1) {
             var csv = line.split(/[\t,:;]/);
             var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
-                (_) => {return{filter:_[0], mode:_[1]||"t"}});
+                (_) => {return{filter:_[0], mode:_[1]||"t"};});
             var exFilters=[];
         } else {
             var csv = emAndEx[0].toString().split(/[\t,:;]/);
@@ -658,7 +658,7 @@ function parseSets( txt ) {
                 (_) => {return{filter:_[0], mode:_[1]||"t"}});
             var exs=emAndEx.slice(1).toString().split(/[\t,:;]/);
             var exFilters=exs.slice(0).map( (_) => _.trim().split(/ +/)).map(
-                (_) => {return{filter:_[0], mode:_[1]||"t"}});
+                (_) => {return{filter:_[0], mode:_[1]||"t"};});
         }
         sets.push({name: csv[0].trim(),
                    dye: csv[1].trim(),
@@ -732,7 +732,7 @@ function addExFilterToSet(filter, mode) {
     exl.data("key", filter);
     var buttons = $( "<span></span>").appendTo(exl);
     var modeBtn = $(`<button class="modeButton">${mode}</button>`).appendTo(buttons);
-    modeBtn.button()
+    modeBtn.button();
     modeBtn.click(function(){
         var newMode = {"t":"r", "r":"t"}[exl.data("mode")];
         EXSET.changeMode(filter,newMode);
