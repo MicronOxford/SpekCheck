@@ -951,7 +951,7 @@ $( document ).ready(function() {
 
     div = $(`<div><label>EMPTY</label></div>` );
     div.addClass("searchable").addClass("selectable");
-    div.click((_) => {selectFilterSet(_, "_empty_")});
+    div.click((_) => {selectFilterSet(_, "_empty_");});
     div.appendTo($("#sets"));
 
     $.ajax(
@@ -970,7 +970,7 @@ $( document ).ready(function() {
             $( "#sets" ).append(divs);
             }
         }
-    ).then( () =>  {preloadFilterSetsSearch()});
+    ).then( () =>  {preloadFilterSetsSearch();});
 
     // Populate list of filters, and store SPECTRA key on the div.data
     $("<div>").insertBefore($("#filters")).html(
@@ -980,8 +980,8 @@ $( document ).ready(function() {
          data: "",
          dataType: "text",
          success: function( resp ) {
-            var filters = parseSources(resp);
-            var divs = []
+             var filters = parseSources(resp);
+             var divs = [];
             $.each(filters, function(key, value) {
                 SPECTRA[key] = new ServerSpectrum(`filters/${value}`, key);
                 var div = $( `<div><label>${key}</label></div>`);
@@ -1013,8 +1013,8 @@ $( document ).ready(function() {
          data: "",
          dataType: "text",
          success: function( data ) {
-            var excitations = parseSources(data);
-            var divs = []
+             var excitations = parseSources(data);
+             var divs = [];
             $.each(excitations, function(key, value) {
                 var div = $(`<div><label>${key}</label></div>`);
                 SPECTRA[key] = new ServerSpectrum(`excitation/${value}`, key);
@@ -1025,7 +1025,7 @@ $( document ).ready(function() {
                 divs.push(div);
             });
             $( "#excitation" ).append(divs);
-        ;}
+        }
     });
 
 
@@ -1037,8 +1037,8 @@ $( document ).ready(function() {
          data: "",
          dataType: "text",
          success: function( data ) {
-            var dyes = parseSources(data);
-            var divs = []
+             var dyes = parseSources(data);
+             var divs = [];
             $.each(dyes, function(key, value) {
                 var div = $(`<div><label>${key}</label></div>`);
                 SPECTRA[key] = new ServerSpectrum(`dyes/${value}`, key);
@@ -1049,7 +1049,7 @@ $( document ).ready(function() {
                 divs.push(div);
             });
             $( "#dyes" ).append(divs);
-        ;}
+        }
     });
     //set search field if in URL
 });
