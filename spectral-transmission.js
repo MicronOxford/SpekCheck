@@ -780,7 +780,7 @@ function processAllDyes(dyes){
     //save current dye so we can restore it at the end.
     var savedDye = EMSET[0].filter
     //loop through all dyes and use each in turn
-    for (dye of dyes) {
+    for (var dye of dyes) {
         EMSET[0].filter = dye;
         //calculate efficency and push results.
         efficiency.push([dye,calcEffAndBright(EXSET,EMSET)]);
@@ -816,15 +816,15 @@ function processAllDyes(dyes){
     }
     //    console.log(bestEx, bestEm,bestBright)
     //display alert with optimised lists.
-    alert(bestExString + bestEmString + bestBrightString)
+    alert(bestExString + bestEmString + bestBrightString);
     //Restore saved dye.
-    EMSET[0].filter = savedDye
+    EMSET[0].filter = savedDye;
 }
 
 function selectExcitation(event, key) {
     // Update on excitation selection.
-    s = event.target.closest(".selectable")
-    cl = s.classList
+    s = event.target.closest(".selectable");
+    cl = s.classList;
     if( cl && cl.value.includes("selected")) {
         $(s).removeClass("selected");
         EXSET[0].filter = null;
@@ -836,7 +836,7 @@ function selectExcitation(event, key) {
         if (EXSET.length == 0) {
             EXSET.push({"filter":key, "mode":null});
         } else {
-            EXSET[0].filter = key
+            EXSET[0].filter = key;
         }
     }
     updatePlot();
@@ -845,20 +845,20 @@ function selectExcitation(event, key) {
 
 function selectFilterSet(event, set) {
     if (set === "_adv_") {
-        $(".advanced").show()
+        $(".advanced").show();
     } else if (set === "_empty_") {
-        $(".advanced").hide()
-        $(".activeFilter").remove()
-        $(".activeExFilter").remove()
+        $(".advanced").hide();
+        $(".activeFilter").remove();
+        $(".activeExFilter").remove();
         $("#excitation .selected").removeClass("selected");
         $("#dyes .selected").removeClass("selected");
         EMSET.splice(0);
         EXSET.splice(0);
     } else {
         // Load a pre-defined filter set.
-        $(".advanced").hide()
-        $(".activeFilter").remove()
-        $(".activeExFilter").remove()
+        $(".advanced").hide();
+        $(".activeFilter").remove();
+        $(".activeExFilter").remove();
         $("#excitation .selected").removeClass("selected");
         $("#dyes .selected").removeClass("selected");
         EMSET.splice(0);
@@ -918,7 +918,7 @@ function refineList(event) {
     let items = $(target.data("search")).children(".searchable");
     if(event.key === "Escape") {
         target.val("");
-        items.show()
+        items.show();
     } else {
         let val = target.val();
         items.filter(":icontains(" + val + ")").show();
