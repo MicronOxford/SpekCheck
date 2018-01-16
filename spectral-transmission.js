@@ -56,7 +56,7 @@ DASHES = function* () {
         index = (index+1) % styles.length;
         yield styles[index];
     }
-}()
+}();
 
 //extract url queiers.
 function getParameterByName(name, url) {
@@ -106,14 +106,14 @@ Spectrum.prototype.interpolate = function () {
                     }
                 }
                 t = (wl - wls[i-1]) / (wls[i] - wls[i-1]);
-                val = (1-t)*vals[i-1]+t*vals[i]
+                val = (1-t)*vals[i-1]+t*vals[i];
             }
             this._interp[0].push(wl);
             this._interp[1].push(val);
         }
     }
     return this._interp;
-}
+};
 
 Spectrum.prototype.rescale = function() {
     // Find max. intensity in spectrum.
@@ -123,7 +123,7 @@ Spectrum.prototype.rescale = function() {
             this.raw[1][i] = this.raw[1][i] / 100;
         }
     }
-}
+};
 
 Spectrum.prototype.area = function (name) {
     // Return the area of the spectrum.
@@ -136,7 +136,7 @@ Spectrum.prototype.area = function (name) {
         area += 0.5 * (Math.max(0, v[i]) + Math.max(0, v[i-1]))*(w[i] - w[i-1]);
     }
     return area;
-}
+};
 
 Spectrum.prototype.copy = function (name) {
     // Create a copy of this spectrum.
@@ -145,14 +145,14 @@ Spectrum.prototype.copy = function (name) {
     copy._interp = deepCopy(this.interpolate());
 
     return copy;
-}
+};
 
 Spectrum.prototype.multiplyBy = function (other) {
     // multiplies this spectrum by other
     // invalidates previously calculated _points
     this._points = null;
     this.interpolate();
-    var oldMax = Math.max(...this._interp[1])
+    var oldMax = Math.max(...this._interp[1]);
     if (other instanceof Spectrum) {
         var m = other.interpolate()[1];
         for (var i = 0; i < this._interp[1].length; i ++) {
@@ -167,7 +167,7 @@ Spectrum.prototype.multiplyBy = function (other) {
             this._interp[1][i] *= other;
         }
     }
-}
+};
 
 
 Spectrum.prototype.peakwl = function () {
@@ -176,7 +176,7 @@ Spectrum.prototype.peakwl = function () {
         var peakidx = this._interp[1].indexOf(Math.max(...this._interp[1]));
         return this._interp[0][peakidx];
     }
-}
+};
 
 
 Spectrum.prototype.points = function () {
@@ -189,7 +189,7 @@ Spectrum.prototype.points = function () {
             return {x: v, y:data[1][i]};
         })
     }
-}
+};
 
 
 //Prototype sets object for staroing exciation and emission sets.
@@ -207,7 +207,7 @@ FilterSet.prototype.addFilter = function(filter, mode) {
     //filter is the filter name,
     //mode is "r" or "t" for reflection or transmission
     this.push({"filter":filter, "mode":mode});
-}
+};
 
 FilterSet.prototype.removeFilter = function(filter){
     var filternum = this.findIndex(function(element){
@@ -219,7 +219,7 @@ FilterSet.prototype.removeFilter = function(filter){
     if (filternum > -1){
         delete this[filternum];
     }
-}
+};
 
 FilterSet.prototype.changeMode = function(filter,mode){
     var filternum = this.findIndex(function(element){
@@ -231,7 +231,7 @@ FilterSet.prototype.changeMode = function(filter,mode){
     if (filternum > -1){
         this[filternum].mode = mode;
     }
-}
+};
 
 
 FilterSet.prototype.doEfficiencyCalc = function () {
@@ -247,8 +247,8 @@ FilterSet.prototype.doEfficiencyCalc = function () {
         }
     });
     this.transmission=calcSpectra.area()/initArea;
-    this.spectrum=calcSpectra
-}
+    this.spectrum=calcSpectra;
+};
 
 
 FilterSet.prototype.efficiency = function( ){
@@ -265,7 +265,7 @@ FilterSet.prototype.efficiency = function( ){
     }
     // When all the data is ready, do the calculation.
     $.when.apply(null, defer).then( () => this.doEfficiencyCalc() );
-}
+};
 
 // calculate the excitation, emission and brightness of a config.
 function calcEffAndBright(exset,emset) {
@@ -275,13 +275,13 @@ function calcEffAndBright(exset,emset) {
     var e_eff,t_eff,bright;
     //Excitation efficiency
     if (exset.length > 0) {
-        exset.efficiency()
+        exset.efficiency();
         e_eff = exset.transmission;
         SPECTRA["excitation"] = exset.spectrum.copy();
         //test if we have a dye selected, and it has an excitation spectra
         //if so multiply excitation spectra by this.
         if(emset[0].filter && SPECTRA[emset[0].filter + EXSUFFIX]) {
-            exset.spectrum.multiplyBy(SPECTRA[emset[0].filter + EXSUFFIX])
+            exset.spectrum.multiplyBy(SPECTRA[emset[0].filter + EXSUFFIX]);
             e_eff = e_eff * (exset.spectrum.area()/SPECTRA["excitation"].area());
         }
     }
@@ -293,29 +293,29 @@ function calcEffAndBright(exset,emset) {
     }
     //calculate relative brightness compared to alexa-448 at 100% excitation.
     // mulitple by 10 to give resasonable range of values.
-    var dye = emset[0].filter
+    var dye = emset[0].filter;
     if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
         bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
                    ALEXABRIGHT) * 10.0;
     }
     return ({e_eff,t_eff,bright});
-}
+};
 
 
 //Function to try all possible dyes and optimise which is "best"
 function optimiseDyes() {
     //First load all the dyes prior to calling the dye optimisation code.
-    var dyes=[]
-    $( "#dyes .selectable").each(function() {dyes.push($(this).data().key)});
+    var dyes=[];
+    $( "#dyes .selectable").each(function() {dyes.push($(this).data().key);});
 
     // Fetch all dyes with concurrent calls.
     var defer = [];
-    for (dye of dyes) {
+    for (var dye of dyes) {
         defer.push(SPECTRA[dye].fetch());
     }
     // When all the data is ready call the optimise dyes
-    $.when.apply(null, defer).then(function(){processAllDyes(dyes)});
-}
+    $.when.apply(null, defer).then(function(){processAllDyes(dyes);});
+};
 
 
 // === ServerSpectrum - spectrum with data from server === //
@@ -335,18 +335,18 @@ ServerSpectrum.prototype.fetch = function ( ){
         $.proxy(function(resp){
             // Parse csv.
             var csv = resp.split("\n");
-            var wls = [] // wavelength
-            var val0s = [] // value0
-            var val1s = [] // aux. value
+            var wls = []; // wavelength
+            var val0s = []; // value0
+            var val1s = []; // aux. value
             for (let [index, line] of csv.entries()) {
-                let strings = line.split(FLOATMATCH)
-                let sepstrings = strings.filter((el, i, arr) => i%2 === 0)
+                let strings = line.split(FLOATMATCH);
+                let sepstrings = strings.filter((el, i, arr) => i%2 === 0);
                 // Skip header lines.
                 if(!sepstrings.every( v => v === "" || (/^[\s,;:]+$/).test(v))){
                     // Match Qyield and Extcoeff values.
                     // this data gets added to the emission spectra as
                     // we dont know yet if this is 2 column or 3 column data.
-                    let strings = line.match(QYIELDMATCH)
+                    let strings = line.match(QYIELDMATCH);
                     if (strings){
                         this.qyield=strings[1]
                         continue;
