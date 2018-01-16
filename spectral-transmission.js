@@ -27,7 +27,7 @@ QYIELDMATCH = /[Qq]uantum [Yy]ield:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)
 // match an exctinction coefficient entry
 EXTCOEFFMATCH = /[Ee]xtinction [Cc]oefficient:\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)/;
 // Alexa-488 birghtness for relative brightness calculations
-var ALEXABRIGHT= 0.92*73000    
+var ALEXABRIGHT= 0.92*73000;
 // The set of active filters.
 var CHART = null;
 var SPECTRA = {};
@@ -36,7 +36,7 @@ var WLMIN = 300.0;
 var WLMAX = 800.0;
 var WLSTEP = 1.0;
 // Suffix for excitation spectra
-var EXSUFFIX = "_ex"
+var EXSUFFIX = "_ex";
 // How many top dyes to return
 var NUMTOPDYES = 3;
 
@@ -75,7 +75,7 @@ function Spectrum(name) {
     this.raw=null;          // raw data after fetch
     this._interp=null;      // cache for interpolated data
     this._points=null;      // cache for points as [{x: , y:}, ...]
-    this.qyield=null;       // quantum yield 
+    this.qyield=null;       // quantum yield
     this.extcoeff=null;     // extinction coefficent
 }
 
@@ -117,7 +117,7 @@ Spectrum.prototype.interpolate = function () {
 
 Spectrum.prototype.rescale = function() {
     // Find max. intensity in spectrum.
-    if (this.raw[1].reduce( (peak, val) => val > peak ? val : peak) > 10.) {
+    if (this.raw[1].reduce( (peak, val) => val > peak ? val : peak) > 10.0) {
         // Spectrum is probably in percent
         for (var i = 0; i < this.raw[1].length; i++) {
             this.raw[1][i] = this.raw[1][i] / 100;
@@ -196,7 +196,7 @@ Spectrum.prototype.points = function () {
 function FilterSet(){
     //transmission is the total transmission efficiency of the
     //set of filters
-    //spectrum is the resulting spectrum after the filter stack is applied 
+    //spectrum is the resulting spectrum after the filter stack is applied
     this.transmission = null;
     this.spectrum = null;
 }
@@ -211,25 +211,25 @@ FilterSet.prototype.addFilter = function(filter, mode) {
 
 FilterSet.prototype.removeFilter = function(filter){
     var filternum = this.findIndex(function(element){
-	if (element) {
-	    return (element.filter === filter);
-	}
+        if (element) {
+            return (element.filter === filter);
+        }
     });
-    
+
     if (filternum > -1){
-	delete this[filternum];
+        delete this[filternum];
     }
 }
 
 FilterSet.prototype.changeMode = function(filter,mode){
     var filternum = this.findIndex(function(element){
-	if (element) {
-	    return (element.filter === filter);
-	}
+        if (element) {
+            return (element.filter === filter);
+        }
     });
-    
+
     if (filternum > -1){
-	this[filternum].mode = mode;
+        this[filternum].mode = mode;
     }
 }
 
@@ -256,18 +256,18 @@ FilterSet.prototype.efficiency = function( ){
     // Fetch all data with concurrent calls.
     var defer = [];
     for (var f of this) {
-	//RemoveFilter leaves an undfined entry so skip these
-	if(f) {
-	    if(f.filter) {
-		defer.push(SPECTRA[f.filter].fetch());
-	    }
-	}
+        //RemoveFilter leaves an undfined entry so skip these
+        if(f) {
+            if(f.filter) {
+                defer.push(SPECTRA[f.filter].fetch());
+            }
+        }
     }
     // When all the data is ready, do the calculation.
     $.when.apply(null, defer).then( () => this.doEfficiencyCalc() );
 }
 
-// calculate the excitation, emission and brightness of a config. 
+// calculate the excitation, emission and brightness of a config.
 function calcEffAndBright(exset,emset) {
     //populate the tramsssion and spectrum elements of the filter set
     //in emset first element must be a dye
@@ -275,28 +275,28 @@ function calcEffAndBright(exset,emset) {
     var e_eff,t_eff,bright;
     //Excitation efficiency
     if (exset.length > 0) {
-	exset.efficiency()
-	e_eff = exset.transmission;
-	SPECTRA["excitation"] = exset.spectrum.copy();
-	//test if we have a dye selected, and it has an excitation spectra
-	//if so multiply excitation spectra by this. 
-	if(emset[0].filter && SPECTRA[emset[0].filter + EXSUFFIX]) {
-	    exset.spectrum.multiplyBy(SPECTRA[emset[0].filter + EXSUFFIX])
-	    e_eff = e_eff * (exset.spectrum.area()/SPECTRA["excitation"].area());
-	}
+        exset.efficiency()
+        e_eff = exset.transmission;
+        SPECTRA["excitation"] = exset.spectrum.copy();
+        //test if we have a dye selected, and it has an excitation spectra
+        //if so multiply excitation spectra by this.
+        if(emset[0].filter && SPECTRA[emset[0].filter + EXSUFFIX]) {
+            exset.spectrum.multiplyBy(SPECTRA[emset[0].filter + EXSUFFIX])
+            e_eff = e_eff * (exset.spectrum.area()/SPECTRA["excitation"].area());
+        }
     }
     //calculate emission efficiency and spectra.
     if (emset.length > 0) {
-	emset.efficiency();
-	t_eff = emset.transmission;
-	SPECTRA["transmitted"]=emset.spectrum;
+        emset.efficiency();
+        t_eff = emset.transmission;
+        SPECTRA["transmitted"]=emset.spectrum;
     }
     //calculate relative brightness compared to alexa-448 at 100% excitation.
     // mulitple by 10 to give resasonable range of values.
     var dye = emset[0].filter
     if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
         bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
-		  ALEXABRIGHT) * 10.0;
+                   ALEXABRIGHT) * 10.0;
     }
     return ({e_eff,t_eff,bright});
 }
