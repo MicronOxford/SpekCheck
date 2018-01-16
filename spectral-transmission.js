@@ -389,7 +389,7 @@ ServerSpectrum.prototype.fetch = function ( ){
         d.resolve();
     }
     return d;
-}
+};
 
 // === End of prototype definitions === //
 
@@ -655,7 +655,7 @@ function parseSets( txt ) {
         } else {
             var csv = emAndEx[0].toString().split(/[\t,:;]/);
             var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
-                (_) => {return{filter:_[0], mode:_[1]||"t"}});
+                (_) => {return{filter:_[0], mode:_[1]||"t"};});
             var exs=emAndEx.slice(1).toString().split(/[\t,:;]/);
             var exFilters=exs.slice(0).map( (_) => _.trim().split(/ +/)).map(
                 (_) => {return{filter:_[0], mode:_[1]||"t"};});
@@ -762,7 +762,7 @@ function selectDye(event, key) {
     }
     else
     {
-        if (EMSET.length == 0) {
+        if (EMSET.length === 0) {
             EMSET.push({"filter":key, "mode":null});
         } else {
             EMSET[0].filter = key;
@@ -787,19 +787,19 @@ function processAllDyes(dyes){
     }
     //sort loist for best excitation
     var bestEx = efficiency.sort(function(a,b){
-        if (a[1].e_eff === undefined) {return (1);};
-        if (b[1].e_eff === undefined) {return (-1);};
-        return (b[1].e_eff-a[1].e_eff)}).slice(0,3);
+        if (a[1].e_eff === undefined) {return (1);}
+        if (b[1].e_eff === undefined) {return (-1);}
+        return (b[1].e_eff-a[1].e_eff);}).slice(0,3);
     //sort list for best emmission
     var bestEm = efficiency.sort(function(a,b){
         if (a[1].t_eff === undefined) {return (1);}
         if (b[1].t_eff === undefined) {return (-1);}
-        return (b[1].t_eff-a[1].t_eff)}).slice(0,3);
+        return (b[1].t_eff-a[1].t_eff);}).slice(0,3);
     //sort list for best brightness
     var bestBright = efficiency.sort(function(a,b){
         if (a[1].bright === undefined) {return (1);}
         if (b[1].bright === undefined) {return (-1);}
-        return (b[1].bright-a[1].bright)}).slice(0,3);
+        return (b[1].bright-a[1].bright);}).slice(0,3);
     //construct output dialog string.
     var bestExString = "Best Excitation:\t ";
     var bestEmString = "\nBest Emission:\t ";
@@ -833,7 +833,7 @@ function selectExcitation(event, key) {
     {
         $("#excitation .selected").removeClass("selected");
         $(s).addClass("selected");
-        if (EXSET.length == 0) {
+        if (EXSET.length === 0) {
             EXSET.push({"filter":key, "mode":null});
         } else {
             EXSET[0].filter = key;
@@ -864,35 +864,35 @@ function selectFilterSet(event, set) {
         EMSET.splice(0);
         EXSET.splice(0);
         if (set.dye) {
-            if (EMSET.length == 0) {
+            if (EMSET.length === 0) {
                 EMSET.push({"filter":set.dye, "mode":null});
             } else {
                 EMSET[0].filter = set.dye;
                 }
             $("#dyes .selected").removeClass("selected");
             $("#dyes .selectable").filter(function() {
-                return $(this).data("key") == set.dye}).addClass("selected")
+                return $(this).data("key") == set.dye;}).addClass("selected");
         } else if (EMSET.length > 0) {
             //EMSET[0] must be the dye, otherwise it is null.
             EMSET[0].filter = null;
         }
         if (set.exsource) {
-            if( EXSET.length == 0) {
+            if( EXSET.length === 0) {
                 EXSET.push({"filter":set.exsource, "mode":null});
             } else {
                 EXSET[0].filter=set.exsource;
             }
             $("#excitation .selected").removeClass("selected");
             $("#excitation .selectable").filter(function() {
-                return $(this).data("key") == set.exsource}).addClass("selected")
+                return $(this).data("key") == set.exsource;}).addClass("selected");
         } else if (EXSET.length >0) {
             //EXSET[0] must be excitation source, else null.
             EXSET[0].filter = null;
         }
-        for (filter of set.filters) {
+        for (var filter of set.filters) {
             addFilterToSet(filter.filter, filter.mode);
         }
-        for (exFilter of set.exFilters) {
+        for (var exFilter of set.exFilters) {
             addExFilterToSet(exFilter.filter, exFilter.mode);
         }
     }
@@ -939,14 +939,14 @@ function preloadFilterSetsSearch() {
 
 //=== DOCUMENT READY===//
 $( document ).ready(function() {
-    $(".advanced").hide()
+    $(".advanced").hide();
     // Populate list of filter sets.
     $("<div>").insertBefore($("#sets")).html(
         $("<input>").attr("id", "searchSets").data("search",
                                                    "#sets").keyup(refineList));
     var div = $(`<div><label>CUSTOM</label></div>` );
     div.addClass("selectable");
-    div.click((_) => {selectFilterSet(_, "_adv_")});
+    div.click((_) => {selectFilterSet(_, "_adv_");});
     div.appendTo($("#sets"));
 
     div = $(`<div><label>EMPTY</label></div>` );
