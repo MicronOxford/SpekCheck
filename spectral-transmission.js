@@ -396,7 +396,7 @@ ServerSpectrum.prototype.fetch = function ( ){
 
 function wavelengthToHue(wl) {
     // Convert a wavelength to HSL-alpha string.
-    return Math.max(0., Math.min(300, 650-wl)) * 0.96;
+    return Math.max(0.0, Math.min(300, 650-wl)) * 0.96;
 }
 
 
@@ -408,7 +408,7 @@ function updatePlot() {
     var filterModes = [];
     var exFilters = [];
     var exFilterModes = [];
-    
+
     // Fetch configuration from UI.
     $( "#dyes .selected").each(function() {dye.push($(this).data().key)})
     $( "#excitation .selected").each(function() {excitation.push($(this).data().key)})
@@ -430,7 +430,7 @@ function updatePlot() {
         defer.push(SPECTRA[f].fetch());
     }
     for (var f of exFilters) {
-	defer.push(SPECTRA[f].fetch());
+        defer.push(SPECTRA[f].fetch());
     }
 
     // When all the data is ready, do the calculation and draw the plot.
@@ -492,7 +492,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     var e_eff = effBright.e_eff ;
     var t_eff = effBright.t_eff ;
     var bright = effBright.bright ;
-    
+
     var skeys = []; // all active keys (filters + dye)
     dye = $("#dyes .selected").data("key");
     if (dye) {
@@ -502,11 +502,11 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         }
     }
     if (excitation) {
-	if (exFilters.length >= 1) {
-	    skeys.push("excitation");
-	} else {
-	    skeys.push(excitation);
-	}
+        if (exFilters.length >= 1) {
+            skeys.push("excitation");
+        } else {
+            skeys.push(excitation);
+        }
     }
 
     skeys.push.apply(skeys, filters);
@@ -533,7 +533,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         switch (key) {
             case excitation:
                 bg = `hsla(${hue}, 100%, 50%, 1)`
-	        fg = `hsla(${hue}, 100%, 50%, 1)`
+                fg = `hsla(${hue}, 100%, 50%, 1)`
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
                 break
             case "excitation":
@@ -587,18 +587,18 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
     // // Update the excitation trace.
     if (excitation) {
-	if (exFilters.length >= 1) {
-	    var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0]
-    	    var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
-    	    extTrace.data = SPECTRA["excitation"].points();
-    	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
-	    extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
-	} else {
-	    var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0]
-    	    var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
-    	    extTrace.data = SPECTRA[excitation].points();
-    	    extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`
-	}
+        if (exFilters.length >= 1) {
+            var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0]
+            var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
+            extTrace.data = SPECTRA["excitation"].points();
+            extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
+            extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
+        } else {
+            var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0]
+            var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
+            extTrace.data = SPECTRA[excitation].points();
+            extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`
+        }
     }
     // if(excitation) {
     
