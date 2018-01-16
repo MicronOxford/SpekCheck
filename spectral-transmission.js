@@ -581,23 +581,23 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     }
 
     // Update the transmission trace.
-    var transTrace = CHART.data.datasets.filter( item => item.label == "transmitted")[0]
+    var transTrace = CHART.data.datasets.filter( item => item.label == "transmitted")[0];
     var hue = wavelengthToHue(SPECTRA["transmitted"].peakwl());
     transTrace.data = SPECTRA["transmitted"].points();
-    transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
+    transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
     // // Update the excitation trace.
     if (excitation) {
         if (exFilters.length >= 1) {
-            var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0]
+            var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0];
             var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
             extTrace.data = SPECTRA["excitation"].points();
-            extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
-            extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`
+            extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+            extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
         } else {
             var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0]
             var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
             extTrace.data = SPECTRA[excitation].points();
-            extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`
+            extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
         }
     }
     // if(excitation) {
@@ -635,14 +635,14 @@ function parseSources( sources )  {
             filters[name] = file;
         }
     }
-    return filters
+    return filters;
 }
 
 function parseSets( txt ) {
     // Parse pre-defined filter sets.
     var sets = [];
 
-    for (line of txt.split(/\n/)) {
+    for (var line of txt.split(/\n/)) {
         if (line.length <=1 || line.match(/^\s*(\/{2,2}|#|\/\*).*/)) {
             continue;
         }
@@ -651,7 +651,7 @@ function parseSets( txt ) {
             var csv = line.split(/[\t,:;]/);
             var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
                 (_) => {return{filter:_[0], mode:_[1]||"t"}});
-           var exFilters=[]
+            var exFilters=[];
         } else {
             var csv = emAndEx[0].toString().split(/[\t,:;]/);
             var filters = csv.slice(3).map( (_) => _.trim().split(/ +/)).map(
@@ -699,13 +699,13 @@ function dropExFilter( event, ui) {
 function addFilterToSet(filter, mode) {
     // Add a filter to the active filter set.
     var el = $(`<div><label>${filter}</label></div>`).addClass("activeFilter");
-    EMSET.addFilter(filter, mode)
-    mode = mode.toLowerCase()
+    EMSET.addFilter(filter, mode);
+    mode = mode.toLowerCase();
     el.data("mode", mode);
-    el.data("key", filter)
+    el.data("key", filter);
     var buttons = $( "<span></span>").appendTo(el);
     var modeBtn = $(`<button class="modeButton">${mode}</button>`).appendTo(buttons);
-    modeBtn.button()
+    modeBtn.button();
     modeBtn.click(function(){
         var newMode = {"t":"r", "r":"t"}[el.data("mode")];
         EMSET.changeMode(filter,newMode);
@@ -726,10 +726,10 @@ function addFilterToSet(filter, mode) {
 function addExFilterToSet(filter, mode) {
     // Add a filter to the active filter set.
     var exl = $(`<div><label>${filter}</label></div>`).addClass("activeExFilter");
-    EXSET.addFilter(filter, mode)
-    mode = mode.toLowerCase()
+    EXSET.addFilter(filter, mode);
+    mode = mode.toLowerCase();
     exl.data("mode", mode);
-    exl.data("key", filter)
+    exl.data("key", filter);
     var buttons = $( "<span></span>").appendTo(exl);
     var modeBtn = $(`<button class="modeButton">${mode}</button>`).appendTo(buttons);
     modeBtn.button()
@@ -754,8 +754,8 @@ EVT = null;
 
 function selectDye(event, key) {
     // Update on dye selection.
-    s = event.target.closest(".selectable")
-    cl = s.classList
+    s = event.target.closest(".selectable");
+    cl = s.classList;
     if( cl && cl.value.includes("selected")) {
         $(s).removeClass("selected");
         EMSET[0].filter = null;
@@ -765,7 +765,7 @@ function selectDye(event, key) {
         if (EMSET.length == 0) {
             EMSET.push({"filter":key, "mode":null});
         } else {
-            EMSET[0].filter = key
+            EMSET[0].filter = key;
         }
         $("#dyes .selected").removeClass("selected");
         $(s).addClass("selected");
@@ -778,7 +778,7 @@ function processAllDyes(dyes){
     var efficiency=[];
     var excitation;
     //save current dye so we can restore it at the end.
-    var savedDye = EMSET[0].filter
+    var savedDye = EMSET[0].filter;
     //loop through all dyes and use each in turn
     for (var dye of dyes) {
         EMSET[0].filter = dye;
