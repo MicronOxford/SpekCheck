@@ -1,4 +1,4 @@
-# spectral-transmission
+# SpekCheck
 Calculate the spectral transmission of dyes through possibly complex
 dichroic/filter series. 
 
