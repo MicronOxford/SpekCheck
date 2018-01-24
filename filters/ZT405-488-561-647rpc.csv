@@ -1,5 +1,6 @@
-Filter: ZT405/488/561/647rpc Chroma
-Wavelength,transmission
+Type: Filter
+Name: Chroma ZT405/488/561/647rpc
+wavelength,transmision
 300.00,9.5000001465451E-7
 301.00,9.5000001465451E-7
 302.00,0.00036217100569047
