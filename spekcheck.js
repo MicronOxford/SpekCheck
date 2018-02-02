@@ -829,7 +829,6 @@ function processAllDyes(dyes){
         bestBrightString = (bestBrightString + bestBright[i][0]+" - "+
                             (bestBright[i][1].bright).toFixed(2)+" ; ");
     }
-    //    console.log(bestEx, bestEm,bestBright)
     //display alert with optimised lists.
     alert(bestExString + bestEmString + bestBrightString);
     //Restore saved dye.
@@ -876,15 +875,12 @@ function selectFilterSet(event, set) {
         $(".activeExFilter").remove();
         $("#excitation .selected").removeClass("selected");
 	if(set.dye !== ""){
-	    console.log("reset dye");
             $("#dyes .selected").removeClass("selected");
 	}
 	//dont remove exisiting dye, will be updated later if defined in set
         EMSET.splice(1);
         EXSET.splice(0);
-	console.log(set)
         if (set.dye !== "") {
-	    console.log("set new dye = "+set.dye)
             if (EMSET.length === 0) {
                 EMSET.push({"filter":set.dye, "mode":null});
             } else {
