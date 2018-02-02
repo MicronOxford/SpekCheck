@@ -1,12 +1,12 @@
 // Name, Dye, filter mode, filter mode ...
 //Diamond CryoSIM
-CryoSIM Red, mCherry, 561-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-600-37 T
-CryoSIM mVenus, GFP, 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-544-24 T
-CryoSIM 515, GFP, 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-520-35 T
-CryoSIM DAPI, DAPI, 405-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-452-45 T
-CryoSIM Red2, mCherry, 561-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-605-70 T
-CryoSIM green, GFP, 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-525-50 T
-CryoSIM FarRed, Cy5, 647-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-655-lp T
+CryoSIM Red, , 561-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-600-37 T
+CryoSIM mVenus, , 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-544-24 T
+CryoSIM 515, , 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-520-35 T
+CryoSIM DAPI, , 405-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-452-45 T
+CryoSIM Red2, , 561-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-605-70 T
+CryoSIM green, , 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-525-50 T
+CryoSIM FarRed, , 647-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-655-lp T
 //OMX V3 Live
 OMXv3 Live-YFP, YFP,514-laser, R-0056 T, EM-550-49 T
 OMXv3 Live_RFP, mRFP,592-laser, R-0056 R, R-0048 T, R-0053 R, EM-642-80-m T
