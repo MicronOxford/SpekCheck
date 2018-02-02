@@ -274,19 +274,26 @@ function calcEffAndBright(exset,emset) {
     //in exset first element must be a light source
     var e_eff,t_eff,bright;
     //Excitation efficiency
-    if (exset.length > 0) {
+    if (exset[0] && exset[0].filter) {
+	console.log("exset eff")
         exset.efficiency();
         e_eff = exset.transmission;
         SPECTRA["excitation"] = exset.spectrum.copy();
         //test if we have a dye selected, and it has an excitation spectra
         //if so multiply excitation spectra by this.
-        if(emset[0].filter && SPECTRA[emset[0].filter + EXSUFFIX]) {
-            exset.spectrum.multiplyBy(SPECTRA[emset[0].filter + EXSUFFIX]);
-            e_eff = e_eff * (exset.spectrum.area()/SPECTRA["excitation"].area());
+	if(emset[0]){
+            if(emset[0].filter && SPECTRA[emset[0].filter + EXSUFFIX]) {
+		exset.spectrum.multiplyBy(SPECTRA[emset[0].filter + EXSUFFIX]);
+		e_eff = e_eff * (exset.spectrum.area()/SPECTRA["excitation"].area());
+	    }
+	    else {
+		e_eff = 0
+	    }
         }
     }
     //calculate emission efficiency and spectra.
-    if (emset.length > 0) {
+    if (emset[0] && emset[0].filter) {
+	console.log("emset eff")
         emset.efficiency();
         t_eff = emset.transmission;
         SPECTRA["transmitted"]=emset.spectrum;
