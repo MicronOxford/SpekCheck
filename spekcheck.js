@@ -295,6 +295,8 @@ function calcEffAndBright(exset,emset) {
         emset.efficiency();
         t_eff = emset.transmission;
         SPECTRA["transmitted"]=emset.spectrum;
+    } else {
+	SPECTRA["transmitted"]=null;
     }
     //calculate relative brightness compared to alexa-448 at 100% excitation.
     // mulitple by 10 to give resasonable range of values.
@@ -596,6 +598,9 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
 	var hue = wavelengthToHue(SPECTRA["transmitted"].peakwl());
 	transTrace.data = SPECTRA["transmitted"].points();
 	transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+    } else {
+	//if there is no transmitted trace then null the data
+	CHART.data.datasets.filter( item => item.label == "transmitted")[0].data=null
     }
     // // Update the excitation trace.
     if (excitation) {
