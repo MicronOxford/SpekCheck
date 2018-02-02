@@ -482,7 +482,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
             }
         });
         CHART.options.scales.xAxes[0].scaleLabel.display = true;
-        CHART.options.scales.xAxes[0].scaleLabel.labelString = "wavelength / nm";
+        CHART.options.scales.xAxes[0].scaleLabel.labelString = "Wavelength / nm";
         // Set chart height now, and on window resize.
         var resizeChart = () => {
             var frac = Math.floor(100*Math.min(
@@ -544,18 +544,21 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
                 break;
             case "excitation":
-                bg = `hsla(${hue}, 100%, 50%, 1)`;
-                fg = `hsla(${hue}, 100%, 50%, 1)`;
+ //               bg = `hsla(${hue}, 100%, 50%, 0.5)`;
+//	    fg = `rgba(0,0,0, 0.5)`;
+            //fg = `hsla(${hue}, 100%, 50%, 1)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
                 break;
             case dye:
                 bg = `hsla(${hue}, 100%, 50%, 0.2)`;
-                fg = `rgba(0, 0, 255, 0.5)`;
+                fg = `hsla(${hue}, 100%, 50%, 1)`;
+	    //`rgba(0, 0, 255, 0.5)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
                 break;
             case dye + EXSUFFIX:
                 bg = `hsla(${hue}, 100%, 50%, 0.2)`;
-                fg = `rgba(255, 0, 0, 0.5)`;
+                fg = `hsla(${hue}, 100%, 50%, 1)`;
+//                fg = `rgba(255, 0, 0, 0.5)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
                 break;
             default:
@@ -601,26 +604,30 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
 	    var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
 	    extTrace.data = SPECTRA["excitation"].points();
 	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-	    extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    extTrace.borderColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    //`hsla(${hue}, 100%, 50%, 0.8)`;
         } else {
 	    var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
 	    var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
 	    extTrace.data = SPECTRA[excitation].points();
-	    extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
+	    extTrace.borderdColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    //`hsla(${hue}, 100%, 50%, 0.8)`;
+//	    extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
         }
     }
     
     if (t_eff != null && e_eff != null && bright != null) {
        CHART.options.title = {display: true,
-                               text: "Efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%" + ", brightness " + bright.toFixed(2),
+                               text: EMSET[0].filter +" efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%" + ", brightness " + bright.toFixed(2),
                                fontSize: 24};
     } else if (t_eff != null && e_eff != null) {
         CHART.options.title = {display: true,
-                               text: "Efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%",
+                               text: EMSET[0].filter +" efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%",
                                fontSize: 24};
     } else if (t_eff != null) {
         CHART.options.title = {display: true,
-                               text: "Efficiency:  " + (100*t_eff).toFixed(1) + "%",
+                               text: EMSET[0].filter +" efficiency:  " + (100*t_eff).toFixed(1) + "%",
                                fontSize: 24};
     } else {
         CHART.options.title = {display: false,
