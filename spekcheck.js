@@ -889,7 +889,9 @@ function selectFilterSet(event, set) {
             $("#dyes .selected").removeClass("selected");
             $("#dyes .selectable").filter(function() {
                 return $(this).data("key") == set.dye;}).addClass("selected");
-        }
+        } else if (EMSET.length == 0) {
+	    EMSET.push({"filter":null, "mode":null});
+	}
 	//else if (EMSET.length > 0) {
          //   //EMSET[0] must be the dye, otherwise it is null.
          //   EMSET[0].filter = null;
