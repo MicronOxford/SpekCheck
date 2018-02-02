@@ -12,6 +12,7 @@
     <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="Chart.js"></script>
     <script src="spekcheck.js"></script>
+    <div><center><big> SpekCheck: Filterset optimisation</big></center></div>
     <div class="container" title="Click to load a filter set.">
         <label>FILTER SETS</label>
         <div id="sets"></div>
@@ -44,6 +45,11 @@
         <label>ACTIVE EX FILTERS</label>
         <div id=exset></div>
     </div>
-    <div><canvas id=chart></canvas></div>
+    <div>
+      <div><canvas id=chart style="position:relative;z-index:20"></canvas></div>
+      <div><img src="colour-scale-cropped-2.gif" width=100% height=2%
+	   style="position:absolute ; bottom:0;z-index=:0;"
+	   alt="Colour scale"></div>
+    </div>
 </body>
 </html>
