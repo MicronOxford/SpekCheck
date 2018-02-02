@@ -293,10 +293,12 @@ function calcEffAndBright(exset,emset) {
     }
     //calculate relative brightness compared to alexa-448 at 100% excitation.
     // mulitple by 10 to give resasonable range of values.
-    var dye = emset[0].filter;
-    if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
+    if (emset.length > 0) {
+	var dye = emset[0].filter;
+	if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
         bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
-                   ALEXABRIGHT) * 10.0;
+                  ALEXABRIGHT) * 10.0;
+	}
     }
     return ({e_eff,t_eff,bright});
 }
@@ -582,28 +584,27 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
 
     // Update the transmission trace.
     var transTrace = CHART.data.datasets.filter( item => item.label == "transmitted")[0];
-    if(transTrace.length > 0){
+    if(SPECTRA["transmitted"]) {
 	var hue = wavelengthToHue(SPECTRA["transmitted"].peakwl());
 	transTrace.data = SPECTRA["transmitted"].points();
 	transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-	// // Update the excitation trace.
-	if (excitation) {
-            if (exFilters.length >= 1) {
-		var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0];
-		var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
-		extTrace.data = SPECTRA["excitation"].points();
-		extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-		extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-            } else {
-		var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
-		var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
-		extTrace.data = SPECTRA[excitation].points();
-		extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
-            }
-	}
     }
-    // if(excitation) {
-
+    // // Update the excitation trace.
+    if (excitation) {
+        if (exFilters.length >= 1) {
+	    var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0];
+	    var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
+	    extTrace.data = SPECTRA["excitation"].points();
+	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+        } else {
+	    var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
+	    var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
+	    extTrace.data = SPECTRA[excitation].points();
+	    extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
+        }
+    }
+    
     if (t_eff != null && e_eff != null && bright != null) {
        CHART.options.title = {display: true,
                                text: "Efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%" + ", brightness " + bright.toFixed(2),
