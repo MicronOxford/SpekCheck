@@ -970,6 +970,7 @@ $( document ).ready(function() {
             $( "#sets" ).append(divs);
             }
         }
+    //add search critera to filter sets if in URL	
     ).then( () =>  {preloadFilterSetsSearch();});
 
     // Populate list of filters, and store SPECTRA key on the div.data
@@ -1051,7 +1052,8 @@ $( document ).ready(function() {
             $( "#dyes" ).append(divs);
         }
     });
-    //set search field if in URL
+    //finally update plot to get an empty grid.
+    updatePlot();
 });
 
 //Global containers for exciation and emission sets.
