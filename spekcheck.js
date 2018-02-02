@@ -275,7 +275,6 @@ function calcEffAndBright(exset,emset) {
     var e_eff,t_eff,bright;
     //Excitation efficiency
     if (exset[0] && exset[0].filter) {
-	console.log("exset eff")
         exset.efficiency();
         e_eff = exset.transmission;
         SPECTRA["excitation"] = exset.spectrum.copy();
@@ -293,7 +292,6 @@ function calcEffAndBright(exset,emset) {
     }
     //calculate emission efficiency and spectra.
     if (emset[0] && emset[0].filter) {
-	console.log("emset eff")
         emset.efficiency();
         t_eff = emset.transmission;
         SPECTRA["transmitted"]=emset.spectrum;
@@ -870,10 +868,16 @@ function selectFilterSet(event, set) {
         $(".activeFilter").remove();
         $(".activeExFilter").remove();
         $("#excitation .selected").removeClass("selected");
-        $("#dyes .selected").removeClass("selected");
-        EMSET.splice(0);
+	if(set.dye !== ""){
+	    console.log("reset dye");
+            $("#dyes .selected").removeClass("selected");
+	}
+	//dont remove exisiting dye, will be updated later if defined in set
+        EMSET.splice(1);
         EXSET.splice(0);
-        if (set.dye) {
+	console.log(set)
+        if (set.dye !== "") {
+	    console.log("set new dye = "+set.dye)
             if (EMSET.length === 0) {
                 EMSET.push({"filter":set.dye, "mode":null});
             } else {
@@ -882,10 +886,11 @@ function selectFilterSet(event, set) {
             $("#dyes .selected").removeClass("selected");
             $("#dyes .selectable").filter(function() {
                 return $(this).data("key") == set.dye;}).addClass("selected");
-        } else if (EMSET.length > 0) {
-            //EMSET[0] must be the dye, otherwise it is null.
-            EMSET[0].filter = null;
         }
+	//else if (EMSET.length > 0) {
+         //   //EMSET[0] must be the dye, otherwise it is null.
+         //   EMSET[0].filter = null;
+        //}
         if (set.exsource) {
             if( EXSET.length === 0) {
                 EXSET.push({"filter":set.exsource, "mode":null});
