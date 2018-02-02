@@ -582,23 +582,25 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
 
     // Update the transmission trace.
     var transTrace = CHART.data.datasets.filter( item => item.label == "transmitted")[0];
-    var hue = wavelengthToHue(SPECTRA["transmitted"].peakwl());
-    transTrace.data = SPECTRA["transmitted"].points();
-    transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-    // // Update the excitation trace.
-    if (excitation) {
-        if (exFilters.length >= 1) {
-            var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0];
-            var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
-            extTrace.data = SPECTRA["excitation"].points();
-            extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-            extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-        } else {
-            var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
-            var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
-            extTrace.data = SPECTRA[excitation].points();
-            extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
-        }
+    if(transTrace.length > 0){
+	var hue = wavelengthToHue(SPECTRA["transmitted"].peakwl());
+	transTrace.data = SPECTRA["transmitted"].points();
+	transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	// // Update the excitation trace.
+	if (excitation) {
+            if (exFilters.length >= 1) {
+		var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0];
+		var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
+		extTrace.data = SPECTRA["excitation"].points();
+		extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+		extTrace.foregroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+            } else {
+		var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
+		var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
+		extTrace.data = SPECTRA[excitation].points();
+		extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
+            }
+	}
     }
     // if(excitation) {
 
