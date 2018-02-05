@@ -39,7 +39,7 @@ var WLSTEP = 1.0;
 var EXSUFFIX = "_ex";
 // How many top dyes to return
 var NUMTOPDYES = 3;
-
+var TEXTLENGTH = 15;
 /* Required page elements:
  * #sets    - a list of predefined filter sets
  * #fset    - the active filter set
@@ -987,7 +987,8 @@ $( document ).ready(function() {
         success: function ( resp ) {
             var divs = [];
             for (let set of parseSets(resp)) {
-                var div = $( `<div><label>${set.name}</label></div>` );
+                var div = $( `<div><label>${set.name.substring(0,TEXTLENGTH)}
+			     </label></div>` );
                 div.click((_) => {selectFilterSet(_, set);});
                 div.addClass("searchable");
                 div.addClass("selectable");
@@ -1011,7 +1012,8 @@ $( document ).ready(function() {
              var divs = [];
             $.each(filters, function(key, value) {
                 SPECTRA[key] = new ServerSpectrum(`filters/${value}`, key);
-                var div = $( `<div><label>${key}</label></div>`);
+                var div = $( `<div><label>${key.substring(0,TEXTLENGTH)}
+			     </label></div>`);
                 div.addClass( "filterSpec" );
                 div.addClass( "searchable" );
                 div.data("key", key);
@@ -1043,7 +1045,8 @@ $( document ).ready(function() {
              var excitations = parseSources(data);
              var divs = [];
             $.each(excitations, function(key, value) {
-                var div = $(`<div><label>${key}</label></div>`);
+                var div = $(`<div><label>${key.substring(0,TEXTLENGTH)}
+			    </label></div>`);
                 SPECTRA[key] = new ServerSpectrum(`excitation/${value}`, key);
                 div.data("key", key);
                 div.addClass("searchable");
@@ -1067,7 +1070,8 @@ $( document ).ready(function() {
              var dyes = parseSources(data);
              var divs = [];
             $.each(dyes, function(key, value) {
-                var div = $(`<div><label>${key}</label></div>`);
+                var div = $(`<div><label>${key.substring(0,TEXTLENGTH)}
+			    </label></div>`);
                 SPECTRA[key] = new ServerSpectrum(`dyes/${value}`, key);
                 div.data("key", key);
                 div.addClass("searchable");
