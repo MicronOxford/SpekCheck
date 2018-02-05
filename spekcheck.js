@@ -116,11 +116,10 @@ Spectrum.prototype.interpolate = function () {
 };
 
 Spectrum.prototype.rescale = function() {
-    // Find max. intensity in spectrum.
-    if (this.raw[1].reduce( (peak, val) => val > peak ? val : peak) > 10.0) {
+    if (Math.max(...this.raw[1]) > 10.0) {
         // Spectrum is probably in percent
         for (var i = 0; i < this.raw[1].length; i++) {
-            this.raw[1][i] = this.raw[1][i] / 100;
+            this.raw[1][i] /= 100;
         }
     }
 };
