@@ -48,10 +48,8 @@ DVelite-CYmC mCherry, mCherry, lumencor-mCherry, DV-SSI-C-YFP-mCh T, DV-EM-mCher
 DVelite-CYmC-CFP, CFP, lumencor-CFP, DV-SSI-C-YFP-mCh T, DV-EM-CFP T :: DV-SSI-C-YFP-mCh R
 DVelite-CYmC-YFP, YFP, lumencor-YFP, DV-SSI-C-YFP-mCh T, DV-EM-YFP T :: DV-SSI-C-YFP-mCh R
 //NanoImager
-NanoImager Ch1f1, Alexa-546, 532-laser , NI-EX-dichroic T, NI-EM-splitter R, NI-ch1f1 T:: NI-EX-dichroic R
-NanoImager Ch1f2, Alexa-546, 532-laser , NI-EX-dichroic T, NI-EM-splitter R, NI-ch1f2 T:: NI-EX-dichroic R
-NanoImager Ch2f1, Alexa-647, 647-laser , NI-EX-dichroic T, NI-EM-splitter T, NI-ch2f1 T:: NI-EX-dichroic R
-NanoImager Ch2f2, Alexa-647, 647-laser , NI-EX-dichroic T, NI-EM-splitter T, NI-ch2f1 T:: NI-EX-dichroic R
+NanoImager Ch1, Alexa-546, 532-laser , NI-EX-dichroic T, NI-EM-splitter R, NI-ch1f1 T, NI-ch1f2 T:: NI-EX-dichroic R
+NanoImager Ch2, Alexa-647, 647-laser , NI-EX-dichroic T, NI-EM-splitter T, NI-ch2f1 T, NI-ch2f2 T:: NI-EX-dichroic R
 //LSM 880 biochem-upright no dichroics as yet
 LSM880-DAPI-Alexa488 DAPI, DAPI, 405-laser, BP420-480_BP495-550 T
 LSM880-DAPI-Alexa488 Alex488, Alexa-488, 488-laser, BP420-480_BP495-550 T
