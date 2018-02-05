@@ -554,6 +554,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
             case dye:
                 bg = `hsla(${hue}, 100%, 50%, 0.2)`;
                 fg = `hsla(${hue}, 100%, 50%, 1)`;
+	        key=key+"_em"
 	    //`rgba(0, 0, 255, 0.5)`;
                 var addToChart = x => CHART.data.datasets.splice(1, 0, x);
                 break;
