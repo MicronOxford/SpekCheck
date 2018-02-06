@@ -624,15 +624,15 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     
     if (t_eff != null && e_eff != null && bright != null) {
        CHART.options.title = {display: true,
-                               text: EMSET[0].filter +" efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%" + ", brightness " + bright.toFixed(2),
+                               text: EMSET[0].filter +" efficiency: ex=" + (100*e_eff).toFixed(1) + "%, em=" + (100*t_eff).toFixed(1) + "%" + ", brightness=" + bright.toFixed(2),
                                fontSize: 24};
     } else if (t_eff != null && e_eff != null) {
         CHART.options.title = {display: true,
-                               text: EMSET[0].filter +" efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%",
+                               text: EMSET[0].filter +" efficiency: ex=" + (100*e_eff).toFixed(1) + "%, em=" + (100*t_eff).toFixed(1) + "%",
                                fontSize: 24};
     } else if (t_eff != null) {
         CHART.options.title = {display: true,
-                               text: EMSET[0].filter +" efficiency:  " + (100*t_eff).toFixed(1) + "%",
+                               text: EMSET[0].filter +" efficiency:  em=" + (100*t_eff).toFixed(1) + "%",
                                fontSize: 24};
     } else {
         CHART.options.title = {display: false,
