@@ -46,3 +46,12 @@ label {
 label {
     display: inline-block;
 }
+
+.button {
+    background-color: gray; /* Gray*/
+    text-align: center;
+    padding: 5px;
+    border-radius: 8px;
+    margin: 10px;
+    color: white;
+}
