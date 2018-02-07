@@ -895,9 +895,13 @@ function selectFilterSet(event, set) {
             $("#dyes .selected").removeClass("selected");
             $("#dyes .selectable").filter(function() {
                 return $(this).data("key") == set.dye;}).addClass("selected");
-        } else if (EMSET.length == 0) {
+	    $("#dyes").scrollTop($("#dyes").scrollTop()+
+				 $("#dyes .selected").offset().top-
+				 $("#dyes").offset().top);
+	} else if (EMSET.length == 0) {
 	    EMSET.push({"filter":null, "mode":null});
 	}
+         
 	//else if (EMSET.length > 0) {
          //   //EMSET[0] must be the dye, otherwise it is null.
          //   EMSET[0].filter = null;
@@ -911,6 +915,9 @@ function selectFilterSet(event, set) {
             $("#excitation .selected").removeClass("selected");
             $("#excitation .selectable").filter(function() {
                 return $(this).data("key") == set.exsource;}).addClass("selected");
+	    $("#excitation").scrollTop($("#excitation").scrollTop()+
+				       $("#excitation .selected").offset().top-
+				       $("#excitation").offset().top);
         } else if (EXSET.length >0) {
             //EXSET[0] must be excitation source, else null.
             EXSET[0].filter = null;
