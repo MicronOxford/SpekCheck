@@ -580,7 +580,27 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         });
     }
 
+    // // Update the excitation trace.
+    if (excitation) {
+        if (exFilters.length >= 1) {
+	    var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0];
+	    var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
+	    extTrace.data = SPECTRA["excitation"].points();
+	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    extTrace.borderColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    //`hsla(${hue}, 100%, 50%, 0.8)`;
+        } else {
+	    var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
+	    var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
+	    extTrace.data = SPECTRA[excitation].points();
+	    extTrace.borderdColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    //`hsla(${hue}, 100%, 50%, 0.8)`;
+//	    extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
+        }
+    }
 
+    
     // Fill traces according to transmission/reflection
     for (var i=0; i < CHART.data.datasets.length; i++) {
         var idx = filters.indexOf(CHART.data.datasets[i].label);
@@ -601,25 +621,6 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
     } else {
 	//if there is no transmitted trace then null the data
 	CHART.data.datasets.filter( item => item.label == "transmitted")[0].data=null
-    }
-    // // Update the excitation trace.
-    if (excitation) {
-        if (exFilters.length >= 1) {
-	    var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0];
-	    var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
-	    extTrace.data = SPECTRA["excitation"].points();
-	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-	    extTrace.borderColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-	    //`hsla(${hue}, 100%, 50%, 0.8)`;
-        } else {
-	    var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
-	    var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
-	    extTrace.data = SPECTRA[excitation].points();
-	    extTrace.borderdColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-	    //`hsla(${hue}, 100%, 50%, 0.8)`;
-//	    extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
-        }
     }
     
     if (t_eff != null && e_eff != null && bright != null) {
