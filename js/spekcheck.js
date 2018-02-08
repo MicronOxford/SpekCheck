@@ -480,6 +480,7 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
             options:{
                 responsive: true,
                 maintainAspectRatio: false,
+                showLines: true,
             }
         });
         CHART.options.scales.xAxes[0].scaleLabel.display = true;
