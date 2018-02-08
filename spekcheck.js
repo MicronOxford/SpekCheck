@@ -580,7 +580,27 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
         });
     }
 
+    // // Update the excitation trace.
+    if (excitation) {
+        if (exFilters.length >= 1) {
+	    var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0];
+	    var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
+	    extTrace.data = SPECTRA["excitation"].points();
+	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    extTrace.borderColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    //`hsla(${hue}, 100%, 50%, 0.8)`;
+        } else {
+	    var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
+	    var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
+	    extTrace.data = SPECTRA[excitation].points();
+	    extTrace.borderdColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+	    //`hsla(${hue}, 100%, 50%, 0.8)`;
+//	    extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
+        }
+    }
 
+    
     // Fill traces according to transmission/reflection
     for (var i=0; i < CHART.data.datasets.length; i++) {
         var idx = filters.indexOf(CHART.data.datasets[i].label);
@@ -602,37 +622,18 @@ function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterMode
 	//if there is no transmitted trace then null the data
 	CHART.data.datasets.filter( item => item.label == "transmitted")[0].data=null
     }
-    // // Update the excitation trace.
-    if (excitation) {
-        if (exFilters.length >= 1) {
-	    var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0];
-	    var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
-	    extTrace.data = SPECTRA["excitation"].points();
-	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-	    extTrace.borderColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-	    //`hsla(${hue}, 100%, 50%, 0.8)`;
-        } else {
-	    var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
-	    var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
-	    extTrace.data = SPECTRA[excitation].points();
-	    extTrace.borderdColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-	    extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-	    //`hsla(${hue}, 100%, 50%, 0.8)`;
-//	    extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
-        }
-    }
     
     if (t_eff != null && e_eff != null && bright != null) {
        CHART.options.title = {display: true,
-                               text: EMSET[0].filter +" efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%" + ", brightness " + bright.toFixed(2),
+                               text: EMSET[0].filter +" efficiency: ex=" + (100*e_eff).toFixed(1) + "%, em=" + (100*t_eff).toFixed(1) + "%" + ", brightness=" + bright.toFixed(2),
                                fontSize: 24};
     } else if (t_eff != null && e_eff != null) {
         CHART.options.title = {display: true,
-                               text: EMSET[0].filter +" efficiency: ex " + (100*e_eff).toFixed(1) + "%, em " + (100*t_eff).toFixed(1) + "%",
+                               text: EMSET[0].filter +" efficiency: ex=" + (100*e_eff).toFixed(1) + "%, em=" + (100*t_eff).toFixed(1) + "%",
                                fontSize: 24};
     } else if (t_eff != null) {
         CHART.options.title = {display: true,
-                               text: EMSET[0].filter +" efficiency:  " + (100*t_eff).toFixed(1) + "%",
+                               text: EMSET[0].filter +" efficiency:  em=" + (100*t_eff).toFixed(1) + "%",
                                fontSize: 24};
     } else {
         CHART.options.title = {display: false,
@@ -894,9 +895,13 @@ function selectFilterSet(event, set) {
             $("#dyes .selected").removeClass("selected");
             $("#dyes .selectable").filter(function() {
                 return $(this).data("key") == set.dye;}).addClass("selected");
-        } else if (EMSET.length == 0) {
+	    $("#dyes").scrollTop($("#dyes").scrollTop()+
+				 $("#dyes .selected").offset().top-
+				 $("#dyes").offset().top);
+	} else if (EMSET.length == 0) {
 	    EMSET.push({"filter":null, "mode":null});
 	}
+         
 	//else if (EMSET.length > 0) {
          //   //EMSET[0] must be the dye, otherwise it is null.
          //   EMSET[0].filter = null;
@@ -910,6 +915,9 @@ function selectFilterSet(event, set) {
             $("#excitation .selected").removeClass("selected");
             $("#excitation .selectable").filter(function() {
                 return $(this).data("key") == set.exsource;}).addClass("selected");
+	    $("#excitation").scrollTop($("#excitation").scrollTop()+
+				       $("#excitation .selected").offset().top-
+				       $("#excitation").offset().top);
         } else if (EXSET.length >0) {
             //EXSET[0] must be excitation source, else null.
             EXSET[0].filter = null;
