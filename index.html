@@ -9,16 +9,16 @@
     <meta name="description" content="Spectral visualisation and optimisation tool for fluorescence microscopy">
     <meta name="keywords" content="microscopy, spectral transmission, filter sets, dyes">
 
-    <link rel="stylesheet" type="text/css" href="spekcheck.css"/>
+    <link rel="stylesheet" type="text/css" href="css/spekcheck.css"/>
     <link rel="icon" type="image/x-icon" href="favicon.ico"/>
 
     <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <script src="Chart.js"></script>
-    <script src="spekcheck.js"></script>
+    <script src="js/3rd-party/Chart.js"></script>
+    <script src="js/spekcheck.js"></script>
 </head>
 <body>
-    <div> <center> <img src="SPEKcheck-logo.gif" width=25%
+    <div> <center> <img src="images/SPEKcheck-logo.gif" width=25%
                         alt="SPEKcheck logo" style="border: 2px"></center>
     </div>
     <div class="container" title="Click to load a filter set.">
@@ -54,7 +54,7 @@
     </div>
     <div>
       <div><canvas id=chart style="position:relative;z-index:20"></canvas></div>
-      <div><img src="colour-scale-cropped-2.gif" width=100% height=2%
+      <div><img src="images/colour-scale-cropped-2.gif" width=100% height=2%
            style="position:absolute ; bottom:0;z-index=:0;"
            alt="Colour scale"></div>
     </div>

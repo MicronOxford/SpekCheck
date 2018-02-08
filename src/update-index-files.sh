@@ -23,5 +23,5 @@
 # loop over dyes, filters and excitation directories
 for dir in dyes filters excitation; do
     #cd to directory, update index.html
-    (cd $dir; ls -1 > index.html; echo $dir) ;
+    (cd data/$dir; ls > index.html; echo $dir) ;
 done

@@ -988,7 +988,7 @@ $( document ).ready(function() {
     div.appendTo($("#sets"));
 
     $.ajax(
-        {url: "./sets",
+        {url: "../data/sets",
         data: "",
         dataType: "text",
         success: function ( resp ) {
@@ -1011,14 +1011,14 @@ $( document ).ready(function() {
     $("<div>").insertBefore($("#filters")).html(
         $("<input>").data("search", "#filters").keyup(refineList));
     $.ajax(
-        {url: "./filters",
+        {url: "../data/filters",
          data: "",
          dataType: "text",
          success: function( resp ) {
              var filters = parseSources(resp);
              var divs = [];
             $.each(filters, function(key, value) {
-                SPECTRA[key] = new ServerSpectrum(`filters/${value}`, key);
+                SPECTRA[key] = new ServerSpectrum(`data/filters/${value}`, key);
                 var div = $( `<div><label>${key.substring(0,TEXTLENGTH)}
                              </label></div>`);
                 div.addClass( "filterSpec" );
@@ -1045,7 +1045,7 @@ $( document ).ready(function() {
     $("<div>").insertBefore($("#excitation")).html(
         $("<input>").data("search", "#excitation").keyup(refineList));
     $.ajax(
-        {url: "./excitation",
+        {url: "../data/excitation",
          data: "",
          dataType: "text",
          success: function( data ) {
@@ -1054,7 +1054,7 @@ $( document ).ready(function() {
             $.each(excitations, function(key, value) {
                 var div = $(`<div><label>${key.substring(0,TEXTLENGTH)}
                             </label></div>`);
-                SPECTRA[key] = new ServerSpectrum(`excitation/${value}`, key);
+                SPECTRA[key] = new ServerSpectrum(`data/excitation/${value}`, key);
                 div.data("key", key);
                 div.addClass("searchable");
                 div.addClass("selectable");
@@ -1070,7 +1070,7 @@ $( document ).ready(function() {
     $("<div>").insertBefore($("#dyes")).html(
         $("<input>").data("search", "#dyes").keyup(refineList));
     $.ajax(
-        {url: "./dyes",
+        {url: "../data/dyes",
          data: "",
          dataType: "text",
          success: function( data ) {
@@ -1079,7 +1079,7 @@ $( document ).ready(function() {
             $.each(dyes, function(key, value) {
                 var div = $(`<div><label>${key.substring(0,TEXTLENGTH)}
                             </label></div>`);
-                SPECTRA[key] = new ServerSpectrum(`dyes/${value}`, key);
+                SPECTRA[key] = new ServerSpectrum(`data/dyes/${value}`, key);
                 div.data("key", key);
                 div.addClass("searchable");
                 div.addClass("selectable");
