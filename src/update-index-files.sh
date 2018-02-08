@@ -21,7 +21,8 @@
 #
 
 # loop over dyes, filters and excitation directories
-for dir in dyes filters excitation; do
-    #cd to directory, update index.html
-    (cd data/$dir; ls > index.html; echo $dir) ;
+for dirname in dyes filters excitation; do
+    dirpath=data/$dirname
+    ls $dirpath | sort | grep -v 'index.html' > "$dirpath/index.html"
+    echo "updated $dirname"
 done
