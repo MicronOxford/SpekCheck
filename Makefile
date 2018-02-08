@@ -13,6 +13,8 @@ help:
 	@echo "    serve [PORT=8000]    serve site at http://localhost:8000"
 	@echo "    update-index         update the data index files"
 
+FILES = \
+  images/visible-spectrum.png
 
 DTYPES = \
   dyes \
@@ -23,8 +25,11 @@ DATA_INDEX_FILES = \
   $(foreach dtype, $(DTYPES), \
             data/$(dtype)/index.html)
 
+images/visible-spectrum.png: src/create-spectrum.py
+	$(PYTHON) $^ $@
+
 update-index: $(DATA_INDEX_FILES)
 	src/update-index-files.sh
 
-serve:
+serve: $(FILES)
 	$(PYTHON) -m SimpleHTTPServer $(PORT)
