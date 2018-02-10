@@ -17,6 +17,123 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// var DataCollection = Backbone.Collection.extend({
+//     url: function() {
+//         console.log("foo");
+//     return this.document.url() + '/index.html';
+//   },
+//     parse: function(response) {
+//         console.log("foo");
+//         alert(response);
+//     return response.results;
+//   }
+// });
+
+var FilterModeEnum = Object.freeze({
+  'reflection': 'r',
+  'transmission': 't',
+});
+
+var Spectrum = Backbone.Model.extend({
+    // The wavelength attribute must exist.  All other attributes must
+    // be Arrays of the same length.
+    defaults: function() {
+        return {wavelength: new Array};
+    },
+
+    validate: function(attrs, options) {
+        if (attrs.wavelength instanceof Array)
+            return "No 'wavelength' property for spectrum data";
+        const numel = attrs.data.wavelength.length;
+        for (let array of Object.values(attrs))
+            if (! (array instanceof Array) || array.length != numel)
+                return "Spectrum arrays must all have the same length";
+    },
+});
+
+var Filter = Backbone.Model.extend({
+    defaults: function() {
+        return {
+            spectrum: new Spectrum({transmission: new Array}),
+            mode: FilterModeEnum.transmission;
+        };
+    },
+
+    validate: function(attrs, options) {
+        if (! attrs.spectrum.isValid)
+            return attrs.spectrum.validationError;
+        if (attrs.spectrum.transmission === undefined)
+            return "Missing 'transmission' property for spectrum data";
+        if (! FilterModeEnum.hasOwnProperty(attrs.mode))
+            return 'invalid filter mode';
+    },
+
+    changeMode: function() {
+        const new_mode = this.get('mode') === FilterModeEnum.transmission ?
+              FilterModeEnum.reflection : FilterModeEnum.transmission;
+        this.set({mode: new_mode});
+    },
+});
+
+var ExcitationSpectrum = Spectrum.extend({
+    defaults: function() {
+        const attrs = Spectrum.prototype.defaults.call(this);
+        attrs.data.intensity = new Array;
+        return attrs;
+    },
+
+    validate: function(attrs, options) {
+        const err = Spectrum.prototype.validate.call(this, attrs, options);
+        if (err !== undefined)
+            return err;
+        if (attrs.data.intensity === undefined)
+            return "Missing 'intensity' property for spectrum data";
+    },
+});
+
+var DyeSpectrum = Spectrum.extend({
+    defaults: function() {
+        const attrs = Spectrum.prototype.defaults.call(this);
+        attrs.data.absorption = new Array;
+        attrs.data.emission = new Array;
+        attrs.ext_coeff = 0.0;
+        attrs.q_yield = 0.0;
+        return attrs;
+    },
+
+    validate: function(attrs, options) {
+        const err = Spectrum.prototype.validate.call(this, attrs, options);
+        if (err !== undefined)
+            return err;
+        if (attrs.data.absorption === undefined)
+            return "Missing 'absorption' property for spectrum data";
+        if (attrs.data.emission === undefined)
+            return "Missing 'emission' property for spectrum data";
+        // Do not change the comparison logic, because by comparing
+        // for true, we are at the same type checking for the right
+        // type (e.g., 'undefined<0', 'undefined>0', or 'String>0'
+        // would return false
+        if (! (attrs.ext_coeff > 0))
+            return 'Extinction Coefficient not a positive number';
+        if (! (attrs.q_yield > 0))
+            return 'Quantum Yield not a positive number';
+    },
+});
+
+var OpticalSetup = Backbone.Model.extend({
+    defaults: function() {
+        const attrs = {
+            name: '', // ??
+            dye: new DyeSpectrum,
+            ex_source: new ExcitationSpectrum,
+            ex_filters: new Array,
+            em_filters: new Array,
+        };
+        return attrs;
+    },
+});
+
+
 // Extensions to strip from source filenames, and files to exclude.
 var FN_EXCLUDE = [".csv", ".Csv", "CSV", "index.html"];
 // regex strings
@@ -1093,6 +1210,7 @@ $( document ).ready(function() {
     //finally update plot to get an empty grid.
     updatePlot();
 });
+
 
 //Global containers for exciation and emission sets.
 var EXSET = new FilterSet();
