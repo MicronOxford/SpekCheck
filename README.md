@@ -27,3 +27,23 @@ Can easily be run locally by using a basic python based web server,
 "python -m SimpleHTTPServer", then connect to http://127.0.0.1:8000
 from a web browser. This works very well as all the processing is done
 on the client side in javascript.
+
+## Project requirements
+
+* Easy to use with local spectra files.  This was originally done by
+  making it simple to run the server locally from a git checkout.
+  However, this prevents a build step.  Instead, this is now made
+  possible by making it possible to import local files into the web
+  application.
+
+* Integration on other webpages.  Should be possible to add a view of
+  SpekCheck on another webpage with a selection of filter sets.  For
+  example, show the spectra on the DeltaVision or OMX pages of the
+  Micron website, with only the filter sets we have.
+
+* ECMAScript 6.  Because we need a minimal version to support, and at
+  the moment we're writing this, we already make use of ECMAScript 6
+  features.
+
+* Support Firefox and Chrome.  Again, we already do not support
+  Internet Explorer, so no point in going back.

@@ -23,6 +23,20 @@
 # loop over dyes, filters and excitation directories
 for dirname in dyes filters excitation; do
     dirpath=data/$dirname
-    ls $dirpath | sort | grep -v 'index.html' > "$dirpath/index.html"
+    jsonpath=data/$dirname.json
+    ## We should drop the index.html files since they are not needed
+    ## anymore.
+    ls $dirpath | sort | grep -v 'index.html' | grep -v 'index.json' \
+        > "$dirpath/index.html"
+    ## When removing the file extension, beware of files with dots on
+    ## it, such as 'Hamamatsu-Flash4.0v2.csv'
+    ls $dirpath | sort | grep -v 'index.html' | sed 's,.csv$,,' \
+        | awk 'BEGIN {print "["} \
+               {
+                 if (FNR != 1)
+                   printf ",\n"; \
+                 printf "\""$1"\""; \
+               } \
+               END {print "\n]"}' > "$jsonpath"
     echo "updated $dirname"
 done
