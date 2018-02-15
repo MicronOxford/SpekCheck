@@ -23,31 +23,67 @@
 let SpekCheck = {};
 
 
-SpekCheck.Spectra = Backbone.Model.extend({
-    // Spectra for anything, possibly multiple spectrum for same
-    // thing, associated with same wavelength.  For example, the
-    // spectra for a dye would be:
-    //
-    //   {
-    //     wavelength: [wavelengths (Float)],
-    //     data: [
-    //       [excitation spectra (Float)],
-    //       [emission spectra (Float)],
-    //     ],
-    //   },
+SpekCheck.Spectrum = Backbone.Model.extend({
     defaults: {
         wavelength: [],
-        data: [], // an array with one array of floats per spectrum
+        data: [],
     },
 
     validate: function(attrs, options) {
         if (! attrs.wavelength instanceof Array)
             return "No 'wavelength' property for spectrum data";
+        if (! attrs.data instanceof Array)
+            return "No 'data' property for spectrum data";
+        if (wavelength.length !== data.length)
+            return "data and wavelength arrays must have the same length";
+    },
 
-        const numel = attrs.wavelength.length;
-        for (let spectrum of attrs.data)
-            if (spectrum.length !== numel)
-                return "Spectrum arrays must all have the same length";
+    area: function() {
+        // Return the area of the spectrum.
+        // Clamps negative values to zero.
+        var w;
+        var v;
+        [w,v] = this.interpolate();
+        const area = 0.0;
+        for (let i=1; i < w.length; i++)
+            area += 0.5 * (Math.max(0, v[i]) + Math.max(0, v[i-1]))*(w[i] - w[i-1]);
+
+        return area;
+    },
+
+    interpolate: function() {
+    },
+
+    multiplyBy: function(other) {
+        // multiplies this spectrum by other
+        // invalidates previously calculated _points
+        this._points = null;
+        this.interpolate();
+        var oldMax = Math.max(...this._interp[1]);
+        if (other instanceof Spectrum) {
+            var m = other.interpolate()[1];
+            for (var i = 0; i < this._interp[1].length; i ++) {
+                this._interp[1][i] *= m[i];
+            }
+        } else if (Array.isArray(other)) {
+            for (var i = 0; i < this._interp[1].length; i ++) {
+                this._interp[1][i] *= other[i];
+            }
+        } else {
+            for (var i = 0; i < this._interp[1].length; i ++) {
+                this._interp[1][i] *= other;
+            }
+        }
+    },
+
+    rescale: function() {
+        const data = this.get('data');
+        if (Math.max(...data) > 10.0) {
+            // Spectrum is probably in percent
+            for (var i = 0; i < data.length; i++) {
+                data[i] /= 100;
+            }
+        }
     },
 }, {
     // static fromCSV(csv) {
@@ -86,17 +122,13 @@ SpekCheck.Spectra = Backbone.Model.extend({
 SpekCheck.Filter = Backbone.Model.extend({
     defaults: {
         name: '',
-        spectra: new SpekCheck.Spectra({data: [[]]}),
+        transmission: new SpekCheck.Spectrum(),
         mode: 't',
     },
 
     validate: function(attrs, options) {
-        if (! attrs.spectra.isValid)
+        if (! attrs.transmission.isValid)
             return attrs.spectra.validationError;
-
-        if (attrs.spectra.data.length !== 1)
-            return "Filter spectra should have only data for transmission";
-
         if (attrs.mode !== 'r' && attrs.mode !== 't')
             return 'invalid filter mode';
     },
@@ -129,14 +161,12 @@ SpekCheck.Filter = Backbone.Model.extend({
 SpekCheck.Excitation = Backbone.Model.extend({
     defaults: {
         name: '',
-        spectra: new SpekCheck.Spectra({data: [[]]}),
+        intensity: new SpekCheck.Spectrum(),
     },
 
     validate: function(attrs, options) {
         if (! attrs.spectra.isValid)
             return attrs.spectra.validationError;
-        if (attrs.spectra.data !== 1)
-            return "Excitation spectra should have only data for intensity";
     },
 },
 {
@@ -149,16 +179,17 @@ SpekCheck.Excitation = Backbone.Model.extend({
 SpekCheck.Dye = Backbone.Model.extend({
     defaults: {
         name: '',
-        spectra: new SpekCheck.Spectra({data: [[], []]}),
+        absorption: new SpekCheck.Spectrum(),
+        emission: new SpekCheck.Spectrum(),
         ext_coeff: 0.0,
         q_yield: 0.0,
     },
 
     validate: function(attrs, options) {
-        if (! attrs.spectra.isValid)
-            return attrs.spectra.validationError;
-        if (attrs.spectra.data.length !== 2)
-            return "Dye spectra should have 'absorption' and 'emission' data";
+        if (! attrs.absorption.isValid)
+            return attrs.absorption.validationError;
+        if (! attrs.emission.isValid)
+            return attrs.emission.validationError;
 
         // Do not change the comparison logic, because by comparing
         // for true, we are at the same type checking for the right
@@ -186,7 +217,7 @@ SpekCheck.Setup = Backbone.Model.extend({
         em_filters: [],
     },
 },
-}
+{
     parseSetupLine: function(line) {
         // Expects line to be a setup definition.  It's the
         // responsability of the caller to make sure that file
@@ -227,22 +258,27 @@ SpekCheck.Setup = Backbone.Model.extend({
 });
 
 
-SpekCheck.SetupCollection = Backbone.Collection.extend({
+SpekCheck.SetupsCollection = Backbone.Collection.extend({
     model: SpekCheck.Setup,
-    url: SpekCheck.data_url + '/sets',
+
+    url: function() {
+        return SpekCheck.data_url + '/sets';
+    },
 
     fetch: function(options) {
-        let collecttion = this;
+        let collection = this;
         $.ajax({
-            url: this.url,
+            url: this.url(),
             dataType: 'text',
             success: function(text) {
-                let setups = SpekCheck.SetupCollection.parseSetupsFile(text);
+                let setups = SpekCheck.SetupsCollection.parseSetupsFile(text);
                 collection.reset(setups);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 // We return an empty collection if we fail to get the
                 // data.  Should we maybe raise an error?
+                console.log(textStatus);
+                console.log(errorThrown);
                 collection.reset([]);
             },
         });
@@ -367,6 +403,12 @@ SpekCheck.SetupPlot = Backbone.View.extend({
     render: function() {
         return this;
     },
+},
+{
+    wavelengthToHue: function(wl) {
+        // Convert a wavelength to HSL-alpha string.
+        return Math.max(0.0, Math.min(300, 650-wl)) * 0.96;
+    },
 });
 
 
@@ -396,30 +438,29 @@ class SpekCheckSync {
 
 $(document).ready(function() {
     SpekCheck.data_url = '../data';
-    let SOURCES = new SpekCheck.ExcitationsCollection();
-    SOURCES.fetch();
-    let FILTERSETS_VIEW = new SpekCheck.ExcitationsView({
-        el: $('#filterset-selector'),
-        collection: SOURCES,
+    let dyes = new SpekCheck.DyesCollection();
+    let setups = new SpekCheck.SetupsCollection();
+    let sources = new SpekCheck.ExcitationsCollection();
+    for (let x of [dyes, setups, sources])
+        x.fetch();
+
+    let setups_view = new SpekCheck.ExcitationsView({
+        el: $('#setup-selector'),
+        collection: setups,
     });
-    let DYES_VIEW = new SpekCheck.ExcitationsView({
+    let dyes_view = new SpekCheck.ExcitationsView({
         el: $('#dye-selector'),
-        collection: SOURCES,
+        collection: dyes,
     });
-    let SOURCES_VIEW = new SpekCheck.ExcitationsView({
+    let sources_view = new SpekCheck.ExcitationsView({
         el: $('#source-selector'),
-        collection: SOURCES,
+        collection: sources,
     });
 
-    let PLOT = new SpekCheck.SetupPlot({
+    let plot = new SpekCheck.SetupPlot({
         el: $('#setup-plot')[0].getContext("2d"),
         setup: new SpekCheck.Setup,
     });
 
     // new SpekCheck.View(...);
 });
-
-
-
-
-    // This should be bootstrapped during build time

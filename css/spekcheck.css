@@ -1,3 +1,25 @@
+/*
+  The logo is the Heavy check mark character, unicode 10004, with the
+  visible spectrum as color.  There's not really a CSS option to use
+  an image as color, so we set the font as transparent, while clipping
+  the image with the text.  This works in most of current browsers.
+  In the ones that do not work, it will falback to use a white font
+  over an image of the visible spectrum.
+*/
+
+.spekcheck-logo
+{
+    color: white;
+    background-image:url('../images/visible-spectrum.png');
+    background-repeat:round;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 3em;
+    line-height: 0.5;
+    font-weight: bold;
+    vertical-align: bottom;
+}
+
 body {
     font-family: sans-serif;
 }
