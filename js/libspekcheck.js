@@ -85,37 +85,176 @@ SpekCheck.Spectrum = Backbone.Model.extend({
             }
         }
     },
-}, {
-    // static fromCSV(csv) {
-    //     let wls = [];
-    //     let val = [];
-    //     for (let line of csv.split('\n')) {
-    //         line = line.trim()
-    //         if (line.startsWith('//') || line.length == 0)
-    //             continue; // skip comments and empty lines
+},
+{
+    parseHeader: function(header, header_map) {
+        // Args:
+        //     header(Array): one item per text line
+        //     header_map(Object): see doc for parseFile
+        //
+        // Returns:
+        //     An Object of attributes, keys taken from header_map
+        //     values.
+        const attrs = {};
+        for (let line of header) {
+            for (let header_key of Object.keys(header_map)) {
+                if (line.startsWith(header_key)
+                    && line[header_key.length] === ':') {
+                    const attr_name = header_map[header_key];
+                    if (attr_name === null)
+                        break; // null means value to be ignored
 
-    //         // FIXME: this is really a hack and we should not support
-    //         //        have this type of noise in the file.
-    //         if (line.startsWith('Type')
-    //             || line.startsWith('Name')
-    //             || line.startsWith('wavelength'))
-    //             continue; // skip headers
+                    // We may need to rethink this in the future.  For
+                    // now, all the values we have on the header are
+                    // numeric so this is fine.  But if we ever have
+                    // different types, we may need to pass a parse
+                    // function together with the attribute name.
+                    const val = parseFloat(line.slice(header_key.length +2));
+                    if (isNaN(val))
+                        throw TypeError('invalid value for ' + header_key)
 
-    //         let cols = (line.split(',')).map(x => parseFloat(x));
-    //         if (cols.length != 2 || cols.some(x => isNan(x)))
-    //             throw TypeError('unable to parse float numbers from file');
+                    attrs[header_map[header_key]] = val;
+                    break; // found it, so move to next line
+                }
+            }
+            // We may get here without having recognized the key.
+            // Well, continue anyway, we will check at the end of
+            // parsing the header for complete attributes.
+        }
 
-    //         wls.push(cols[0]);
-    //         val.push(cols[1]);
-    //     }
-    //     let filter = new Filter({
-    //         spectrum: new Spectrum({
-    //             wavelength: wls,
-    //             transmission: val,
-    //         })
-    //     });
-    //     return filter;
-    // }
+        // Confirm we got all properties from the header.
+        for (let attr_name of Object.values(header_map))
+            if (attr_name !== null && attrs[attr_name] === undefined)
+                throw TypeError('missing ' + attr_name + ' from header');
+
+        return attrs;
+    },
+
+    parseCSV: function(csv) {
+        // Args:
+        //    csv(Array): one item per line.
+        //
+        // Returns:
+        //    An Object with the csv first line as property names, and
+        //    Spectrum objects as values.
+        // First line of CSV content is still an header.  Tells us two
+        // things: 1) the number of columns, 2) name of the spectrum
+        // used for attribute when calling the constructor at the end.
+        // Ignore the name of the first column, it's the wavelenght.
+        const attrs = {};
+
+        const spectra_names = csv[0].split(',').slice(1).map(x => x.trim());
+        const n_spectra = spectra_names.length;
+        const spectra = Array(n_spectra);
+        for (let i = 0; i < n_spectra; i++)
+            spectra[i] = [];
+
+        let wavelengths = [];
+        for (let line of csv) {
+            let vals = line.split(',').map(x => parseFloat(x));
+            wavelengths.push(vals[0]);
+            for (let i = 0; i < n_spectra; i++)
+                spectra[i].push(vals[1+i]);
+        }
+
+        for (let i = 0; i < n_spectra; i++) {
+            attrs[spectra_names[i]] = new SpekCheck.Spectrum({
+                wavelength: wavelengths,
+                data: spectra[i],
+            });
+        }
+        return attrs;
+    },
+
+    parseFile: function(text, header_map, constructor) {
+        // Parse our spectra files (text header followed with CSV)
+        //
+        // Our spectra files have a multi-line text header of the
+        // form:
+        //
+        //    key: some-value
+        //
+        // This header is followed by CSV like:
+        //
+        //    wavelengths, spectra name #1, spectra name #2
+        //    x, y, z
+        //
+        // The `key` values are case-sensitive and used to index
+        // `header_map`.  The `spectra name #N` will be used as a
+        // property name in the constructor.  Everything is
+        // case-sensitive.
+        //
+        // Args:
+        //     text (String): the file content.
+        //
+        //     header_map (Object): maps header keys on the file
+        //        header to property names used for the Object passed
+        //        to `constructor`.  If the value is `null`, those
+        //        keys are ignored.
+        //
+        //     constructor (function): the constructor used for the
+        //         returned object.  It must accept an Object as
+        //         input.  The keys of that Object will be the values
+        //         of `header_map` and the CSV header names.
+        //
+        // Returns:
+        //    An object constructed with `constructor`.
+        //
+        // This is meant to construct the Dye, Excitation, and Source
+        // objects which have one or more Spectrum objects.  So if we
+        // have a file like this:
+        //
+        //     Name: really cool dye
+        //     Type: vegan-eco-bio-green dye
+        //     Quantum Yield: 9001
+        //     Extinction coefficient: 0.9
+        //     wavelength, excitation, emission
+        //     300.0, 0.5, 0.07
+        //     ...
+        //
+        // The the function would be called like this:
+        //
+        //      parseFile(text, {
+        //                        'Name': null, // Ignore this
+        //                        'Type': null, // Ignore this
+        //                        'Quantum Yield': 'q_yield',
+        //                        'Extinction coefficient': 'ext_coeff'
+        //                      },
+        //                constructor)
+        //
+        // To have the constructor called like this (the names q_yield
+        // and ext_coeff are values from header_map, while the names
+        // excitation and emission come from the first line of the CSV
+        // text):
+        //
+        //    constructor({
+        //        q_yield: 9001,
+        //        ext_coeff: 0.9,
+        //        excitation: new Spectrum({
+        //            wavelength: [300.0, ...],
+        //            data: [0.5, ...],
+        //        },
+        //        emission: new Spectrum({
+        //            wavelength: [300.0, ...],
+        //            data: [0.0.7, ...],
+        //        },
+        //    });
+
+        const attrs = {}; // to be used when calling constructor
+
+        const lines = text.split('\n');
+        const header_length = Object.keys(header_map).length;
+        const header = lines.slice(0, header_length);
+        const csv = lines.slice(header_length);
+
+        const header_attrs = this.parseHeader(header, header_map);
+        const csv_attrs = this.parseCSV(csv);
+        if (Object.keys(header_attrs).some(x => csv_attrs.hasOwnProperty(x)))
+            throw TypeError('csv and header have duplicate properties');
+
+        Object.assign(attrs, header_attrs, csv_attrs);
+        return new constructor(attrs);
+    }
 });
 
 
@@ -173,21 +312,32 @@ SpekCheck.Excitation = Backbone.Model.extend({
     base_url: function() {
         return SpekCheck.data_url + '/excitation';
     },
+
+    header_map: {
+        'Name': null,
+        'Type': null,
+    },
+
+    parseFile: function(text) {
+        return SpekCheck.Spectrum.parseFile(text,
+                                            SpekCheck.Excitation.header_map,
+                                            SpekCheck.Excitation);
+    },
 });
 
 
 SpekCheck.Dye = Backbone.Model.extend({
     defaults: {
         name: '',
-        absorption: new SpekCheck.Spectrum(),
+        excitation: new SpekCheck.Spectrum(),
         emission: new SpekCheck.Spectrum(),
         ext_coeff: 0.0,
         q_yield: 0.0,
     },
 
     validate: function(attrs, options) {
-        if (! attrs.absorption.isValid)
-            return attrs.absorption.validationError;
+        if (! attrs.excitation.isValid)
+            return attrs.excitation.validationError;
         if (! attrs.emission.isValid)
             return attrs.emission.validationError;
 
@@ -204,6 +354,16 @@ SpekCheck.Dye = Backbone.Model.extend({
 {
     base_url: function() {
         return SpekCheck.data_url + '/dyes';
+    },
+
+    header_map: {
+        'Extinction coefficient': 'ext_coeff',
+        'Quantum Yield': 'q_yield',
+    },
+
+    parseFile: function(text) {
+        return SpekCheck.Spectrum.parseFile(text, SpekCheck.Dye.header_map,
+                                            SpekCheck.Dye);
     },
 });
 
@@ -380,7 +540,7 @@ SpekCheck.SetupPlot = Backbone.View.extend({
                     borderWidth: 1,
                     borderColor: 'rgba(0, 0, 0, 0.5)',
                     pointRadius: 0,
-                }]
+                }],
             },
             options: {
                 responsive: true,
@@ -391,10 +551,10 @@ SpekCheck.SetupPlot = Backbone.View.extend({
                         scaleLabel: {
                             display: true,
                             labelString: 'Wavelength / nm',
-                        }
-                    }]
-                }
-            }
+                        },
+                    }],
+                },
+            },
         });
         this.listenTo(this.setup, 'change', this.render);
         this.render();
