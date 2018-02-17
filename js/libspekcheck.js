@@ -653,17 +653,17 @@ $(document).ready(function() {
         collection: sources,
     });
 
-    let plot = new SpekCheck.SetupPlot({
-        el: $('#setup-plot')[0].getContext("2d"),
-        setup: new SpekCheck.Setup,
-    });
+    // let plot = new SpekCheck.SetupPlot({
+    //     el: $('#setup-plot')[0].getContext("2d"),
+    //     setup: new SpekCheck.Setup,
+    // });
 
-    let app = new SpekCheck.SetupView({
-        el: $('#spekcheck'),
-        'plot': plot,
-        'dyes': dyes_view.$el,
-        'sources': sources_view.$el,
-    });
+    // let app = new SpekCheck.SetupView({
+    //     el: $('#spekcheck'),
+    //     'plot': plot,
+    //     'dyes': dyes_view.$el,
+    //     'sources': sources_view.$el,
+    // });
     // new SpekCheck.View(...);
 });
 
@@ -674,6 +674,22 @@ class Spectrum
         this.data = data;
     }
 
+    toChartjsPoints() {
+        // We are using Chart.js for the plotting which requires this
+        // format.  Maybe this could be moved into the Plot class but
+        // this allows us to keep this in cache (maybe this is not
+        // good?)
+        if (this._chartjs_points === undefined) {
+            this._chartjs_points = [];
+            for (let i = 0; i < this.wavelength.length; i++) {
+                this._chartjs_points.push({
+                    x: this.wavelength[i],
+                    y: this.data[i],
+                });
+            }
+        }
+        return this._chartjs_points;
+    }
 }
 
 
@@ -725,10 +741,39 @@ class Dye
 }
 
 
+class ChangeEventTrigger
+{
+    trigger() {
+    }
+
+    on(property, callback) {
+        this.push(callback);
+    }
+}
+
 class Setup
 {
     constructor() {
-        this.name = '';
+        this.change_callbacks = [];
+        this.dye = 'foo';
+        this.ex_source = 'bar';
+        this.ex_filters = [];
+        this.em_filters = [];
+    }
+
+    // change dye
+    // change source
+    //
+    // add ex source
+    // rm ex source
+
+    onChange(callback) {
+        this.change_callbacks.push(callback);
+    }
+
+    triggerChange() {
+        for (let callback of this.change_callbacks)
+            callback();
     }
 
     static parseLine(line) {
@@ -891,5 +936,77 @@ class DataServer
     }
 
     fetch(name) {
+    }
+}
+
+class SetupPlot
+{
+    constructor($el, setup) {
+        this.$el = $el;
+        this.plot = new Chart(this.$el, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'transmitted',
+                    data: [],
+                    borderWidth: 1,
+                    borderColor: 'rgba(0, 0, 0, 0.5)',
+                    pointRadius: 0,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                showLines: true,
+                scales: {
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Wavelength / nm',
+                        },
+                    }],
+                },
+            },
+        });
+        // this.setup.on('change', this.add_spectrum);
+        // this.listenTo(this.setup, 'change', this.render);
+        // this.render();
+    }
+
+    render() {
+        this.add_spectrum(this.setup.ex_source.spectrum);
+        for (let ex_filters of this.setup.ex_filters)
+            this.add_spectrum(ex_filters.spectrum);
+
+        // For dye, we have two spectras...
+        //        this.add_spectrum(this.setup.dye.spectrum);
+
+        for (let em_filters of this.setup.em_filters)
+            this.add_spectrum(em_filters.spectrum);
+        this.plot.update();
+    }
+
+    add_spectrum(spectrum) {
+        //const hue = this.constructor.wavelengthToHue(spectrum.peakwl());
+        const points = [];
+        for (let i = 0; i < spectrum.wavelength.length; i++)
+            points.push({x: spectrum.wavelength[i], y: spectrum.data[i]});
+
+        const dataset = {
+            label: 'foo',
+            data: spectrum.toChartjsPoints(),
+            pointRadius: 0,
+        };
+        this.plot.data.datasets.push(dataset);
+    }
+
+    static dashes() {
+        // LineDash styles to use on spectra plots.
+        return [[8,4], [16,4], [4,8,4], [4,8,8]];
+    }
+
+    static wavelengthToHue(wl) {
+        // Convert a wavelength to HSL-alpha string.
+        return Math.max(0.0, Math.min(300, 650-wl)) * 0.96;
     }
 }
