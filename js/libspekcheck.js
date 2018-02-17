@@ -506,6 +506,10 @@ SpekCheck.ExcitationsView = Backbone.View.extend({
 
     template: _.template('<option value="<%= name %>"><%= name %></option>\n'),
 
+    events: {
+        'change': "doFoo",
+    },
+
     initialize: function() {
         // Ws just re-render whole thing even after adding a single
         // element.  Maybe we should rethink it.
@@ -530,7 +534,7 @@ SpekCheck.SetupPlot = Backbone.View.extend({
     // LineDash styles to use on spectra plots.
     dashes: [[8,4], [16,4], [4,8,4], [4,8,8]],
 
-    initialize: function() {
+    initialize: function(options) {
         this.plot = new Chart(this.el, {
             type: 'scatter',
             data: {
@@ -571,7 +575,39 @@ SpekCheck.SetupPlot = Backbone.View.extend({
     },
 });
 
+SpekCheck.SetupView = Backbone.View.extend({
+    tagName: 'section',
 
+    initialize: function(options) {
+        console.log('inilas');
+        this.$sources = options.sources;
+        this.$dyes = options.dyes;
+        console.log(options);
+    },
+    // events: function() {
+    //     const events = {};
+    //     events['change #' + this.$sources.attr('id')] = 'doFoo';
+    //     events['change #' + this.$dyes.attr('id')] = 'doDye';
+    //     return events;
+    // },
+
+    doFoo: function(e) {
+        console.log(e + 'Foo');
+    },
+    doDye: function(e) {
+        console.log(e + 'dye');
+    },
+});
+
+class SpekCheckView {
+    constructor($el, dyes, sources) {
+        this.$el = $el;
+        this.setup = new SpekCheck.Setup;
+        this.dyes = dyes;
+        this.sources = sources;
+
+    }
+}
 
 // All our data is in CSVish files.  This provides an interface to our
 // collection of filters, sets, etc.
@@ -622,5 +658,238 @@ $(document).ready(function() {
         setup: new SpekCheck.Setup,
     });
 
+    let app = new SpekCheck.SetupView({
+        el: $('#spekcheck'),
+        'plot': plot,
+        'dyes': dyes_view.$el,
+        'sources': sources_view.$el,
+    });
     // new SpekCheck.View(...);
 });
+
+class Spectrum
+{
+    constructor(wavelength, data) {
+        this.wavelength = wavelength;
+        this.data = data;
+    }
+
+}
+
+
+// Delays actually reading the data until the properties are accessed.
+class LazyData
+{
+    constructor(url, properties)
+    {
+        this.url = url;
+        this.properties = properties;
+        for (let property of properties)
+            Object.defineProperty(this, property,
+                                  {get: this.fill,
+                                   configurable: true,})
+    }
+
+    fill()
+    {
+        for (let property of this.properties) {
+            delete this[property];
+            Object.defineProperty(this, property, {value: this.url})
+        }
+    }
+}
+
+class Foo8
+{
+    get bar() {
+        console.log('getter');
+        Object.defineProperty(this, 'bar', {value:100});
+        return this.bar;
+    }
+    set bar(val) {
+        console.log('jklasa');
+    }
+}
+
+    
+class Dye
+{
+    // constructor(name) {
+    //     this.name = name;
+    // }
+
+    cached() {
+        return false;
+    }
+
+}
+
+
+class Setup
+{
+    constructor() {
+        this.name = '';
+    }
+
+    static parseLine(line) {
+        // Expects line to be a setup definition.  It's the
+        // responsability of the caller to make sure that file
+        // comments and empty lines are filtered out.
+        const line_parts = line.split(',').map(x => x.trim());
+        const name = line_parts[0];
+        const dye = new Dye(line_parts[1]); // construct
+        const ex_source = new SpekCheck.Excitation({
+            'name': line_parts[2],
+        });
+
+        const ex_filters = [];
+        const em_filters = [];
+        let ex_path = true; // looking at filters in ex path until we see '::'
+        for (let filt of line_parts.slice(3)) {
+            const c_idx = filt.search('::');
+            if (c_idx >= 0) {
+                if (! ex_path)
+                    throw TypeError('more than one :: in set ' + name);
+                ex_filters.push
+                ex_path = false;
+                em_filters.push
+            }
+            else if (ex_path)
+                ex_filters.push
+            else // already looking at emission path
+                em_filters.push
+        }
+        const setup = new SpekCheck.Setup({
+            'name': name,
+            'dye': dye,
+            'ex_source': ex_source,
+            'ex_filters': ex_filters,
+            'em_filters': em_filters,
+        });
+        return setup;
+    }
+}
+
+class Collection
+{
+    constructor(obj_type) {
+        this.url = '../data/' + obj_type.url;
+        this.obj_type = obj_type;
+        this.objects = [];
+    }
+
+    fetch(over_options) {
+        const collection = this;
+        const defaults = {
+            url: this.url,
+            dataType: 'text',
+            success: function(text) {
+                const objects = collection.constructor.parseText(text);
+                collection.reset(objects);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                // We return an empty collection if we fail to get the
+                // data.  Should we maybe raise an error?
+                console.log(textStatus);
+                console.log(errorThrown);
+                collection.reset([]);
+            },
+        };
+        const options = Object.assign({}, defaults, over_options);
+        $.ajax(options);
+    }
+
+    reset(objects) {
+        this.objects = objects;
+        console.log('reset with ' + objects);
+    }
+
+    add(object) {
+        this.objects.push(object);
+        console.log('adding ' + object);
+    }
+}
+
+
+// Collections for filters, dyes, and excitation sources.
+//
+// The url from where the data is fetched will be computed from the
+// object type base url.
+
+class DataCollection extends Collection
+{
+    fetch(over_options) {
+        const collection = this;
+        const defaults = {
+            dataType: 'json',
+            success: function(data) {
+                const objects = collection.constructor.parseData(data);
+                collection.reset(objects);
+            }
+        };
+        const options = Object.assign({}, defaults, over_options);
+        super.fetch(options);
+    }
+
+    static parseData(data) {
+        for (let i = 0; i < data.length; i++)
+            data[i] = {name: data[i]};
+        return data;
+    }
+}
+
+
+class DyeCollection extends DataCollection
+{
+    constructor(objects) {
+        super(objects);
+        this.url += 'dyes.json'
+    }
+}
+
+
+class ExcitationCollection extends DataCollection
+{
+    constructor(objects) {
+        super(objects);
+        this.url += 'excitation.json';
+    }
+}
+
+
+class FilterCollection extends DataCollection
+{
+    constructor(objects) {
+        super(objects);
+        this.url += 'filters.json';
+    }
+}
+
+class SetupCollection extends Collection
+{
+    constructor(objects) {
+        super(objects);
+        this.url += 'sets';
+    }
+
+    static parseText(txt) {
+        const setups = [];
+        for (let line of txt.split('\n')) {
+            line = line.trim();
+            if (line.startsWith('//') || line.length === 0)
+                continue; // skip comments and empty lines
+            setups.push(Setup.parseLine(line));
+        }
+        return setups;
+    }
+}
+
+class DataServer
+{
+    constructor(base_url) {
+        this.base_url = base_url;
+    }
+
+    fetch(name) {
+    }
+}
