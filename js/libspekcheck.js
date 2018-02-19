@@ -83,8 +83,7 @@ let SpekCheck = {};
 //     },
 
 //     header_map: {
-//         'Extinction coefficient': 'ext_coeff',
-//         'Quantum Yield': 'q_yield',
+//         
 //     },
 
 //     parseFile: function(text) {
@@ -214,19 +213,6 @@ SpekCheck.DataCollection = Backbone.Collection.extend({
 });
 
 
-SpekCheck.ExcitationsCollection = SpekCheck.DataCollection.extend({
-    model: SpekCheck.Excitation,
-});
-
-SpekCheck.DyesCollection = SpekCheck.DataCollection.extend({
-    model: SpekCheck.Dye,
-});
-
-SpekCheck.FiltersCollection = SpekCheck.DataCollection.extend({
-    model: SpekCheck.Filter,
-});
-
-
 SpekCheck.ExcitationsView = Backbone.View.extend({
     tagName: 'select',
 
@@ -252,44 +238,6 @@ SpekCheck.ExcitationsView = Backbone.View.extend({
     },
 
 });
-
-
-
-SpekCheck.SetupView = Backbone.View.extend({
-    tagName: 'section',
-
-    initialize: function(options) {
-        console.log('inilas');
-        this.$sources = options.sources;
-        this.$dyes = options.dyes;
-        console.log(options);
-    },
-    // events: function() {
-    //     const events = {};
-    //     events['change #' + this.$sources.attr('id')] = 'doFoo';
-    //     events['change #' + this.$dyes.attr('id')] = 'doDye';
-    //     return events;
-    // },
-
-    doFoo: function(e) {
-        console.log(e + 'Foo');
-    },
-    doDye: function(e) {
-        console.log(e + 'dye');
-    },
-});
-
-class SpekCheckView {
-    constructor($el, dyes, sources) {
-        this.$el = $el;
-        // this.setup = new SpekCheck.Setup;
-        this.dyes = dyes;
-        this.sources = sources;
-
-    }
-}
-
-
 
 class Spectrum
 {
@@ -340,6 +288,16 @@ class Spectrum
             for (var i = 0; i < this._interp[1].length; i ++)
                 this._interp[1][i] *= other;
         }
+    }
+
+    peakWavelength() {
+        if (this._peakwl === undefined) {
+            let max_index= this.data.reduce(
+                (iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0
+            );
+            this._peakwl = this.wavelength[max_index];
+        }
+        return this._peakwl;
     }
 
     rescale() {
@@ -430,19 +388,16 @@ class Spectrum
             spectra[i] = [];
 
         let wavelengths = [];
-        for (let line of csv) {
+        for (let line of csv.slice(1)) {
             let vals = line.split(',').map(x => parseFloat(x));
             wavelengths.push(vals[0]);
             for (let i = 0; i < n_spectra; i++)
                 spectra[i].push(vals[1+i]);
         }
 
-        // for (let i = 0; i < n_spectra; i++) {
-        //     attrs[spectra_names[i]] = new SpekCheck.Spectrum({
-        //         wavelength: wavelengths,
-        //         data: spectra[i],
-        //     });
-        // }
+        for (let i = 0; i < n_spectra; i++)
+            attrs[spectra_names[i]] = new Spectrum(wavelengths, spectra[i]);
+
         return attrs;
     }
 
@@ -538,60 +493,103 @@ class Spectrum
 }
 
 
-// Delays actually reading the data until the properties are accessed.
-class LazyData
+// Base class for our Data, Excitation, and Filter classes.
+//
+// It requires two static data members:
+//
+//    properties: an Array of property names which will be defined on
+//        a class instance, and are required to be keys on the Object
+//        passed to the constructor.
+//    header_map: used to map the keys on the header of Spectra files
+//        to the keys used on the Object passed to the constructor.
+//        null values mean fields to ignore.
+class Data
 {
-    constructor(url, properties)
-    {
-        this.url = url;
-        this.properties = properties;
-        for (let property of properties)
-            Object.defineProperty(this, property,
-                                  {get: this.fill,
-                                   configurable: true,})
-    }
-
-    fill()
-    {
-        for (let property of this.properties) {
-            delete this[property];
-            Object.defineProperty(this, property, {value: this.url})
+    constructor(attrs) {
+        // Make sure that all properties mentioned are defined
+        for (let p of this.constructor.prototype.properties) {
+            if (attrs[p] === undefined)
+                throw TypeError('missing property');
+            this[p] = attrs[p];
         }
     }
-}
 
-
-class Dye
-{
-    // constructor(name) {
-    //     this.name = name;
-    // }
-
-    cached() {
-        return false;
-    }
-
-}
-
-
-class ChangeEventTrigger
-{
-    trigger() {
-    }
-
-    on(property, callback) {
-        this.push(callback);
+    static constructFromFile(text) {
+        return Spectrum.parseFile(text, this.prototype.header_map,
+                                  this.prototype.constructor);
     }
 }
+Data.prototype.header_map = {
+    'Name' : null,
+    'Type' : null,
+};
 
-class Setup
+
+class Dye extends Data
 {
-    constructor(name) {
+}
+Dye.prototype.header_map = Object.assign({}, Data.prototype.header_map, {
+    'Extinction coefficient': 'ex_coeff',
+    'Quantum Yield': 'q_yield',
+});
+Dye.prototype.properties = [
+    'emission',
+    'ex_coeff',
+    'excitation',
+    'q_yield',
+];
+
+
+class Excitation extends Data
+{
+}
+Excitation.prototype.properties = [
+    'intensity',
+];
+
+
+class Filter extends Data
+{
+    constructor(name, transmission, mode) {
         this.name = name;
+        this.transmission = transmission;
+        this.mode = mode;
+    }
+
+    validate() {
+        if (! this.transmission.isValid)
+            return this.transmission.validationError;
+        if (this.mode !== 'r' && this.mode !== 't')
+            return 'invalid filter mode';
+    }
+
+    changeMode() {
+        this.mode = this.mode === 't' ? 'r' : 't';
+    }
+
+    static parseFilterField(field) {
+        // Parses a filter definition as it appears on the sets file,
+        // i.e., 'filter_name [mode]' where mode is optional and R|T
+        const field_parts = field.split(' ').map(x => x.trim());
+        if (field_parts.length > 2)
+            throw TypeError('invalid Filter definition ' + field);
+
+        const attrs = {name: field_parts[0]};
+        if (field_parts.length === 2)
+            attrs.mode = field_parts[1].toLowerCase();
+        return new Filter(attrs);
+    }
+}
+
+class FilterSet
+{
+    constructor() {
         // this.dye = 'foo';
         // this.ex_source = 'bar';
         this.ex_filters = [];
         this.em_filters = [];
+        this.preferred_dye = undefined;
+        this.preferred_excitation = undefined;
     }
 
     // change dye
@@ -650,46 +648,12 @@ class Setup
 }
 
 
-class Filter
-{
-    constructor(name, transmission, mode) {
-        this.name = name;
-        this.transmission = transmission;
-        this.mode = mode;
-    }
-
-    validate() {
-        if (! this.transmission.isValid)
-            return this.transmission.validationError;
-        if (this.mode !== 'r' && this.mode !== 't')
-            return 'invalid filter mode';
-    }
-
-    changeMode() {
-        this.mode = this.mode === 't' ? 'r' : 't';
-    }
-
-    static parseFilterField(field) {
-        // Parses a filter definition as it appears on the sets file,
-        // i.e., 'filter_name [mode]' where mode is optional and R|T
-        const field_parts = field.split(' ').map(x => x.trim());
-        if (field_parts.length > 2)
-            throw TypeError('invalid Filter definition ' + field);
-
-        const attrs = {name: field_parts[0]};
-        if (field_parts.length === 2)
-            attrs.mode = field_parts[1].toLowerCase();
-        return new Filter(attrs);
-    }
-}
-
-
 // Our base class for Collections.
 class Collection
 {
     constructor() {
         this.url = '../data/';
-        this.models = [];
+        this.models = []; // Actually, promises of a model.
         this.ids = [];
 
         // This callbacks are usually arrays.  We can probably get
@@ -714,7 +678,7 @@ class Collection
             dataType: 'json',
         };
         const options = Object.assign({}, defaults, new_options);
-        // In case of error reading the collection file, we set an
+        // In case of error reading the collection file we set an
         // empty collection.  Maybe we should throw something?
         return $.ajax(options).then(data => this.resetWithData(data),
                                     () => this.reset([]));
@@ -728,8 +692,8 @@ class Collection
     }
 
     reset(ids) {
-        this.ids = ids;
-        this.models = new Array(ids.length);
+        this.ids = ids.slice(0);
+        this.models = new Array(this.ids.length);
         if (this.reset_callback !== undefined)
             this.reset_callback();
     }
@@ -745,19 +709,19 @@ class Collection
 // Collections for filters, dyes, and excitation sources.
 class DataCollection extends Collection
 {
-    constructor(filename) {
+    constructor(filename, file_reader) {
         super();
         this.dir_url = this.url + filename + '/';
         this.url += filename + '.json';
+        this.file_reader = file_reader;
     }
 
     fetch_model(id) {
         const fpath = this.dir_url + id + '.csv';
-        console.log(fpath);
         return $.ajax({
             url: fpath,
             dataType: 'text',
-        }).then(text => text);
+        }).then(text => this.file_reader(text));
     }
 }
 
@@ -802,16 +766,46 @@ class CollectionView
     }
 
     render() {
-        const html = this.collection.ids.map(
-            id => this.option_html(id));
+        const names = [''].concat(this.collection.ids);
+        const html = names.map(name => this.option_html(name));
         this.$el.html(html);
     }
 
-    option_html(id) {
-        return '<option value="' + id + '">' + id + '</option>\n';
+    option_html(name) {
+        return `<option value="${ name }">${ name }</option>\n`;
     }
 }
 
+
+class Setup
+{
+    constructor() {
+        this._dye = undefined;
+        this._excitation = undefined;
+        this._em_filters = [];
+        this._ex_filters = [];
+
+        // This callbacks are usually arrays.  We can probably get
+        // away with only one callback.
+        this.change_callback = undefined;
+    }
+
+    set dye(val) {
+        this._dye = val;
+        this.change_callback();
+    }
+    get dye() {
+        return this._dye;
+    }
+
+    set excitation(val) {
+        this._excitation = val;
+        this.change_callback();
+    }
+    get excitation() {
+        return this._excitation;
+    }
+}
 
 class SetupPlot
 {
@@ -821,13 +815,7 @@ class SetupPlot
         this.plot = new Chart(this.$el, {
             type: 'scatter',
             data: {
-                datasets: [{
-                    label: 'transmitted',
-                    data: [],
-                    borderWidth: 1,
-                    borderColor: 'rgba(0, 0, 0, 0.5)',
-                    pointRadius: 0,
-                }],
+                datasets: [],
             },
             options: {
                 responsive: true,
@@ -854,46 +842,76 @@ class SetupPlot
                 },
             },
         });
-        // this.setup.on('change', this.add_spectrum);
-        // this.listenTo(this.setup, 'change', this.render);
+        // this.setup.on('change', this.render.bind(this));
         // this.render();
     }
 
-    // test
-
-    // s = new Setup();
-    // s.ex_source = {spectrum: new Spectrum([1, 2, 3], [.1, .2, .3])};
-    // s.ex_filters = [{spectrum: new Spectrum([3, 4], [2, 3])},
-    //                 {spectrum: new Spectrum([2, 3, 4], [5, 6])}];
-    // s.em_filters = [];
-    // b.setup = s;
-    // b.render();
-
     render() {
-        this.add_spectrum(this.setup.ex_source.spectrum);
-        for (let ex_filters of this.setup.ex_filters)
-            this.add_spectrum(ex_filters.spectrum);
+        const datasets = [];
+
+        if (this.setup.excitation !== undefined) {
+            const spectrum = this.setup.excitation.intensity;
+            const hue = SetupPlot.wavelengthToHue(spectrum.peakWavelength());
+            const colour = `hsla(${ hue }, 100%, 50%, 1)`;
+            datasets.push({
+                label: 'Source',
+                data: spectrum.toChartjsPoints(),
+                backgroundColor: colour,
+                borderColor: colour,
+                pointRadius: 0,
+            });
+        }
+
+        if (this.setup.dye !== undefined) {
+            const ex_spectrum = this.setup.dye.excitation;
+            const em_spectrum = this.setup.dye.emission;
+            const ex_hue = SetupPlot.wavelengthToHue(ex_spectrum.peakWavelength());
+            const em_hue = SetupPlot.wavelengthToHue(em_spectrum.peakWavelength());
+            const ex_bg_colour = `hsla(${ ex_hue }, 100%, 50%, 0.2)`;
+            const ex_fg_colour = `hsla(${ ex_hue }, 100%, 50%, 1)`;
+            const em_bg_colour = `hsla(${ em_hue }, 100%, 50%, 0.2)`;
+            const em_fg_colour = `hsla(${ em_hue }, 100%, 50%, 1)`;
+            datasets.push({
+                label: 'Dye Excitation',
+                data: ex_spectrum.toChartjsPoints(),
+                backgroundColor: ex_bg_colour,
+                borderColor: ex_fg_colour,
+                pointRadius: 0,
+            });
+            datasets.push({
+                label: 'Dye Emission',
+                data: em_spectrum.toChartjsPoints(),
+                backgroundColor: em_bg_colour,
+                borderColor: em_fg_colour,
+                pointRadius: 0,
+            });
+        }
+        // if (this.setup.dye !== undefined)
+        //     plot_dye_spectrum()
+        // this.add_spectrum(this.setup.ex_source.spectrum);
+        // for (let ex_filters of this.setup.ex_filters)
+        //     this.add_spectrum(ex_filters.spectrum);
+
+            //             datasets: [{
+            //         label: 'transmitted',
+            //         data: [],
+            //         borderWidth: 1,
+            //         borderColor: 'rgba(0, 0, 0, 0.5)',
+            //         pointRadius: 0,
+            //     }],
+            // },
 
         // For dye, we have two spectras...
         //        this.add_spectrum(this.setup.dye.spectrum);
 
-        for (let em_filters of this.setup.em_filters)
-            this.add_spectrum(em_filters.spectrum);
+        // for (let em_filters of this.setup.em_filters)
+        //     this.add_spectrum(em_filters.spectrum);
+        this.plot.data.datasets = datasets;
         this.plot.update();
     }
 
     add_spectrum(spectrum) {
         //const hue = this.constructor.wavelengthToHue(spectrum.peakwl());
-        const points = [];
-        for (let i = 0; i < spectrum.wavelength.length; i++)
-            points.push({x: spectrum.wavelength[i], y: spectrum.data[i]});
-
-        const dataset = {
-            label: 'foo',
-            data: spectrum.toChartjsPoints(),
-            pointRadius: 0,
-        };
-        this.plot.data.datasets.push(dataset);
     }
 
     static dashes() {
@@ -912,38 +930,73 @@ class SpekCheckController
 {
     constructor() {
         this.setup = new Setup;
-        this.setup_view = new SetupPlot($('#setup-plot')[0].getContext('2d'));
+        this.plot = new SetupPlot($('#setup-plot')[0].getContext('2d'),
+                                  this.setup);
 
-        this.dyes = new DataCollection('dyes');
+        const dye_reader = Dye.constructFromFile.bind(Dye);
+        this.dyes = new DataCollection('dyes', dye_reader);
         this.dyes_view = new CollectionView($('#dye-selector'),
                                              this.dyes);
 
-        this.excitations = new DataCollection('excitation');
+        const excitation_reader = Excitation.constructFromFile.bind(Excitation);
+        this.excitations = new DataCollection('excitation', excitation_reader);
         this.excitations_view = new CollectionView($('#source-selector'),
                                                     this.excitations);
 
-        this.setups = new SetupCollection('sets');
-        this.setups_view = new CollectionView($('#setup-selector'),
-                                               this.setups);
+        // this.setups = new SetupCollection('sets');
+        // this.setups_view = new CollectionView($('#setup-selector'),
+        //                                        this.setups);
 
-        for (let x of [this.dyes, this.excitations, this.setups])
+        for (let x of [this.dyes, this.excitations])
             x.fetch();
 
         this.excitations_view.$el.on('change',
                                      this.changeExcitation.bind(this));
         this.dyes_view.$el.on('change',
                               this.changeDye.bind(this));
+
+        this.setup.change_callback = this.plot.render.bind(this.plot);
+        // FilterSets have a preferred Dye and Excitation, the logic
+        // being that they are often used with those.  In that case we
+        // should change Dye and Excitation when changing FilterSet.
+        // However, a user can also be interested in inspecting
+        // different FilterSets for a specific Dye and Excitation in
+        // which case they should remain fixed when changing
+        // FilterSet.
+        //
+        // To support both cases, we keep track whether the current
+        // Dye and Excitation selection comes from manual choice, and
+        // only change them to a FilterSet prefered if not.
+        this.user_selected_dye = false;
+        this.user_selected_excitation = false;
     }
 
     changeDye(ev) {
         const id = ev.target.value;
-        this.dyes.get(id).then(x => console.log(x));
-        // this will make
+        if (id === '') {
+            this.user_selected_dye = false;
+            this.setup.dye = undefined;
+            console.log('nothing');
+        } else {
+            this.user_selected_dye = true;
+            this.dyes.get(id).then(
+                dye => {this.setup.dye = dye}
+            );
+        }
     }
 
     changeExcitation(ev) {
         const id = ev.target.value;
-        this.excitations.get(id).then(x => console.log(x));
+        if (id === '') {
+            this.user_selected_excitation = false;
+            this.setup.excitation = undefined;
+            console.log('nothing');
+        } else {
+            this.user_selected_excitation = true;
+            this.excitations.get(id).then(
+                ex => {this.setup.excitation = ex}
+            );
+        }
     }
 }
 
@@ -956,4 +1009,14 @@ $(document).ready(function() {
     // console.log('end');
     // setTimeout(() => undefined, 3000);
     // console.log(excitations.models[2]);
+
+        // test
+
+    // s = new Setup();
+    // s.ex_source = {spectrum: new Spectrum([1, 2, 3], [.1, .2, .3])};
+    // s.ex_filters = [{spectrum: new Spectrum([3, 4], [2, 3])},
+    //                 {spectrum: new Spectrum([2, 3, 4], [5, 6])}];
+    // s.em_filters = [];
+    // b.setup = s;
+    // b.render();
 });
