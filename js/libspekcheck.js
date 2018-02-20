@@ -1,5 +1,5 @@
 // Copyright (C) 2017 Mick Phillips <mick.phillips@gmail.com>
-// Copyright (C) 2017 Ian Dobbie <ian.dobbie@bioch.ox.ac.uk>
+// Copyright (C) 2017-2018 Ian Dobbie <ian.dobbie@bioch.ox.ac.uk>
 // Copyright (C) 2018 David Pinto <david.pinto@bioch.ox.ac.uk>
 //
 // SpekCheck is free software: you can redistribute it and/or modify
@@ -113,25 +113,35 @@ SpekCheck.SetupsCollection = Backbone.Collection.extend({
     },
 });
 
+/////////
+
+
+// A base class to provide base for model validation.  We may add
+// event handling later.
+//
+// Yeah, feels like we are re-inventing backbone for ES6.  That's
+// because we tried to use it first before giving up.
 class Model
 {
     constructor() {
-        this.validation_error = undefined;
+        this.validation_error = null; // String or null
     }
 
     isValid() {
-        this.validation_error = this.validate();
-        return this.validation_error === undefined;
+        this.validation_error = this.validate() || null;
+        return this.validation_error === null;
     }
 }
 
 
+// Call for Spectrum data only.  Not for Dye, Filter, etc.  Those have
+// a spectrum but are not a spectrum themselves.
 class Spectrum extends Model
 {
     constructor(wavelength, data) {
         super();
-        this.wavelength = wavelength;
-        this.data = data;
+        this.wavelength = wavelength; // Array of floats
+        this.data = data; // Array of floats
     }
 
     validate() {
@@ -190,14 +200,16 @@ class Spectrum extends Model
 
     static parseHeader(header, header_map) {
         // Args:
-        //     header(Array): one item per text line
-        //     header_map(Object): see doc for parseFile
+        //     header(Array): one item per text line.
+        //     header_map(Object): see doc for parseFile.
         //
         // Returns:
-        //     An Object of attributes, keys taken from header_map
+        //     An Object of attributes, keys taken from `header_map`
         //     values.
         const attrs = {};
         for (let line of header) {
+            if (line.startsWith('#'))
+                continue; // skip comments
             for (let header_key of Object.keys(header_map)) {
                 if (line.startsWith(header_key)
                     && line[header_key.length] === ':') {
@@ -239,12 +251,13 @@ class Spectrum extends Model
         //    csv(Array): one item per line.
         //
         // Returns:
-        //    An Object with the csv first line as property names, and
-        //    Spectrum objects as values.
-        // First line of CSV content is still an header.  Tells us two
-        // things: 1) the number of columns, 2) name of the spectrum
-        // used for attribute when calling the constructor at the end.
-        // Ignore the name of the first column, it's the wavelenght.
+        //    An Object with the spectrum names as keys, and Spectrum
+        //    objects as values.
+        //
+        // First line of CSV content tells us: 1) the number of
+        // columns/spectrum; 2) name to give to each spectrum.  We
+        // ignore the name of the first column, but it should be
+        // wavelength.
         const attrs = {};
 
         const spectra_names = csv[0].split(',').slice(1).map(x => x.trim());
@@ -262,7 +275,14 @@ class Spectrum extends Model
         }
 
         for (let i = 0; i < n_spectra; i++) {
-            // Rescale to [0 1] if it looks like data is on percent
+            // Rescale to [0 1] if it looks like data is on percent.
+            // If the data is in percentage but all values are below
+            // 10%, it will not be rescaled.  This should not happen
+            // because values in a spectrum are all relative to their
+            // maximum value.  Except we also handle the sensitivity
+            // of cameras detectors as Spectrum.  Here's to hope that
+            // we never have to handle a detector with a maximum
+            // sensitivity below 10%.
             const data = spectra[i];
             if (data.some(x => x > 10.0))
                 for (let j = 0; j < data.length; j++)
@@ -275,13 +295,14 @@ class Spectrum extends Model
         return attrs;
     }
 
-    static parseFile(text, header_map, constructor) {
+    static parseFile(text, header_map, factory) {
         // Parse our spectra files (text header followed with CSV)
         //
         // Our spectra files have a multi-line text header of the
         // form:
         //
         //    key: some-value
+        //    # An optional comment
         //
         // This header is followed by CSV like:
         //
@@ -290,28 +311,28 @@ class Spectrum extends Model
         //
         // The `key` values are case-sensitive and used to index
         // `header_map`.  The `spectra name #N` will be used as a
-        // property name in the constructor.  Everything is
-        // case-sensitive.
+        // property keys on the Object passed to `factory`.
+        // Everything is case-sensitive.
         //
         // Args:
         //     text (String): the file content.
         //
-        //     header_map (Object): maps header keys on the file
+        //     header_map (Object): maps header keys from the file
         //        header to property names used for the Object passed
-        //        to `constructor`.  If the value is `null`, those
-        //        keys are ignored.
+        //        to `factory`.  If the value is `null`, those keys
+        //        are ignored.
         //
-        //     constructor (function): the constructor used for the
-        //         returned object.  It must accept an Object as
-        //         input.  The keys of that Object will be the values
-        //         of `header_map` and the CSV header names.
+        //     factory (function): the function for the returned
+        //         object.  It must accept an Object as input.  The
+        //         keys of that Object will be the values of
+        //         `header_map` and the CSV spectrum names.
         //
         // Returns:
-        //    An object constructed with `constructor`.
+        //    The return value from `factory`.
         //
-        // This is meant to construct the Dye, Excitation, and Source
-        // objects which have one or more Spectrum objects.  So if we
-        // have a file like this:
+        // This is meant to construct the Dye, Excitation, Filter, and
+        // Source objects which have one or more Spectrum objects.  So
+        // if we have a file like this:
         //
         //     Name: really cool dye
         //     Type: vegan-eco-bio-green dye
@@ -323,20 +344,21 @@ class Spectrum extends Model
         //
         // The the function would be called like this:
         //
-        //      parseFile(text, {
-        //                        'Name': null, // Ignore this
-        //                        'Type': null, // Ignore this
-        //                        'Quantum Yield': 'q_yield',
-        //                        'Extinction coefficient': 'ext_coeff'
-        //                      },
-        //                constructor)
+        //      parseFile(text,
+        //                {
+        //                    'Name': null, // Ignore this
+        //                    'Type': null, // Ignore this
+        //                    'Quantum Yield': 'q_yield',
+        //                    'Extinction coefficient': 'ext_coeff'
+        //                },
+        //                (attrs) => new Dye(attrs))
         //
-        // To have the constructor called like this (the names q_yield
-        // and ext_coeff are values from header_map, while the names
-        // excitation and emission come from the first line of the CSV
-        // text):
+        // To have `factory` called like this (the names `q_yield` and
+        // `ext_coeff` are values from `header_map`, while the names
+        // `excitation` and `emission` come from the first line of the
+        // CSV text):
         //
-        //    constructor({
+        //    factory({
         //        q_yield: 9001,
         //        ext_coeff: 0.9,
         //        excitation: new Spectrum({
@@ -349,10 +371,18 @@ class Spectrum extends Model
         //        },
         //    });
 
-        const attrs = {}; // to be used when calling constructor
+        const attrs = {}; // to be used when calling factory
 
         const lines = text.split('\n');
-        const header_length = Object.keys(header_map).length;
+
+        // We want to support an arbitrary number of comment lines on
+        // the file header so we also add lines starting with # to the
+        // header length (which the header parser will ignore).
+        let header_length = Object.keys(header_map).length;
+        for (let i = 0; i < header_length +1; i++)
+            if (lines[i].startsWith('#'))
+                header_length++;
+
         const header = lines.slice(0, header_length);
         const csv = lines.slice(header_length);
 
@@ -362,7 +392,7 @@ class Spectrum extends Model
             throw TypeError('csv and header have duplicate properties');
 
         Object.assign(attrs, header_attrs, csv_attrs);
-        return new constructor(attrs);
+        return factory(attrs);
     }
 }
 
@@ -373,24 +403,25 @@ class Spectrum extends Model
 //
 //    properties: an Array of property names which will be defined on
 //        a class instance, and are required to be keys on the Object
-//        passed to the constructor.
+//        passed to the factory.
 //    header_map: used to map the keys on the header of Spectra files
-//        to the keys used on the Object passed to the constructor.
+//        to the keys used on the Object passed to the factory.
 //        null values mean fields to ignore.
-class Data
+class Data extends Model
 {
     constructor(attrs) {
+        super();
         // Make sure that all properties mentioned are defined
         for (let p of this.constructor.prototype.properties) {
             if (attrs[p] === undefined)
-                throw TypeError('missing property');
+                throw TypeError(`missing property '${ p }'`);
             this[p] = attrs[p];
         }
     }
 
     static constructFromFile(text) {
-        return Spectrum.parseFile(text, this.prototype.header_map,
-                                  this.prototype.constructor);
+        const factory = (attrs) => new this.prototype.constructor(attrs);
+        return Spectrum.parseFile(text, this.prototype.header_map, factory);
     }
 }
 Data.prototype.header_map = {
@@ -422,12 +453,22 @@ Excitation.prototype.properties = [
 ];
 
 
+// Reflection/Transmission mode is not a property of the filter, it's
+// a property of the Optical Setup.  So it's up to Setup to handle it.
 class Filter extends Data
 {
-    constructor(name, transmission, mode) {
-        this.name = name;
-        this.transmission = transmission;
-        this.mode = mode;
+    // Lazy-getters to compute reflection.
+    get reflection() {
+        const reflection = this.transmission.map(x => 1-x);
+        delete this.reflection;
+        Object.defineProperty(this, 'reflection', {value: reflection});
+        return this.reflection;
+    }
+
+    set reflection(val) {
+        // We just declare this because we need to declare a setter
+        // with everty getter.
+        Object.defineProperty(this, 'reflection', {value: val});
     }
 
     validate() {
@@ -453,13 +494,32 @@ class Filter extends Data
             attrs.mode = field_parts[1].toLowerCase();
         return new Filter(attrs);
     }
-}
 
-class FilterSet
+    static constructFromFile(text) {
+        // Some Filter data files have reflection instead of
+        // transmission so fix that before calling the constructor.
+        const constructor = this.prototype.constructor;
+        const factory = function(attrs) {
+            if (attrs.reflection !== undefined) {
+                attrs.transmission = attrs.reflection;
+                attrs.transmission.data = attrs.reflection.data.map(x => 1-x);
+                delete attrs.reflection;
+            }
+            return new constructor(attrs);
+        }
+        return Spectrum.parseFile(text, this.prototype.header_map, factory);
+    }
+}
+Filter.prototype.properties = [
+    'transmission',
+];
+
+
+
+class FilterSet extends Model
 {
     constructor() {
-        // this.dye = 'foo';
-        // this.ex_source = 'bar';
+        super();
         this.ex_filters = [];
         this.em_filters = [];
         this.preferred_dye = undefined;
@@ -523,12 +583,13 @@ class FilterSet
 
 
 // Our base class for Collections.
-class Collection
+class Collection extends Model
 {
     constructor() {
+        super();
         this.url = '../data/';
         this.models = []; // Actually, promises of a model.
-        this.ids = [];
+        this.ids = []; // Array of Strings (the names which are unique)
 
         // This callbacks are usually arrays.  We can probably get
         // away with only one callback.
@@ -541,7 +602,7 @@ class Collection
         const index = this.ids.indexOf(id);
         if (index === -1)
             throw TypeError('no id');
-       if (this.models[index] === undefined)
+        if (this.models[index] === undefined)
             this.models[index] = this.fetch_model(id);
         return this.models[index];
     }
@@ -583,11 +644,15 @@ class Collection
 // Collections for filters, dyes, and excitation sources.
 class DataCollection extends Collection
 {
-    constructor(filename, file_reader) {
+    constructor(filename, factory) {
+        // Args:
+        //    filename (String):
+        //    factory (function): will parse the text of a file and
+        //        return a Data object.  See Data.constructFromFile.
         super();
         this.dir_url = this.url + filename + '/';
         this.url += filename + '.json';
-        this.file_reader = file_reader;
+        this.factory = factory;
     }
 
     fetch_model(id) {
@@ -595,7 +660,7 @@ class DataCollection extends Collection
         return $.ajax({
             url: fpath,
             dataType: 'text',
-        }).then(text => this.file_reader(text));
+        }).then(text => this.factory(text));
     }
 }
 
@@ -604,7 +669,7 @@ class SetupCollection extends Collection
 {
     constructor(filename) {
         super();
-        this.url += filename; // it's a plain text file
+        this.url += filename; // plain text file, no file extension
     }
 
     fetch() {
@@ -724,12 +789,35 @@ class SetupPlot
         this._dataset_cache = new WeakMap;
     }
 
+    asChartjsDataset(spectrum, label) {
+        if (! this._dataset_cache.has(spectrum)) {
+            const points = new Array(spectrum.wavelength.length);
+            for (let i = 0; i < points.length; i++)
+                points[i] = {x: spectrum.wavelength[i], y: spectrum.data[i]};
+            // Convert a wavelength to HSL-alpha string.
+            const peak_wl = spectrum.peakWavelength();
+            const hue = Math.max(0.0, Math.min(300, 650-peak_wl)) * 0.96;
+
+            const bg_colour = `hsla(${ hue }, 100%, 50%, 0.2)`;
+            const fg_colour = `hsla(${ hue }, 100%, 50%, 1)`;
+            const chartjs_dataset = {
+                label: label,
+                data: points,
+                backgroundColor: bg_colour,
+                borderColor: fg_colour,
+                pointRadius: 0,
+            };
+            this._dataset_cache.set(spectrum, chartjs_dataset);
+        }
+        return this._dataset_cache.get(spectrum);
+    }
+
     render() {
         const datasets = [];
         const setup = this.setup;
 
         if (this.setup.excitation !== undefined) {
-            const spectrum = this.setup.excitation.intensity;
+            const spectrum = this.setup.excitation.transmission;
             datasets.push(this.asChartjsDataset(spectrum, 'Excitation'));
         }
 
@@ -768,29 +856,6 @@ class SetupPlot
         // LineDash styles to use on spectra plots.
         return [[8,4], [16,4], [4,8,4], [4,8,8]];
     }
-
-    asChartjsDataset(spectrum, label) {
-        if (! this._dataset_cache.has(spectrum)) {
-            const points = new Array(spectrum.wavelength.length);
-            for (let i = 0; i < points.length; i++)
-                points[i] = {x: spectrum.wavelength[i], y: spectrum.data[i]};
-            // Convert a wavelength to HSL-alpha string.
-            const peak_wl = spectrum.peakWavelength();
-            const hue = Math.max(0.0, Math.min(300, 650-peak_wl)) * 0.96;
-
-            const bg_colour = `hsla(${ hue }, 100%, 50%, 0.2)`;
-            const fg_colour = `hsla(${ hue }, 100%, 50%, 1)`;
-            const chartjs_dataset = {
-                label: label,
-                data: points,
-                backgroundColor: bg_colour,
-                borderColor: fg_colour,
-                pointRadius: 0,
-            };
-            this._dataset_cache.set(spectrum, chartjs_dataset);
-        }
-        return this._dataset_cache.get(spectrum);
-    }
 }
 
 
@@ -804,24 +869,32 @@ class SpekCheckController
         const dye_reader = Dye.constructFromFile.bind(Dye);
         this.dyes = new DataCollection('dyes', dye_reader);
         this.dyes_view = new CollectionView($('#dye-selector'),
-                                             this.dyes);
+                                            this.dyes);
 
         const excitation_reader = Excitation.constructFromFile.bind(Excitation);
         this.excitations = new DataCollection('excitation', excitation_reader);
         this.excitations_view = new CollectionView($('#source-selector'),
-                                                    this.excitations);
+                                                   this.excitations);
+
+        const filter_reader = Filter.constructFromFile.bind(Filter);
+        this.filters = new DataCollection('filters', filter_reader);
+        this.filters_view = new CollectionView($('#filter-selector'),
+                                               this.filters);
 
         // this.setups = new SetupCollection('sets');
         // this.setups_view = new CollectionView($('#setup-selector'),
         //                                        this.setups);
 
-        for (let x of [this.dyes, this.excitations])
+        for (let x of [this.dyes, this.excitations, this.filters])
             x.fetch();
 
         this.excitations_view.$el.on('change',
                                      this.changeExcitation.bind(this));
         this.dyes_view.$el.on('change',
                               this.changeDye.bind(this));
+
+        this.filters_view.$el.on('change',
+                                 this.changeFilter.bind(this));
 
         this.setup.change_callback = this.plot.render.bind(this.plot);
         // FilterSets have a preferred Dye and Excitation, the logic
@@ -844,7 +917,6 @@ class SpekCheckController
         if (id === '') {
             this.user_selected_dye = false;
             this.setup.dye = undefined;
-            console.log('nothing');
         } else {
             this.user_selected_dye = true;
             this.dyes.get(id).then(
@@ -858,10 +930,22 @@ class SpekCheckController
         if (id === '') {
             this.user_selected_excitation = false;
             this.setup.excitation = undefined;
-            console.log('nothing');
         } else {
             this.user_selected_excitation = true;
             this.excitations.get(id).then(
+                ex => {this.setup.excitation = ex}
+            );
+        }
+    }
+
+    changeFilter(ev) {
+        const id = ev.target.value;
+        if (id === '') {
+            this.user_selected_excitation = false;
+            this.setup.excitation = undefined;
+        } else {
+            this.user_selected_excitation = true;
+            this.filters.get(id).then(
                 ex => {this.setup.excitation = ex}
             );
         }
