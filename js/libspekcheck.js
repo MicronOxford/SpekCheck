@@ -23,76 +23,6 @@
 let SpekCheck = {};
 
 
-// SpekCheck.Excitation = Backbone.Model.extend({
-//     defaults: {
-//         name: '',
-//         intensity: new SpekCheck.Spectrum(),
-//     },
-
-//     validate: function(attrs, options) {
-//         if (! attrs.spectra.isValid)
-//             return attrs.spectra.validationError;
-//     },
-// },
-// {
-//     base_url: function() {
-//         return SpekCheck.data_url + '/excitation';
-//     },
-
-//     header_map: {
-//         'Name': null,
-//         'Type': null,
-//     },
-
-//     parseFile: function(text) {
-//         return SpekCheck.Spectrum.parseFile(text,
-//                                             SpekCheck.Excitation.header_map,
-//                                             SpekCheck.Excitation);
-//     },
-// });
-
-
-// SpekCheck.Dye = Backbone.Model.extend({
-//     defaults: {
-//         name: '',
-//         excitation: new SpekCheck.Spectrum(),
-//         emission: new SpekCheck.Spectrum(),
-//         ext_coeff: 0.0,
-//         q_yield: 0.0,
-//     },
-
-//     validate: function(attrs, options) {
-//         if (! attrs.excitation.isValid)
-//             return attrs.excitation.validationError;
-//         if (! attrs.emission.isValid)
-//             return attrs.emission.validationError;
-
-//         // Do not change the comparison logic, because by comparing
-//         // for true, we are at the same type checking for the right
-//         // type (e.g., 'undefined<0', 'undefined>0', or 'String>0'
-//         // would return false).
-//         if (! (attrs.ext_coeff >= 0.0))
-//             return 'Extinction Coefficient not a positive number';
-//         if (! (attrs.q_yield >= 0.0))
-//             return 'Quantum Yield not a positive number';
-//     },
-// },
-// {
-//     base_url: function() {
-//         return SpekCheck.data_url + '/dyes';
-//     },
-
-//     header_map: {
-//         
-//     },
-
-//     parseFile: function(text) {
-//         return SpekCheck.Spectrum.parseFile(text, SpekCheck.Dye.header_map,
-//                                             SpekCheck.Dye);
-//     },
-// });
-
-
 SpekCheck.Setup = Backbone.Model.extend({
     defaults: {
         name: '',
@@ -183,65 +113,23 @@ SpekCheck.SetupsCollection = Backbone.Collection.extend({
     },
 });
 
+class Model
+{
+    constructor() {
+        this.validation_error = undefined;
+    }
 
-SpekCheck.DataCollection = Backbone.Collection.extend({
-    comparator: 'name',
-
-    // A base class for our collection of dyes, excitation sources,
-    // and filters.
-    url: function() {
-        return this.model.base_url() + '.json';
-    },
-
-    fetch: function(options) {
-        let collection = this;
-        $.ajax({
-            url: this.url(),
-            dataType: 'json',
-            success: function(data) {
-                for (let i = 0; i < data.length; i++)
-                    data[i] = {name: data[i]};
-                collection.reset(data);
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                // We return an empty collection if we fail to get the
-                // data.  Should we maybe raise an error?
-                collection.reset([]);
-            },
-        });
-    },
-});
+    isValid() {
+        this.validation_error = this.validate();
+        return this.validation_error === undefined;
+    }
+}
 
 
-SpekCheck.ExcitationsView = Backbone.View.extend({
-    tagName: 'select',
-
-    template: _.template('<option value="<%= name %>"><%= name %></option>\n'),
-
-    events: {
-        'change': "doFoo",
-    },
-
-    initialize: function() {
-        // Ws just re-render whole thing even after adding a single
-        // element.  Maybe we should rethink it.
-        this.listenTo(this.collection, 'reset', this.render);
-        this.listenTo(this.collection, 'add', this.render);
-        this.render();
-    },
-
-    render: function(){
-        let options = this.collection.models.map(
-            x => this.template({name: x.get('name')}));
-        this.$el.html(options);
-        return this;
-    },
-
-});
-
-class Spectrum
+class Spectrum extends Model
 {
     constructor(wavelength, data) {
+        super();
         this.wavelength = wavelength;
         this.data = data;
     }
@@ -252,7 +140,7 @@ class Spectrum
         if (! this.data instanceof Array)
             return "No 'data' property for spectrum";
         if (this.wavelength.length !== this.data.length)
-            return "data and wavelength arrays must have the same length";
+            return "'data' and 'wavelength' arrays must have the same length";
     }
 
     area() {
@@ -291,38 +179,13 @@ class Spectrum
     }
 
     peakWavelength() {
-        if (this._peakwl === undefined) {
-            let max_index= this.data.reduce(
-                (iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0
-            );
-            this._peakwl = this.wavelength[max_index];
-        }
-        return this._peakwl;
-    }
-
-    rescale() {
-        // Rescale to [0 1] if it looks like data is in percent
-        const data = this.data;
-        if (Math.max(...data) > 10.0)
-            for (let i = 0; i < data.length; i++)
-                data[i] /= 100;
-    }
-
-    toChartjsPoints() {
-        // We are using Chart.js for the plotting which requires this
-        // format.  Maybe this could be moved into the Plot class but
-        // this allows us to keep this in cache (maybe this is not
-        // good?)
-        if (this._chartjs_points === undefined) {
-            this._chartjs_points = [];
-            for (let i = 0; i < this.wavelength.length; i++) {
-                this._chartjs_points.push({
-                    x: this.wavelength[i],
-                    y: this.data[i],
-                });
-            }
-        }
-        return this._chartjs_points;
+        // We could keep the value in cache but this is actually only
+        // used to create the dataset for Chartjs and SetupPlot
+        // already keeps the values in cache.
+        const max_index= this.data.reduce(
+            (iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0
+        );
+        return this.wavelength[max_index];
     }
 
     static parseHeader(header, header_map) {
@@ -347,9 +210,12 @@ class Spectrum
                     // numeric so this is fine.  But if we ever have
                     // different types, we may need to pass a parse
                     // function together with the attribute name.
-                    const val = parseFloat(line.slice(header_key.length +2));
-                    if (isNaN(val))
-                        throw TypeError('invalid value for ' + header_key)
+                    const val = parseFloat(line.slice(header_key.length+2));
+
+                    // Even though we only expect numeric input,
+                    // sometimes, the values are missing, e.g., we
+                    // don't have quantum yield for all dyes.  In that
+                    // case, the value will be a NaN.
 
                     attrs[header_map[header_key]] = val;
                     break; // found it, so move to next line
@@ -387,12 +253,20 @@ class Spectrum
         for (let i = 0; i < n_spectra; i++)
             spectra[i] = [];
 
-        let wavelengths = [];
+        const wavelengths = [];
         for (let line of csv.slice(1)) {
             let vals = line.split(',').map(x => parseFloat(x));
             wavelengths.push(vals[0]);
             for (let i = 0; i < n_spectra; i++)
                 spectra[i].push(vals[1+i]);
+        }
+
+        for (let i = 0; i < n_spectra; i++) {
+            // Rescale to [0 1] if it looks like data is on percent
+            const data = spectra[i];
+            if (data.some(x => x > 10.0))
+                for (let j = 0; j < data.length; j++)
+                    data[j] /= 100;
         }
 
         for (let i = 0; i < n_spectra; i++)
@@ -844,47 +718,27 @@ class SetupPlot
         });
         // this.setup.on('change', this.render.bind(this));
         // this.render();
+
+        // Keep a cache of individual Spectrum objects, as ready to
+        // use Chartjs datasets.
+        this._dataset_cache = new WeakMap;
     }
 
     render() {
         const datasets = [];
+        const setup = this.setup;
 
         if (this.setup.excitation !== undefined) {
             const spectrum = this.setup.excitation.intensity;
-            const hue = SetupPlot.wavelengthToHue(spectrum.peakWavelength());
-            const colour = `hsla(${ hue }, 100%, 50%, 1)`;
-            datasets.push({
-                label: 'Source',
-                data: spectrum.toChartjsPoints(),
-                backgroundColor: colour,
-                borderColor: colour,
-                pointRadius: 0,
-            });
+            datasets.push(this.asChartjsDataset(spectrum, 'Excitation'));
         }
 
         if (this.setup.dye !== undefined) {
-            const ex_spectrum = this.setup.dye.excitation;
-            const em_spectrum = this.setup.dye.emission;
-            const ex_hue = SetupPlot.wavelengthToHue(ex_spectrum.peakWavelength());
-            const em_hue = SetupPlot.wavelengthToHue(em_spectrum.peakWavelength());
-            const ex_bg_colour = `hsla(${ ex_hue }, 100%, 50%, 0.2)`;
-            const ex_fg_colour = `hsla(${ ex_hue }, 100%, 50%, 1)`;
-            const em_bg_colour = `hsla(${ em_hue }, 100%, 50%, 0.2)`;
-            const em_fg_colour = `hsla(${ em_hue }, 100%, 50%, 1)`;
-            datasets.push({
-                label: 'Dye Excitation',
-                data: ex_spectrum.toChartjsPoints(),
-                backgroundColor: ex_bg_colour,
-                borderColor: ex_fg_colour,
-                pointRadius: 0,
-            });
-            datasets.push({
-                label: 'Dye Emission',
-                data: em_spectrum.toChartjsPoints(),
-                backgroundColor: em_bg_colour,
-                borderColor: em_fg_colour,
-                pointRadius: 0,
-            });
+            const dye = this.setup.dye;
+            datasets.push(this.asChartjsDataset(dye.excitation,
+                                                'Dye Excitation'));
+            datasets.push(this.asChartjsDataset(dye.emission,
+                                                'Dye Emission'));
         }
         // if (this.setup.dye !== undefined)
         //     plot_dye_spectrum()
@@ -910,18 +764,32 @@ class SetupPlot
         this.plot.update();
     }
 
-    add_spectrum(spectrum) {
-        //const hue = this.constructor.wavelengthToHue(spectrum.peakwl());
-    }
-
     static dashes() {
         // LineDash styles to use on spectra plots.
         return [[8,4], [16,4], [4,8,4], [4,8,8]];
     }
 
-    static wavelengthToHue(wl) {
-        // Convert a wavelength to HSL-alpha string.
-        return Math.max(0.0, Math.min(300, 650-wl)) * 0.96;
+    asChartjsDataset(spectrum, label) {
+        if (! this._dataset_cache.has(spectrum)) {
+            const points = new Array(spectrum.wavelength.length);
+            for (let i = 0; i < points.length; i++)
+                points[i] = {x: spectrum.wavelength[i], y: spectrum.data[i]};
+            // Convert a wavelength to HSL-alpha string.
+            const peak_wl = spectrum.peakWavelength();
+            const hue = Math.max(0.0, Math.min(300, 650-peak_wl)) * 0.96;
+
+            const bg_colour = `hsla(${ hue }, 100%, 50%, 0.2)`;
+            const fg_colour = `hsla(${ hue }, 100%, 50%, 1)`;
+            const chartjs_dataset = {
+                label: label,
+                data: points,
+                backgroundColor: bg_colour,
+                borderColor: fg_colour,
+                pointRadius: 0,
+            };
+            this._dataset_cache.set(spectrum, chartjs_dataset);
+        }
+        return this._dataset_cache.get(spectrum);
     }
 }
 
@@ -1002,21 +870,4 @@ class SpekCheckController
 
 $(document).ready(function() {
     const spekcheck = new SpekCheckController;
-//    const excitations = new DataCollection('excitation');
-    // excitations.models = [undefined];
-    // excitations.model_ids = ['405-laser'];
-    // excitations.get('405-laser').then(x => console.log(x));
-    // console.log('end');
-    // setTimeout(() => undefined, 3000);
-    // console.log(excitations.models[2]);
-
-        // test
-
-    // s = new Setup();
-    // s.ex_source = {spectrum: new Spectrum([1, 2, 3], [.1, .2, .3])};
-    // s.ex_filters = [{spectrum: new Spectrum([3, 4], [2, 3])},
-    //                 {spectrum: new Spectrum([2, 3, 4], [5, 6])}];
-    // s.em_filters = [];
-    // b.setup = s;
-    // b.render();
 });
