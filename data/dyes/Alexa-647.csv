@@ -2,7 +2,7 @@ Type: dye
 Name: Alexa-647
 Extinction coefficient: 270000
 Quantum Yield: 0.33
-wavelength,emission
+wavelength,excitation,emission
 250,0.122647002,0
 251,0.117388003,0
 252,0.114036001,0

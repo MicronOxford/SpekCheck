@@ -2,7 +2,7 @@ Type: dye
 Name: Alexa-594
 Extinction coefficient: 92000
 Quantum Yield: 0.66
-wavelength,emission
+wavelength,excitation,emission
 250,0.461775005,0
 251,0.445630014,0
 252,0.439969987,0

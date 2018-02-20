@@ -1,5 +1,8 @@
-Dye: FluoShperes red (578/605)
-Wavelength,Excitation,Emission
+Type: dye
+Name: FluoShperes red (578/605)
+Extinction coefficient:
+Quantum Yield:
+wavelength,excitation,emission
 300,0,0
 301,0,0
 302,0,0

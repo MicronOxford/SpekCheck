@@ -1,5 +1,8 @@
-Dye: FluoShperes orange (540/560)
-Wavelength,Excitation,Emission
+Type: dye
+Name: FluoShperes orange (540/560)
+Extinction coefficient:
+Quantum Yield:
+wavelength,excitation,emission
 300,0,0
 301,0,0
 302,0,0
