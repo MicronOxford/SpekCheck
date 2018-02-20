@@ -1,6 +1,6 @@
 Type: dichroic
 Name: Chroma ZT488/592TPC_PhaseT T600-750-UF3 batch 283873
-Wavelength (nm), Transmission (0 to 1)
+wavelength,transmission
 380,0.032953
 381,0.0427426
 382,0.0784276

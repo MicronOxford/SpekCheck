@@ -1,6 +1,6 @@
 Type: filter
 Name: Chroma ET575lp
-Wavelength (nm), Transmission (0 to 1)
+wavelength,transmission
 300.00,9.5000001465451E-7
 301.00,9.5000001465451E-7
 302.00,9.5000001465451E-7

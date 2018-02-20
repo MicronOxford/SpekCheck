@@ -1,6 +1,6 @@
 Type: filter
 Name: Chroma Et442/46m
-Wavelength (nm), Transmission (0 to 1)
+wavelength,transmission
 300.0000,-0.00004
 301.0000,-0.00001
 302.0000,0.00002
