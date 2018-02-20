@@ -1,7 +1,7 @@
 Type: dye
 Name: Mitotracker red FM
-Extinction coefficient: 
-Quantum Yield: 
+Extinction coefficient:
+Quantum Yield:
 wavelength,excitation,emission
 300,0,0
 301,0,0

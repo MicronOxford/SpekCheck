@@ -1,7 +1,8 @@
 Type: Dye
-Name: CF 405M spectra from http://www.fluorophores.tugraz.at/substance/1131
+Name: CF 405M
 Extinction coefficient: 41000
-Quantum Yield: 
+Quantum Yield:
+## spectra from http://www.fluorophores.tugraz.at/substance/1131
 wavelength,excitation,emission
 320,0.0602,0
 321,0.0549,0
