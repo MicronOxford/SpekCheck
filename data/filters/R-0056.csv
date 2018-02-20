@@ -1,5 +1,6 @@
-Dichroic: API-0056 Reflectence
-wavelength,R-0056
+Type: filter
+Name: API-0056 Reflectance
+wavelength,reflection
 364,0.88
 366,0.78
 368,0.75

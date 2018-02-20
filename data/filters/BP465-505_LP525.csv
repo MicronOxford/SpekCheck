@@ -1,6 +1,6 @@
-Type: Filter
+Type: filter
 Name: LSM880Airyscan_BP465-505_LP525_2095-051
-wavelength,transmision
+wavelength,transmission
 450.867527,0.001451276
 452.3901425,0.001414735
 453.912758,0.001414735

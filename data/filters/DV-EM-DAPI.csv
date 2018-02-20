@@ -1,7 +1,7 @@
-Type: Filter
+Type: filter
 Name: DV-EM-DAPI.csv
-Not the real filter, 440/40 rather then 435/48.
-wavelength,transmision
+## Not the real filter, 440/40 rather then 435/48.
+wavelength,transmission
 200.0,3.0746e-06
 200.2,7.9384e-06
 200.4,4.6182e-07

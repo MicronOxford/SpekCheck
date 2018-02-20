@@ -1,5 +1,6 @@
-Standard Quad Dichroic for DV with SSI?
-wavelength,GFP
+Type: filter
+Name: Standard Quad Dichroic for DV with SSI?
+wavelength,reflection
 300.00,0.091237999498844
 301.00,0.035228800028563
 302.00,0.00011726599768735

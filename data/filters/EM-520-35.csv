@@ -1,6 +1,6 @@
 Type: filter
 Name: Semrock FF01-520/35 Diamond CryoSIM
-Data format:  Wavelength (nm), Transmission (0 to 1)
+wavelength,transmission
 270.0,2.9833e-06
 270.2,3.1675e-06
 270.4,3.3631e-06

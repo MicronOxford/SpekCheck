@@ -1,5 +1,6 @@
-Dichroic: API-0053 Reflectence
-wavelength,R-0053
+Type: filter
+Name: API-0053 Reflectance
+wavelength,reflection
 348,0.941747573
 350,0.815533981
 352,0.708737864

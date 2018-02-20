@@ -1,5 +1,6 @@
-Filter: ET600/50m Chroma
-Wavelength,transmission
+Type: filter
+Name: ET600/50m Chroma
+wavelength,transmission
 300.00,1.0271900237058E-6
 301.00,9.5000001465451E-7
 302.00,9.5000001465451E-7

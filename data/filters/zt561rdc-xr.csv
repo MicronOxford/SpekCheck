@@ -1,5 +1,6 @@
-Dichroic: ZT561tdc-xr Chroma
-Wavelength,transmission
+Type: filter
+Name: ZT561tdc-xr Chroma
+wavelength,transmission
 380.00,0.0066881701350212
 381.00,0.0051186098717153
 382.00,0.0031623200047761

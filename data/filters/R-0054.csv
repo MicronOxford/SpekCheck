@@ -1,5 +1,6 @@
-Dichroic: API-0054 Reflectence.
-Wavelength,Reflectance
+Type: filter
+Name: API-0054 Reflectance
+wavelength,reflection
 400,0.932038835
 402,0.932038835
 404,0.932038835

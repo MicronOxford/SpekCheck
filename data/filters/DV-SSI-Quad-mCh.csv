@@ -1,9 +1,9 @@
-Type: Dichroic
+Type: dichroic
 Name: FF405/496/593/647-Di01
-Typical Measured Spectrum of Semrock FF405/496/593/647-Di01 Optical Filter	
-For wavelengths between 320 and 1120 nm, values near or below 3e-7 (Optical Density 6.5) are measurement noise limited.
-For wavelengths < 320 nm and > 1120 nm, values near or below 3e-6 (Optical Density 5.5) are measurement noise limited. 
-Data format:  Wavelength (nm) <tab> Transmission (0 to 1)
+## Typical Measured Spectrum of Semrock FF405/496/593/647-Di01 Optical Filter
+## For wavelengths between 320 and 1120 nm, values near or below 3e-7 (Optical Density 6.5) are measurement noise limited.
+## For wavelengths < 320 nm and > 1120 nm, values near or below 3e-6 (Optical Density 5.5) are measurement noise limited.
+wavelength,transmission
 371.0,0.00179
 371.2,0.00127
 371.4,9.4946e-04

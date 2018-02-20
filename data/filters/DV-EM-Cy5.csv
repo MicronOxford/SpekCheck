@@ -1,6 +1,6 @@
-Type: Filter
+Type: filter
 Name: DV-EM-Cy5.csv
-wavelength,transmision
+wavelength,transmission
 450.088864,0.004743
 450.204180,0.005017
 450.319497,0.004637

@@ -1,6 +1,6 @@
 Type: dichroic
 Name: Chroma T560lpxr CryoSIM secondary dichroic
-Data format:  Wavelength (nm), Transmission (0 to 1)
+wavelength,transmission
 380.00,0.0018482300220057
 381.00,0.0023903900291771
 382.00,0.0031139499042183

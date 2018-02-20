@@ -1,5 +1,6 @@
-Dichroic: API-0052 Reflectence
-wavelength,R-0052
+Type: filter
+Name: API-0052 Reflectance
+wavelength,reflection
 318,0.893203883
 320,0.689320388
 322,0.514563107

@@ -1,4 +1,6 @@
-Wavelength,645_75
+Type: filter
+Name: 645_75
+wavelength,transmission
 300.00,9.5000001465451E-7
 301.00,9.5000001465451E-7
 302.00,9.5000001465451E-7

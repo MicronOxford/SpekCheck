@@ -1,6 +1,6 @@
 Type: filter
 Name: Chroma ET605LP
-Wavelength (nm), Transmission (0 to 1)
+wavelength,transmission
 300,0.0000002
 301,0.0000001
 302,0.0000005

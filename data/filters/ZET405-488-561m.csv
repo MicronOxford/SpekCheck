@@ -1,6 +1,6 @@
-Type: Filter
+Type: filter
 Name: Chroma ZET405/488/561m
-wavelength,transmision
+wavelength,transmission
 300.00,9.5000001465451E-7
 300.50,9.5000001465451E-7
 301.00,9.5000001465451E-7

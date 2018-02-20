@@ -1,6 +1,6 @@
-Type: Filter
+Type: filter
 Name: DV-EM-CFP.csv
-wavelength,transmision
+wavelength,transmission
 437.647947,0.007017
 437.761224,0.011331
 437.874507,0.013500

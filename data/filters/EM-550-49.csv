@@ -1,4 +1,6 @@
-Wavelength (nm),Transmission
+Type: filter
+Name: 550/49
+wavelength,transmission
 350,0
 351,0
 352,0

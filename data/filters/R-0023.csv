@@ -1,5 +1,6 @@
-Dichroic: API-0023 Reflectence
-Wavelength,API_0023
+Type: filter
+Name: API-0023 Reflectance
+wavelength,transmission
 300,0
 302,0.0001
 304,0.0001

@@ -1,6 +1,6 @@
 Type: filter
 Name: Olympus BA515IF scanned from web for Diamond CryoSIM
-Data format:  Wavelength (nm), Transmission (0 to 1)
+wavelength,transmission
 302.6448938,0.003577392
 334.3911241,0.003858831
 364.020939,0.004121506

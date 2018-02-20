@@ -1,6 +1,6 @@
 Type: filter
 Name: Semrock FF01-676/37 Optical Filter
-Wavelength (nm), Transmission (0 to 1)
+wavelength,transmission
 265.0,6.7793e-06
 265.2,6.6494e-06
 265.4,6.522e-06

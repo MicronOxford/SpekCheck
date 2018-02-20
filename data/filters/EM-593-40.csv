@@ -1,4 +1,6 @@
-Wavelength,593/40
+Type: filter
+Name: 593/40
+wavelength,transmission
 300,0
 302,0
 304,0

@@ -1,5 +1,6 @@
-Dichroic: API-0058 Reflectence
-Wavelength,Reflectance
+Type: filter
+Name: API-0058 Reflectance
+wavelength,reflection
 400,0.03
 401,0.03
 402,0.02
