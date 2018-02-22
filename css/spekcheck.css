@@ -20,10 +20,16 @@
     vertical-align: bottom;
 }
 
+.spekcheck-filtersview
+{
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+
 body {
     font-family: sans-serif;
 }
-
 
 
 *.selected {

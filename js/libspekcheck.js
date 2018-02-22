@@ -15,112 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with SpekCheck.  If not, see <http://www.gnu.org/licenses/>.
 
-// TODO: The handling of URLs is a bit of a mess.  Some are static
-//    methods, others are static properties, others are instance
-//    methods.  This may prevent the reuse with other structures.
-
-
-let SpekCheck = {};
-
-
-SpekCheck.Setup = Backbone.Model.extend({
-    defaults: {
-        name: '',
-        // dye: new SpekCheck.Dye,
-        // ex_source: new SpekCheck.Excitation,
-        ex_filters: [],
-        em_filters: [],
-    },
-},
-{
-    parseSetupLine: function(line) {
-        // Expects line to be a setup definition.  It's the
-        // responsability of the caller to make sure that file
-        // comments and empty lines are filtered out.
-        const line_parts = line.split(',').map(x => x.trim());
-        const name = line_parts[0];
-        // const dye = new SpekCheck.Dye({name: line_parts[1]});
-        // const ex_source = new SpekCheck.Excitation({
-        //     'name': line_parts[2],
-        // });
-
-        const ex_filters = [];
-        const em_filters = [];
-        let ex_path = true; // looking at filters in ex path until we see '::'
-        for (let filt of line_parts.slice(3)) {
-            const c_idx = filt.search('::');
-            if (c_idx >= 0) {
-                if (! ex_path)
-                    throw TypeError('more than one :: in set ' + name);
-                ex_filters.push
-                ex_path = false;
-                em_filters.push
-            }
-            else if (ex_path)
-                ex_filters.push
-            else // already looking at emission path
-                em_filters.push
-        }
-        // const setup = new SpekCheck.Setup({
-        //     'name': name,
-        //     'dye': dye,
-        //     'ex_source': ex_source,
-        //     'ex_filters': ex_filters,
-        //     'em_filters': em_filters,
-        // });
-        return setup;
-    },
-});
-
-
-SpekCheck.SetupsCollection = Backbone.Collection.extend({
-    model: SpekCheck.Setup,
-
-    url: function() {
-        return SpekCheck.data_url + '/sets';
-    },
-
-    fetch: function(options) {
-        let collection = this;
-        $.ajax({
-            url: this.url(),
-            dataType: 'text',
-            success: function(text) {
-                let setups = SpekCheck.SetupsCollection.parseSetupsFile(text);
-                collection.reset(setups);
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                // We return an empty collection if we fail to get the
-                // data.  Should we maybe raise an error?
-                console.log(textStatus);
-                console.log(errorThrown);
-                collection.reset([]);
-            },
-        });
-    },
-},
-{
-    parseSetupsFile: function(txt) {
-        let setups = [];
-        for (let line of txt.split('\n')) {
-            line = line.trim();
-            if (line.startsWith('//') || line.length === 0)
-                continue; // skip comments and empty lines
-            let setup = SpekCheck.Setup.parseSetupLine(line);
-            setups.push(setup);
-        }
-        return setups;
-    },
-});
-
-/////////
-
 
 // A base class to provide base for model validation.  We may add
 // event handling later.
 //
-// Yeah, feels like we are re-inventing backbone for ES6.  That's
-// because we tried to use it first before giving up.
+// For validation, subclasses should overload the 'validate' method.
+// Users should be calling 'isValid' and then accessing the
+// 'validation_error' property for the error message.
+//
+// If it looks like we are re-inventing backbone with ES6 syntax,
+// that's because we tried to use backbone first before giving up and
+// picking only the things we needed.
 class Model
 {
     constructor() {
@@ -134,8 +39,9 @@ class Model
 }
 
 
-// Call for Spectrum data only.  Not for Dye, Filter, etc.  Those have
-// a spectrum but are not a spectrum themselves.
+// Call for Spectrum data and its computations.  Not for Dye, Filter,
+// or Excitation.  Those have a spectrum property but they are not a
+// Spectrum themselves.
 class Spectrum extends Model
 {
     constructor(wavelength, data) {
@@ -204,7 +110,7 @@ class Spectrum extends Model
         //     header_map(Object): see doc for parseFile.
         //
         // Returns:
-        //     An Object of attributes, keys taken from `header_map`
+        //     An Object of attributes, keys taken from 'header_map'
         //     values.
         const attrs = {};
         for (let line of header) {
@@ -241,7 +147,7 @@ class Spectrum extends Model
         // Confirm we got all properties from the header.
         for (let attr_name of Object.values(header_map))
             if (attr_name !== null && attrs[attr_name] === undefined)
-                throw TypeError('missing ' + attr_name + ' from header');
+                throw new Error(`missing value for '${ attr_name }' in header`);
 
         return attrs;
     }
@@ -295,7 +201,7 @@ class Spectrum extends Model
         return attrs;
     }
 
-    static parseFile(text, header_map, factory) {
+    static parseText(text, header_map, factory) {
         // Parse our spectra files (text header followed with CSV)
         //
         // Our spectra files have a multi-line text header of the
@@ -309,9 +215,9 @@ class Spectrum extends Model
         //    wavelengths, spectra name #1, spectra name #2
         //    x, y, z
         //
-        // The `key` values are case-sensitive and used to index
-        // `header_map`.  The `spectra name #N` will be used as a
-        // property keys on the Object passed to `factory`.
+        // The 'key' values are case-sensitive and used to index
+        // 'header_map'.  The 'spectra name #N' will be used as a
+        // property keys on the Object passed to 'factory'.
         // Everything is case-sensitive.
         //
         // Args:
@@ -319,16 +225,16 @@ class Spectrum extends Model
         //
         //     header_map (Object): maps header keys from the file
         //        header to property names used for the Object passed
-        //        to `factory`.  If the value is `null`, those keys
+        //        to 'factory'.  If the value is 'null', those keys
         //        are ignored.
         //
         //     factory (function): the function for the returned
         //         object.  It must accept an Object as input.  The
         //         keys of that Object will be the values of
-        //         `header_map` and the CSV spectrum names.
+        //         'header_map' and the CSV spectrum names.
         //
         // Returns:
-        //    The return value from `factory`.
+        //    The return value from 'factory'.
         //
         // This is meant to construct the Dye, Excitation, Filter, and
         // Source objects which have one or more Spectrum objects.  So
@@ -344,7 +250,7 @@ class Spectrum extends Model
         //
         // The the function would be called like this:
         //
-        //      parseFile(text,
+        //      parseText(text,
         //                {
         //                    'Name': null, // Ignore this
         //                    'Type': null, // Ignore this
@@ -353,9 +259,9 @@ class Spectrum extends Model
         //                },
         //                (attrs) => new Dye(attrs))
         //
-        // To have `factory` called like this (the names `q_yield` and
-        // `ext_coeff` are values from `header_map`, while the names
-        // `excitation` and `emission` come from the first line of the
+        // To have 'factory' called like this (the names 'q_yield' and
+        // 'ext_coeff' are values from 'header_map', while the names
+        // 'excitation' and 'emission' come from the first line of the
         // CSV text):
         //
         //    factory({
@@ -389,7 +295,7 @@ class Spectrum extends Model
         const header_attrs = this.parseHeader(header, header_map);
         const csv_attrs = this.parseCSV(csv);
         if (Object.keys(header_attrs).some(x => csv_attrs.hasOwnProperty(x)))
-            throw TypeError('csv and header have duplicate properties');
+            throw new Error('csv and header have duplicate properties');
 
         Object.assign(attrs, header_attrs, csv_attrs);
         return factory(attrs);
@@ -399,29 +305,34 @@ class Spectrum extends Model
 
 // Base class for our Data, Excitation, and Filter classes.
 //
-// It requires two static data members:
+// It provides a nice default constructor and factory from file text.
+// It requires two static data members wich configure the constructor
+// and the reader:
 //
 //    properties: an Array of property names which will be defined on
 //        a class instance, and are required to be keys on the Object
 //        passed to the factory.
-//    header_map: used to map the keys on the header of Spectra files
-//        to the keys used on the Object passed to the factory.
-//        null values mean fields to ignore.
+//    header_map: used to map the keys on the header of the files to
+//        the keys used on the Object passed to the factory.  null
+//        values mean fields to ignore.
+//
+// TODO: call it something other than Data.  It is meant to represent
+//       the things that we have a data file for.
 class Data extends Model
 {
     constructor(attrs) {
         super();
-        // Make sure that all properties mentioned are defined
+        // Make sure that all properties are defined.
         for (let p of this.constructor.prototype.properties) {
             if (attrs[p] === undefined)
-                throw TypeError(`missing property '${ p }'`);
+                throw new Error(`missing property '${ p }'`);
             this[p] = attrs[p];
         }
     }
 
-    static constructFromFile(text) {
+    static constructFromText(text) {
         const factory = (attrs) => new this.prototype.constructor(attrs);
-        return Spectrum.parseFile(text, this.prototype.header_map, factory);
+        return Spectrum.parseText(text, this.prototype.header_map, factory);
     }
 }
 Data.prototype.header_map = {
@@ -432,6 +343,23 @@ Data.prototype.header_map = {
 
 class Dye extends Data
 {
+    validate() {
+        for (let s_name of ['emission', 'excitation']) {
+            if (! this[s_name] instanceof Spectrum)
+                return `${ s_name } property is not a Spectrum object`;
+            if (! this[s_name].isValid())
+                return this[s_name].validation_error;
+        }
+
+        // Careful with the comparison logic here.  We compare for
+        // true so that it also checks for the right type.  If we did
+        // 'ex_coeff < 0.0' it would return false even if 'ex_coeff'
+        // was undefined a String or whatever.
+        if (! (this.ex_coeff >= 0.0) && ! isNaN(this.ex_coeff))
+            return 'Extinction Coefficient must be a positive number';
+        if (! (this.q_yield >= 0.0) && ! isNaN(this.q_yield))
+            return 'Quantum Yield must be a positive number';
+    }
 }
 Dye.prototype.header_map = Object.assign({}, Data.prototype.header_map, {
     'Extinction coefficient': 'ex_coeff',
@@ -447,6 +375,12 @@ Dye.prototype.properties = [
 
 class Excitation extends Data
 {
+    validate() {
+        if (! this.intensity instanceof Spectrum)
+            return "'intensity' property is not a Spectrum object";
+        if (! this.intensity.isValid())
+            return this.intensity.validation_error;
+    }
 }
 Excitation.prototype.properties = [
     'intensity',
@@ -457,8 +391,8 @@ Excitation.prototype.properties = [
 // a property of the Optical Setup.  So it's up to Setup to handle it.
 class Filter extends Data
 {
-    // Lazy-getters to compute reflection.
     get reflection() {
+        // Lazy-getters to compute reflection.
         const reflection = this.transmission.map(x => 1-x);
         delete this.reflection;
         Object.defineProperty(this, 'reflection', {value: reflection});
@@ -472,48 +406,15 @@ class Filter extends Data
     }
 
     validate() {
-        if (! this.transmission.isValid)
-            return this.transmission.validationError;
-        if (this.mode !== 'r' && this.mode !== 't')
-            return 'invalid filter mode';
-    }
-
-    changeMode() {
-        this.mode = this.mode === 't' ? 'r' : 't';
-    }
-
-    static parseFilterField(field) {
-        // Parses a filter definition as it appears on the sets file,
-        // i.e., 'filter_name [mode]' where mode is optional and R|T
-        const field_parts = field.split(' ').map(x => x.trim());
-        if (field_parts.length > 2)
-            throw TypeError('invalid Filter definition ' + field);
-
-        const attrs = {name: field_parts[0]};
-        if (field_parts.length === 2)
-            attrs.mode = field_parts[1].toLowerCase();
-        return new Filter(attrs);
-    }
-
-    static constructFromFile(text) {
-        // Some Filter data files have reflection instead of
-        // transmission so fix that before calling the constructor.
-        const constructor = this.prototype.constructor;
-        const factory = function(attrs) {
-            if (attrs.reflection !== undefined) {
-                attrs.transmission = attrs.reflection;
-                attrs.transmission.data = attrs.reflection.data.map(x => 1-x);
-                delete attrs.reflection;
-            }
-            return new constructor(attrs);
-        }
-        return Spectrum.parseFile(text, this.prototype.header_map, factory);
+        if (! this.transmission instanceof Spectrum)
+            return "'transmission' property is not a Spectrum object";
+        if (! this.transmission.isValid())
+            return this.transmission.validation_error;
     }
 }
 Filter.prototype.properties = [
     'transmission',
 ];
-
 
 
 class FilterSet extends Model
@@ -539,6 +440,38 @@ class FilterSet extends Model
     triggerChange() {
         for (let callback of this.change_callbacks)
             callback();
+    }
+
+    // changeMode() {
+    //     this.mode = this.mode === 't' ? 'r' : 't';
+    // }
+
+    static parseFilterField(field) {
+        // Parses a filter definition as it appears on the sets file,
+        // i.e., 'filter_name [mode]' where mode is optional and R|T
+        const field_parts = field.split(' ').map(x => x.trim());
+        if (field_parts.length > 2)
+            throw TypeError('invalid Filter definition ' + field);
+
+        const attrs = {name: field_parts[0]};
+        if (field_parts.length === 2)
+            attrs.mode = field_parts[1].toLowerCase();
+        return new Filter(attrs);
+    }
+
+    static constructFromText(text) {
+        // Some Filter data files have reflection instead of
+        // transmission so fix that before calling the constructor.
+        const constructor = this.prototype.constructor;
+        const factory = function(attrs) {
+            if (attrs.reflection !== undefined) {
+                attrs.transmission = attrs.reflection;
+                attrs.transmission.data = attrs.reflection.data.map(x => 1-x);
+                delete attrs.reflection;
+            }
+            return new constructor(attrs);
+        }
+        return Spectrum.parseText(text, this.prototype.header_map, factory);
     }
 
     static parseLine(line) {
@@ -579,35 +512,73 @@ class FilterSet extends Model
         // return setup;
         return new Setup(name);
     }
+
+    static parseSetupsFile(txt) {
+        let setups = [];
+        for (let line of txt.split('\n')) {
+            line = line.trim();
+            if (line.startsWith('//') || line.length === 0)
+                continue; // skip comments and empty lines
+            let setup = SpekCheck.Setup.parseSetupLine(line);
+            setups.push(setup);
+        }
+        return setups;
+    }
 }
 
 
 // Our base class for Collections.
+//
+// A lot of functionality here is asynchronous because the actual
+// Models it stores will only be created when it's required to access
+// them (so that the data files are only parsed when required).
 class Collection extends Model
 {
     constructor() {
         super();
         this.url = '../data/';
         this.models = []; // Actually, promises of a model.
-        this.ids = []; // Array of Strings (the names which are unique)
+        this.uids = []; // Array of Strings (the names which are unique)
 
         // This callbacks are usually arrays.  We can probably get
         // away with only one callback.
+        //
+        // TODO: add this event handling to the Model parent class.
         this.add_callback = undefined;
         this.reset_callback = undefined;
     }
 
-    get(id) {
+    validate() {
+        if (this.models.length !== this.uids.length)
+            return 'Number of models and uids is not the same';
+        if (this.models.some(x => x !== undefined && ! x instanceof Promise))
+            return 'Models must all be promises (or undefined)';
+    }
+
+    add(uid, model) {
+        if (this.uids.indexOf(uid) !== -1)
+            throw new Error(`There is already '${ uid }' in collection`);
+        if (! model instanceof Promise)
+            throw new Error('New model being added is not a Promise');
+
+        this.models.push(model);
+        this.uids.push(uid);
+        if (this.add_callback !== undefined)
+            this.add_callback(object);
+    }
+
+    get(uid) {
         // Returns a Promise!!!
-        const index = this.ids.indexOf(id);
+        const index = this.uids.indexOf(uid);
         if (index === -1)
-            throw TypeError('no id');
+            throw new Error(`No object named '${ uid }' in collection`);
         if (this.models[index] === undefined)
-            this.models[index] = this.fetch_model(id);
+            this.models[index] = this.fetch_model(uid);
         return this.models[index];
     }
 
     fetch(new_options) {
+        // Async method!!!
         const defaults = {
             url: this.url,
             dataType: 'json',
@@ -626,18 +597,14 @@ class Collection extends Model
         this.reset(data);
     }
 
-    reset(ids) {
-        this.ids = ids.slice(0);
-        this.models = new Array(this.ids.length);
+    reset(uids) {
+        this.uids = uids.slice(0);
+        // XXX: maybe we should fill the models with promises?
+        this.models = new Array(this.uids.length);
         if (this.reset_callback !== undefined)
             this.reset_callback();
     }
 
-    add(object) {
-        this.models.push(object);
-        if (this.add_callback !== undefined)
-            this.add_callback(object);
-    }
 }
 
 
@@ -648,15 +615,15 @@ class DataCollection extends Collection
         // Args:
         //    filename (String):
         //    factory (function): will parse the text of a file and
-        //        return a Data object.  See Data.constructFromFile.
+        //        return a Data object.  See Data.constructFromText.
         super();
         this.dir_url = this.url + filename + '/';
         this.url += filename + '.json';
         this.factory = factory;
     }
 
-    fetch_model(id) {
-        const fpath = this.dir_url + id + '.csv';
+    fetch_model(uid) {
+        const fpath = this.dir_url + uid + '.csv';
         return $.ajax({
             url: fpath,
             dataType: 'text',
@@ -677,8 +644,8 @@ class SetupCollection extends Collection
     }
 
     resetWithData(data) {
-        const ids = this.constructor.parseData(data);
-        this.reset(ids);
+        const uids = this.constructor.parseData(data);
+        this.reset(uids);
     }
 
     static parseData(data) {
@@ -696,6 +663,25 @@ class SetupCollection extends Collection
 }
 
 
+class SelectorView
+{
+    constructor($el, collection) {
+        this.$el = $el;
+        this.collection = collection;
+        this.collection.reset_callback = this.render.bind(this);
+    }
+
+    render() {
+        const names = [''].concat(this.collection.uids);
+        const html = names.map(name => this.option_html(name));
+        this.$el.html(html);
+    }
+
+    option_html(name) {
+        return `<option value="${ name }">${ name }</option>\n`;
+    }
+}
+
 class CollectionView
 {
     constructor($el, collection) {
@@ -705,13 +691,31 @@ class CollectionView
     }
 
     render() {
-        const names = [''].concat(this.collection.ids);
-        const html = names.map(name => this.option_html(name));
+        const html = this.collection.uids.map(name => this.option_html(name));
         this.$el.html(html);
     }
 
     option_html(name) {
         return `<option value="${ name }">${ name }</option>\n`;
+    }
+}
+
+class FilterSetBuilder
+{
+    constructor($el, filters) {
+        this.$el = $el;
+        this.filters = filters;
+        this.ex_filters = [];
+        this.em_filters = []
+
+        this.$ex_el = undefined;
+        this.$em_el = undefined;
+    }
+
+    onAdd(ev) {
+        // Adding a filter to either the ex or em path
+    }
+    onRemove(ev) {
     }
 }
 
@@ -817,7 +821,7 @@ class SetupPlot
         const setup = this.setup;
 
         if (this.setup.excitation !== undefined) {
-            const spectrum = this.setup.excitation.transmission;
+            const spectrum = this.setup.excitation.intensity;
             datasets.push(this.asChartjsDataset(spectrum, 'Excitation'));
         }
 
@@ -866,20 +870,31 @@ class SpekCheckController
         this.plot = new SetupPlot($('#setup-plot')[0].getContext('2d'),
                                   this.setup);
 
-        const dye_reader = Dye.constructFromFile.bind(Dye);
+        const dye_reader = Dye.constructFromText.bind(Dye);
         this.dyes = new DataCollection('dyes', dye_reader);
-        this.dyes_view = new CollectionView($('#dye-selector'),
-                                            this.dyes);
+        this.dyes_view = new SelectorView($('#dye-selector'),
+                                          this.dyes);
 
-        const excitation_reader = Excitation.constructFromFile.bind(Excitation);
+        const excitation_reader = Excitation.constructFromText.bind(Excitation);
         this.excitations = new DataCollection('excitation', excitation_reader);
-        this.excitations_view = new CollectionView($('#source-selector'),
-                                                   this.excitations);
+        this.excitations_view = new SelectorView($('#source-selector'),
+                                                 this.excitations);
 
-        const filter_reader = Filter.constructFromFile.bind(Filter);
+        const filter_reader = Filter.constructFromText.bind(Filter);
         this.filters = new DataCollection('filters', filter_reader);
-        this.filters_view = new CollectionView($('#filter-selector'),
+        this.filters_view = new CollectionView($('#filters-view'),
                                                this.filters);
+        this.filters_view.option_html = function(name) {
+            return '<li class="list-group-item">' +
+                  `${ name }` +
+                '<button type="button" class="close" aria-label="Add to excitation">' +
+                '<span aria-hidden="true">&#8668;</span>' +
+                '</button>' +
+                '<button type="button" class="close" aria-label="Add to emission">' +
+                '<span aria-hidden="true">&#8669;</span>' +
+                '</button>' +
+                '</li>';
+        }
 
         // this.setups = new SetupCollection('sets');
         // this.setups_view = new CollectionView($('#setup-selector'),
@@ -892,9 +907,6 @@ class SpekCheckController
                                      this.changeExcitation.bind(this));
         this.dyes_view.$el.on('change',
                               this.changeDye.bind(this));
-
-        this.filters_view.$el.on('change',
-                                 this.changeFilter.bind(this));
 
         this.setup.change_callback = this.plot.render.bind(this.plot);
         // FilterSets have a preferred Dye and Excitation, the logic
@@ -910,46 +922,64 @@ class SpekCheckController
         // only change them to a FilterSet prefered if not.
         this.user_selected_dye = false;
         this.user_selected_excitation = false;
+
+        $('.custom-file-input').on('change', this.selectFile);
+        $('#import-dye').on('click', this.addDye.bind(this));
+    }
+
+    selectFile(ev) {
+        const filename = ev.target.files[0].name;
+        const label = $(ev.target).next('.custom-file-label');
+        label.html(filename);
+    }
+
+    addDye(ev) {
+        const file = $('#file-selector')[0].files[0];
+        // We should probably be using a FileReader...
+        const file_url = window.URL.createObjectURL(file);
+        return $.ajax({
+            url: file_url,
+            dataType: 'text',
+        }).then(text => this.dyes.add(this.dyes.factory(text)));
     }
 
     changeDye(ev) {
-        const id = ev.target.value;
-        if (id === '') {
+        const uid = ev.target.value;
+        if (uid === '') {
             this.user_selected_dye = false;
             this.setup.dye = undefined;
         } else {
             this.user_selected_dye = true;
-            this.dyes.get(id).then(
+            this.dyes.get(uid).then(
                 dye => {this.setup.dye = dye}
             );
         }
     }
 
     changeExcitation(ev) {
-        const id = ev.target.value;
-        if (id === '') {
+        const uid = ev.target.value;
+        if (uid === '') {
             this.user_selected_excitation = false;
             this.setup.excitation = undefined;
         } else {
             this.user_selected_excitation = true;
-            this.excitations.get(id).then(
+            this.excitations.get(uid).then(
                 ex => {this.setup.excitation = ex}
             );
         }
     }
 
-    changeFilter(ev) {
-        const id = ev.target.value;
-        if (id === '') {
-            this.user_selected_excitation = false;
-            this.setup.excitation = undefined;
-        } else {
-            this.user_selected_excitation = true;
-            this.filters.get(id).then(
-                ex => {this.setup.excitation = ex}
-            );
-        }
-    }
+    // changeFilter(ev) {
+    //     const uid = ev.target.value;
+    //     if (uid === '') {
+    //         this.setup.excitation = undefined;
+    //     } else {
+    //         this.user_selected_excitation = true;
+    //         this.filters.get(uid).then(
+    //             ex => {this.setup.excitation = ex}
+    //         );
+    //     }
+    // }
 }
 
 $(document).ready(function() {
