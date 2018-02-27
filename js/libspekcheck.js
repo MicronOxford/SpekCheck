@@ -16,8 +16,7 @@
 // along with SpekCheck.  If not, see <http://www.gnu.org/licenses/>.
 
 
-// A base class to provide base for model validation.  We may add
-// event handling later.
+// Base class to provide model validation and event callbacks.
 //
 // For validation, subclasses should overload the 'validate' method.
 // Users should be calling 'isValid' and then accessing the
@@ -30,11 +29,24 @@ class Model
 {
     constructor() {
         this.validation_error = null; // String or null
+        this._events = {};
     }
 
     isValid() {
         this.validation_error = this.validate() || null;
         return this.validation_error === null;
+    }
+
+    on(event, callback, thisArg=callback) {
+        if (this._events[event] === undefined)
+            this._events[event] = [];
+        this._events[event].push(callback.bind(thisArg));
+    }
+
+    trigger(event, args) {
+        if (this._events[event] !== undefined)
+            for (let callback of this._events[event])
+                callback.apply(null, args);
     }
 }
 
@@ -527,6 +539,33 @@ class FilterSet extends Model
 }
 
 
+class OpticalSetup extends Model
+{
+    constructor() {
+        super();
+        this._dye = null;
+        this._excitation = null;
+        this._em_filters = [];
+        this._ex_filters = [];
+    }
+
+    set dye(val) {
+        this._dye = val;
+        this.trigger('change');
+    }
+    get dye() {
+        return this._dye;
+    }
+
+    set excitation(val) {
+        this._excitation = val;
+        this.trigger('change');
+    }
+    get excitation() {
+        return this._excitation;
+    }
+}
+
 // Our base class for Collections.
 //
 // A lot of functionality here is asynchronous because the actual
@@ -720,35 +759,6 @@ class FilterSetBuilder
 }
 
 
-class Setup
-{
-    constructor() {
-        this._dye = undefined;
-        this._excitation = undefined;
-        this._em_filters = [];
-        this._ex_filters = [];
-
-        // This callbacks are usually arrays.  We can probably get
-        // away with only one callback.
-        this.change_callback = undefined;
-    }
-
-    set dye(val) {
-        this._dye = val;
-        this.change_callback();
-    }
-    get dye() {
-        return this._dye;
-    }
-
-    set excitation(val) {
-        this._excitation = val;
-        this.change_callback();
-    }
-    get excitation() {
-        return this._excitation;
-    }
-}
 
 class SetupPlot
 {
