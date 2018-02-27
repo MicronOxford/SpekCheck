@@ -539,32 +539,35 @@ class FilterSet extends Model
 }
 
 
+// A simple container of properties emitting triggers when they
+// change.  This is the model for what will eventually get displayed.
+// All user interactions get modelled into changes to an OpticalSetup
+// instance.
 class OpticalSetup extends Model
 {
     constructor() {
         super();
-        this._dye = null;
-        this._excitation = null;
-        this._em_filters = [];
-        this._ex_filters = [];
-    }
-
-    set dye(val) {
-        this._dye = val;
-        this.trigger('change');
-    }
-    get dye() {
-        return this._dye;
-    }
-
-    set excitation(val) {
-        this._excitation = val;
-        this.trigger('change');
-    }
-    get excitation() {
-        return this._excitation;
+        // Adds a setter and getter for all properties, so it triggers
+        // change events.
+        for (let p of ['dye', 'excitation', 'ex_filters', 'em_filters']) {
+            const attr_name = `_${ p }`;
+            Object.defineProperty(this, attr_name, {
+                value: null,
+                writable: true,
+            });
+            Object.defineProperty(this, p, {
+                get: function () {
+                    return this[attr_name];
+                },
+                set: function (val) {
+                    this[attr_name] = val;
+                    this.trigger('change');
+                },
+            });
+        }
     }
 }
+
 
 // Our base class for Collections.
 //
@@ -693,7 +696,7 @@ class SetupCollection extends Collection
             line = line.trim();
             if (line.startsWith('//') || line.length === 0)
                 continue; // skip comments and empty lines
-            setups.push(Setup.parseLine(line));
+            setups.push(OpticalSetup.parseLine(line));
         }
         // gag until we figure out how to handle models
         const setup_ids = setups.map(x => x.name);
@@ -876,7 +879,7 @@ class SetupPlot
 class SpekCheckController
 {
     constructor() {
-        this.setup = new Setup;
+        this.setup = new OpticalSetup;
         this.plot = new SetupPlot($('#setup-plot')[0].getContext('2d'),
                                   this.setup);
 
@@ -918,7 +921,7 @@ class SpekCheckController
         this.dyes_view.$el.on('change',
                               this.changeDye.bind(this));
 
-        this.setup.change_callback = this.plot.render.bind(this.plot);
+        this.setup.on('change', this.plot.render, this.plot);
         // FilterSets have a preferred Dye and Excitation, the logic
         // being that they are often used with those.  In that case we
         // should change Dye and Excitation when changing FilterSet.
