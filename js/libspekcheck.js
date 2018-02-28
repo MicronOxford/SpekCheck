@@ -79,7 +79,7 @@ class Spectrum extends Model
         [w,v] = this.interpolate();
         const area = 0.0;
         for (let i=1; i < w.length; i++)
-            area += 0.5 * (Math.max(0, v[i]) + Math.max(0, v[i-1]))*(w[i] - w[i-1]);
+            area += 0.5 * (v[i] + v[i-1])*(w[i] - w[i-1]);
         return area;
     }
 
@@ -192,6 +192,8 @@ class Spectrum extends Model
                 spectra[i].push(vals[1+i]);
         }
 
+        // Data corrections:
+
         for (let i = 0; i < n_spectra; i++) {
             // Rescale to [0 1] if it looks like data is on percent.
             // If the data is in percentage but all values are below
@@ -205,6 +207,11 @@ class Spectrum extends Model
             if (data.some(x => x > 10.0))
                 for (let j = 0; j < data.length; j++)
                     data[j] /= 100;
+
+            // Clip negative values to zero
+            for (let j = 0; j < data.length; j++)
+                if (data[j] < 0)
+                    data[j] = 0;
         }
 
         for (let i = 0; i < n_spectra; i++)
