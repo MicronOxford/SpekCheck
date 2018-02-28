@@ -556,13 +556,22 @@ class OpticalSetup extends Model
         super();
         // Adds a setter and getter for all properties, so it triggers
         // change events.
-        for (let p of ['dye', 'excitation', 'ex_filters', 'em_filters']) {
-            const attr_name = `_${ p }`;
+        const defaults = {
+            dye: null,
+            excitation: null,
+            // The filters are a Map with Filter objects as keys, and
+            // mode as value.  mode is a single char, 'r' or 't', for
+            // reflection or transmission.
+            ex_filters: {},
+            em_filters: {},
+        };
+        for (let p_name of Object.keys(defaults)) {
+            const attr_name = `_${ p_name }`;
             Object.defineProperty(this, attr_name, {
-                value: null,
+                value: defaults[p_name],
                 writable: true,
             });
-            Object.defineProperty(this, p, {
+            Object.defineProperty(this, p_name, {
                 get: function () {
                     return this[attr_name];
                 },
@@ -770,7 +779,7 @@ class FilterSetBuilder
 
 
 
-class SetupPlot
+class OpticalSetupPlot
 {
     constructor($el, setup) {
         this.$el = $el;
@@ -805,8 +814,7 @@ class SetupPlot
                 },
             },
         });
-        // this.setup.on('change', this.render.bind(this));
-        // this.render();
+        this.setup.on('change', this.render, this);
 
         // Keep a cache of individual Spectrum objects, as ready to
         // use Chartjs datasets.
@@ -838,46 +846,40 @@ class SetupPlot
 
     render() {
         const datasets = [];
-        const setup = this.setup;
 
-        if (this.setup.excitation !== undefined) {
+        if (this.setup.excitation !== null) {
             const spectrum = this.setup.excitation.intensity;
             datasets.push(this.asChartjsDataset(spectrum, 'Excitation'));
         }
 
-        if (this.setup.dye !== undefined) {
+        if (this.setup.dye !== null) {
             const dye = this.setup.dye;
             datasets.push(this.asChartjsDataset(dye.excitation,
                                                 'Dye Excitation'));
             datasets.push(this.asChartjsDataset(dye.emission,
                                                 'Dye Emission'));
         }
-        // if (this.setup.dye !== undefined)
-        //     plot_dye_spectrum()
-        // this.add_spectrum(this.setup.ex_source.spectrum);
-        // for (let ex_filters of this.setup.ex_filters)
-        //     this.add_spectrum(ex_filters.spectrum);
 
-            //             datasets: [{
-            //         label: 'transmitted',
-            //         data: [],
-            //         borderWidth: 1,
-            //         borderColor: 'rgba(0, 0, 0, 0.5)',
-            //         pointRadius: 0,
-            //     }],
-            // },
+        for (let spectrum of this.setup.ex_filters)
+            datasets.push(this.asChartjsDataset(spectrum), 'foo');
+        for (let spectrum of this.setup.em_filters)
+            datasets.push(this.asChartjsDataset(spectrum), 'foo');
 
-        // For dye, we have two spectras...
-        //        this.add_spectrum(this.setup.dye.spectrum);
+        if (this.setup.excitation !== null &&
+            this.setup.ex_filters.length !== 0) {
+            // adjust excitation to filters
+        }
 
-        // for (let em_filters of this.setup.em_filters)
-        //     this.add_spectrum(em_filters.spectrum);
+        if (this.setup.em_filters.length !== 0) {
+            // compute transmission
+        }
+
         this.plot.data.datasets = datasets;
         this.plot.update();
     }
 
     static dashes() {
-        // LineDash styles to use on spectra plots.
+        // LineDash styles to use on spectrum lines of filters only.
         return [[8,4], [16,4], [4,8,4], [4,8,8]];
     }
 }
@@ -887,8 +889,8 @@ class SpekCheckController
 {
     constructor() {
         this.setup = new OpticalSetup;
-        this.plot = new SetupPlot($('#setup-plot')[0].getContext('2d'),
-                                  this.setup);
+        this.plot = new OpticalSetupPlot($('#setup-plot')[0].getContext('2d'),
+                                         this.setup);
 
         const dye_reader = Dye.constructFromText.bind(Dye);
         this.dyes = new DataCollection('dyes', dye_reader);
@@ -928,7 +930,6 @@ class SpekCheckController
         this.dyes_view.$el.on('change',
                               this.changeDye.bind(this));
 
-        this.setup.on('change', this.plot.render, this.plot);
         // FilterSets have a preferred Dye and Excitation, the logic
         // being that they are often used with those.  In that case we
         // should change Dye and Excitation when changing FilterSet.
