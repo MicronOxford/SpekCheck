@@ -83,13 +83,74 @@ class Spectrum extends Model
         return area;
     }
 
-    interpolate() {
-        return undefined;
+    interpolate(points) {
+        // TODO: needs testing
+        //
+        // Interpolate data to specific wavelengths.
+        //
+        // Args:
+        //     points(Array<float>): should sort in increasing order.
+        //
+        // Returns:
+        //     A new Spectrum object.
+        if (! points instanceof Array)
+            throw new TypeError('POINTS must be an Array');
+        if (this.wavelength.length === 1)
+            return new Spectrum(points.slice(0),
+                                new Array(points.length).fill(0));
+
+        const old_w = this.wavelength;
+        const old_d = this.data;
+
+        const new_w = points.slice(0);
+        const new_d = new Array(wl.length);
+
+        let i = 0; // index into the interpolated data
+
+        // Outside the existing data, values are zero
+        for (; new_w[i] < old_w[0]; i++)
+            new_d[i] = 0;
+
+        // We loop this way under the assumption that the existing
+        // data has more points, and the purpose of this interpolation
+        // is to resample at a much lower resolution (see Lumencor and
+        // halogen excitation sources, and the DV-SSI filters which
+        // have >3000 data points).
+        let next_wl = new_w[i];
+        const last_wl = new_w[new_w.length -1];
+        let j = 0; // index into the original data
+
+        const last_wavelength = old_w[old_w.length -1];
+        for (; new_w[i] < last_wavelength && i < new_w.length; i++) {
+            while (new_w[j] < new_w[i])
+                j++;
+
+            // This case should be quite common since most data is actually
+
+            measurements
+            // (original data) are often done at integer values, and
+            // the sampling is done at integers wavelengths too.
+            if (old_w[j] === new_w[i])
+                new_d[i] = old_w[j];
+            else {
+                // Linear interpolation.
+                const slope = (old_d[j] - old_d[j-1]) / (old_w[j] - old_w[j-1]);
+                new_d[i] = old_d[j-1] + slope * (new_w[i] - old_w[j-1]);
+            }
+        }
+
+        // Outside the existing data, values are zero
+        for (; i < new_w.length; i++)
+            new_d[i] = 0;
+
+        return new Spectrum(new_w, new_d);
     }
 
     multiplyBy(other) {
-        // multiplies this spectrum by other
-        // invalidates previously calculated _points
+        // Multiply by another spectrum instance and returns a new
+        // Spectrum instance.  The wavelength range of the new
+        // Spectrum is the intersection of the two wavelength ranges
+        // (values outside the range are interpreted as zeros anyway).
         this._points = null;
         this.interpolate();
         var oldMax = Math.max(...this._interp[1]);
@@ -582,6 +643,19 @@ class OpticalSetup extends Model
             });
         }
     }
+
+    transmission() {
+        //
+    }
+
+    ex_efficiency() {
+    }
+
+    em_efficiency() {
+    }
+
+    brightness() {
+    }
 }
 
 
@@ -860,9 +934,9 @@ class OpticalSetupPlot
                                                 'Dye Emission'));
         }
 
-        for (let spectrum of this.setup.ex_filters)
+        for (let spectrum of Object.keys(this.setup.ex_filters))
             datasets.push(this.asChartjsDataset(spectrum), 'foo');
-        for (let spectrum of this.setup.em_filters)
+        for (let spectrum of Object.keys(this.setup.em_filters))
             datasets.push(this.asChartjsDataset(spectrum), 'foo');
 
         if (this.setup.excitation !== null &&
