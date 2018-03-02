@@ -58,8 +58,26 @@ class Spectrum extends Model
 {
     constructor(wavelength, data) {
         super();
-        this.wavelength = wavelength; // Array of floats
-        this.data = data; // Array of floats
+        this.wavelength = wavelength.slice(0); // Array of floats
+        this.data = data;.slice(0) // Array of floats
+
+        // Data corrections:
+
+        // Rescale to [0 1] if it looks like data is on percent.  If
+        // the data is in percentage but all values are below 10%, it
+        // will not be rescaled.  This should not happen because
+        // values in a spectrum are all relative to their maximum
+        // value.  Except we also handle the sensitivity of cameras
+        // detectors as Spectrum.  Here's to hope that we never have
+        // to handle a detector with a maximum sensitivity below 10%.
+        if (this.data.some(x => x > 10.0))
+            for (let i = 0; i < this.data.length; i++)
+                this.data[i] /= 100.0;
+
+        // Clip negative values to zero
+        for (let i = 0; i < this.data.length; i++)
+            if (this.data[i] < 0.0)
+                this.data[i] = 0;
     }
 
     validate() {
@@ -253,28 +271,6 @@ class Spectrum extends Model
                 spectra[i].push(vals[1+i]);
         }
 
-        // Data corrections:
-
-        for (let i = 0; i < n_spectra; i++) {
-            // Rescale to [0 1] if it looks like data is on percent.
-            // If the data is in percentage but all values are below
-            // 10%, it will not be rescaled.  This should not happen
-            // because values in a spectrum are all relative to their
-            // maximum value.  Except we also handle the sensitivity
-            // of cameras detectors as Spectrum.  Here's to hope that
-            // we never have to handle a detector with a maximum
-            // sensitivity below 10%.
-            const data = spectra[i];
-            if (data.some(x => x > 10.0))
-                for (let j = 0; j < data.length; j++)
-                    data[j] /= 100;
-
-            // Clip negative values to zero
-            for (let j = 0; j < data.length; j++)
-                if (data[j] < 0)
-                    data[j] = 0;
-        }
-
         for (let i = 0; i < n_spectra; i++)
             attrs[spectra_names[i]] = new Spectrum(wavelengths, spectra[i]);
 
@@ -408,6 +404,7 @@ class Data extends Model
                 throw new Error(`missing property '${ p }'`);
             this[p] = attrs[p];
         }
+        this.uid = null;
     }
 
     static constructFromText(text) {
@@ -499,32 +496,16 @@ Filter.prototype.properties = [
 
 class FilterSet extends Model
 {
-    constructor() {
+    constructor(name, dye, excitation, ex_path, em_path) {
         super();
-        this.ex_filters = [];
-        this.em_filters = [];
-        this.preferred_dye = undefined;
-        this.preferred_excitation = undefined;
+        this.name = name
+        this.preferred_dye = dye
+        this.preferred_excitation = excitation;
+
+        // These are Objects with 'id' and 'mode' keys.
+        this.ex_path = ex_path;
+        this.em_path = em_path;
     }
-
-    // change dye
-    // change source
-    //
-    // add ex source
-    // rm ex source
-
-    onChange(callback) {
-        this.change_callbacks.push(callback);
-    }
-
-    triggerChange() {
-        for (let callback of this.change_callbacks)
-            callback();
-    }
-
-    // changeMode() {
-    //     this.mode = this.mode === 't' ? 'r' : 't';
-    // }
 
     static parseFilterField(field) {
         // Parses a filter definition as it appears on the sets file,
@@ -539,22 +520,7 @@ class FilterSet extends Model
         return new Filter(attrs);
     }
 
-    static constructFromText(text) {
-        // Some Filter data files have reflection instead of
-        // transmission so fix that before calling the constructor.
-        const constructor = this.prototype.constructor;
-        const factory = function(attrs) {
-            if (attrs.reflection !== undefined) {
-                attrs.transmission = attrs.reflection;
-                attrs.transmission.data = attrs.reflection.data.map(x => 1-x);
-                delete attrs.reflection;
-            }
-            return new constructor(attrs);
-        }
-        return Spectrum.parseText(text, this.prototype.header_map, factory);
-    }
-
-    static parseLine(line) {
+    static parseFilterSet(line) {
         // Expects line to be a setup definition.  It's the
         // responsability of the caller to make sure that file
         // comments and empty lines are filtered out.
@@ -593,17 +559,24 @@ class FilterSet extends Model
         return new Setup(name);
     }
 
-    static parseSetupsFile(txt) {
-        let setups = [];
-        for (let line of txt.split('\n')) {
-            line = line.trim();
-            if (line.startsWith('//') || line.length === 0)
-                continue; // skip comments and empty lines
-            let setup = SpekCheck.Setup.parseSetupLine(line);
-            setups.push(setup);
-        }
-        return setups;
+    static parseText(text) {
     }
+
+    static constructFromText(text) {
+        // Some Filter data files have reflection instead of
+        // transmission so fix that before calling the constructor.
+        const constructor = this.prototype.constructor;
+        const factory = function(attrs) {
+            if (attrs.reflection !== undefined) {
+                attrs.transmission = attrs.reflection;
+                attrs.transmission.data = attrs.reflection.data.map(x => 1-x);
+                delete attrs.reflection;
+            }
+            return new constructor(attrs);
+        }
+        return Spectrum.parseText(text, this.prototype.header_map, factory);
+    }
+
 }
 
 
@@ -620,11 +593,13 @@ class OpticalSetup extends Model
         const defaults = {
             dye: null,
             excitation: null,
-            // The filters are a Map with Filter objects as keys, and
-            // mode as value.  mode is a single char, 'r' or 't', for
-            // reflection or transmission.
-            ex_filters: {},
-            em_filters: {},
+            // The filters are an array of Objects with filter and
+            // mode keys.  We can't use a Map and the filter as key
+            // because we may have the same filter multiple times.
+            // 'filter' value is a Filter object. 'mode' value is a
+            // char with value of 'r' or 't'.
+            ex_path: [],
+            em_path: [],
         };
         for (let p_name of Object.keys(defaults)) {
             const attr_name = `_${ p_name }`;
@@ -695,8 +670,7 @@ class Collection extends Model
 
         this.models.push(model);
         this.uids.push(uid);
-        if (this.add_callback !== undefined)
-            this.add_callback(object);
+        this.trigger('add', object);
     }
 
     get(uid) {
@@ -733,8 +707,7 @@ class Collection extends Model
         this.uids = uids.slice(0);
         // XXX: maybe we should fill the models with promises?
         this.models = new Array(this.uids.length);
-        if (this.reset_callback !== undefined)
-            this.reset_callback();
+        this.trigger('reset');
     }
 
 }
@@ -764,15 +737,38 @@ class DataCollection extends Collection
 }
 
 
+// A collection for Setups.  Needs a Collection of Dyes, Excitations,
+// and Filters to actually construct the Setups
 class SetupCollection extends Collection
 {
-    constructor(filename) {
+    constructor(filename, dyes, excitations, filters) {
         super();
         this.url += filename; // plain text file, no file extension
+        this.dyes = dyes;
+        this.excitations;
+        this.filters;
     }
 
     fetch() {
         super.fetch({dataType: 'text'});
+    }
+
+    resetWithData(text) {
+        this.uids = [];
+        this.models = [];
+        this._unparsed_models = [];
+        for (let line of text.split('\n')) {
+            line = line.trim();
+            if (line.startsWith('#') || line.length === 0)
+                continue; // skip comments and empty lines
+            const split_index = line.indexOf(',');
+            if (split_index === -1)
+                throw new Error('invalid setup line')
+            const uid = line.slice(0, split_index);
+            const setup_line = line.slice(split_index+1);
+            this.uids.push(uid);
+            this._unparsed_models.push(setup_line);
+        }
     }
 
     resetWithData(data) {
@@ -780,29 +776,26 @@ class SetupCollection extends Collection
         this.reset(uids);
     }
 
-    static parseData(data) {
-        const setups = [];
-        for (let line of data.split('\n')) {
-            line = line.trim();
-            if (line.startsWith('//') || line.length === 0)
-                continue; // skip comments and empty lines
-            setups.push(OpticalSetup.parseLine(line));
-        }
-        // gag until we figure out how to handle models
-        const setup_ids = setups.map(x => x.name);
-        return setup_ids;
-    }
 }
 
 
-class SelectorView
+class CollectionView
 {
     constructor($el, collection) {
         this.$el = $el;
         this.collection = collection;
-        this.collection.reset_callback = this.render.bind(this);
+        this.collection.on('reset', this.render, this);
     }
 
+    render() {
+    }
+}
+
+// Displays a Collection as option lists in a select menu with an
+// empty entry at the top.  Used to select a FilterSet, a Dye, and
+// Excitation.
+class SelectView extends CollectionView
+{
     render() {
         const names = [''].concat(this.collection.uids);
         const html = names.map(name => this.option_html(name));
@@ -814,43 +807,93 @@ class SelectorView
     }
 }
 
-class CollectionView
+// Used for list-group, the ones used by the FilterSetBuilder
+class ListItemView extends CollectionView
 {
-    constructor($el, collection) {
+    render() {
+        this.$el.html(this.collection.uids.map(name => this.li_html(name)));
+    }
+
+    li_html(name) {
+        return `<li class="list-group-item">${ name }</li>\n`;
+    }
+}
+
+class PathView
+{
+    constructor($el, path) {
         this.$el = $el;
-        this.collection = collection;
-        this.collection.reset_callback = this.render.bind(this);
+        this.path = path;
+    }
+
+    render() {
+        this.path.map(f => li_html(f.filter.name, f.mode));
+    }
+
+    li_html(name, mode) {
+        return '<li class="list-group-item">' +
+            `${ name }` +
+            '<button type="button" class="close" aria-label="Mode">' +
+            `<span aria-hidden="true">${ mode }</span>` +
+            '</button>' +
+            '<button type="button" class="close" aria-label="Close">' +
+            '<span aria-hidden="true">&times;</span>' +
+            '</button>' +
+            '</li>';
+    }
+}
+
+
+// Displays the GUI to construct a FilterSet.  This a bit more complex
+// that just a drop down menu, it also includes the list-group for the
+// emission and excitation paths.
+//
+// There must be three ul elements inside $el with ids:
+//    #filters
+//    #ex-path
+//    #em-path
+class FilterSetBuilder
+{
+    constructor($el, filters, setup) {
+        // Args:
+        //     $el: jquery for the builder div
+        //     filters (DataCollection<Filter>)
+        //     setup (OpticalSetup)
+        this.$el = $el;
+        this.filters = filters;
+        this.setup = setup;
+        // Maybe we should do some checking here...
+        this.$filters = $($el.find('#filters-view')[0]);
+        this.$ex_path = $($el.find('#ex-path')[0]);
+        this.$em_path = $($el.find('#em-path')[0]);
+
+        this.filters_view = new ListItemView(this.$filters, this.filters);
+        this.filters_view.li_html = function(name) {
+            return '<li class="list-group-item">' +
+                  `${ name }` +
+                '<button type="button" class="close" aria-label="Add to excitation">' +
+                '<span aria-hidden="true">&#8668;</span>' +
+                '</button>' +
+                '<button type="button" class="close" aria-label="Add to emission">' +
+                '<span aria-hidden="true">&#8669;</span>' +
+                '</button>' +
+                '</li>';
+        }
+
+        this.ex_path_view = new PathView(this.$ex_path, this.setup.ex_path);
+        this.em_path_view = new PathView(this.$em_path, this.setup.em_path);
+
+        this.setup.on('change', this.ex_path_view.render, this.ex_path_view);
+        this.setup.on('change', this.em_path_view.render, this.em_path_view);
+        // on adding filter to ex_path, get the filter name from the
+        // collection, and then add
     }
 
     render() {
         const html = this.collection.uids.map(name => this.option_html(name));
         this.$el.html(html);
     }
-
-    option_html(name) {
-        return `<option value="${ name }">${ name }</option>\n`;
-    }
 }
-
-class FilterSetBuilder
-{
-    constructor($el, filters) {
-        this.$el = $el;
-        this.filters = filters;
-        this.ex_filters = [];
-        this.em_filters = []
-
-        this.$ex_el = undefined;
-        this.$em_el = undefined;
-    }
-
-    onAdd(ev) {
-        // Adding a filter to either the ex or em path
-    }
-    onRemove(ev) {
-    }
-}
-
 
 
 class OpticalSetupPlot
@@ -934,17 +977,17 @@ class OpticalSetupPlot
                                                 'Dye Emission'));
         }
 
-        for (let spectrum of Object.keys(this.setup.ex_filters))
+        for (let spectrum of Object.keys(this.setup.ex_path))
             datasets.push(this.asChartjsDataset(spectrum), 'foo');
-        for (let spectrum of Object.keys(this.setup.em_filters))
+        for (let spectrum of Object.keys(this.setup.em_path))
             datasets.push(this.asChartjsDataset(spectrum), 'foo');
 
         if (this.setup.excitation !== null &&
-            this.setup.ex_filters.length !== 0) {
+            this.setup.ex_path.length !== 0) {
             // adjust excitation to filters
         }
 
-        if (this.setup.em_filters.length !== 0) {
+        if (this.setup.em_path.length !== 0) {
             // compute transmission
         }
 
@@ -968,33 +1011,23 @@ class SpekCheckController
 
         const dye_reader = Dye.constructFromText.bind(Dye);
         this.dyes = new DataCollection('dyes', dye_reader);
-        this.dyes_view = new SelectorView($('#dye-selector'),
+        this.dyes_view = new SelectView($('#dye-selector'),
                                           this.dyes);
 
         const excitation_reader = Excitation.constructFromText.bind(Excitation);
         this.excitations = new DataCollection('excitation', excitation_reader);
-        this.excitations_view = new SelectorView($('#source-selector'),
+        this.excitations_view = new SelectView($('#source-selector'),
                                                  this.excitations);
 
         const filter_reader = Filter.constructFromText.bind(Filter);
         this.filters = new DataCollection('filters', filter_reader);
-        this.filters_view = new CollectionView($('#filters-view'),
-                                               this.filters);
-        this.filters_view.option_html = function(name) {
-            return '<li class="list-group-item">' +
-                  `${ name }` +
-                '<button type="button" class="close" aria-label="Add to excitation">' +
-                '<span aria-hidden="true">&#8668;</span>' +
-                '</button>' +
-                '<button type="button" class="close" aria-label="Add to emission">' +
-                '<span aria-hidden="true">&#8669;</span>' +
-                '</button>' +
-                '</li>';
-        }
+        this.filterset_builder = new FilterSetBuilder($('#filterset-builder'),
+                                                      this.filters, this.setup);
 
-        // this.setups = new SetupCollection('sets');
-        // this.setups_view = new CollectionView($('#setup-selector'),
-        //                                        this.setups);
+        this.setups = new SetupCollection('sets', this.dyes,
+                                          this.excitations, this.filters);
+        this.setups_view = new CollectionView($('#setup-selector'),
+                                               this.setups);
 
         for (let x of [this.dyes, this.excitations, this.filters])
             x.fetch();
