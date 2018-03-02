@@ -59,7 +59,7 @@ class Spectrum extends Model
     constructor(wavelength, data) {
         super();
         this.wavelength = wavelength.slice(0); // Array of floats
-        this.data = data;.slice(0) // Array of floats
+        this.data = data.slice(0); // Array of floats
 
         // Data corrections:
 
@@ -74,10 +74,13 @@ class Spectrum extends Model
             for (let i = 0; i < this.data.length; i++)
                 this.data[i] /= 100.0;
 
-        // Clip negative values to zero
-        for (let i = 0; i < this.data.length; i++)
+        // Clip values to [0 1]
+        for (let i = 0; i < this.data.length; i++) {
             if (this.data[i] < 0.0)
-                this.data[i] = 0;
+                this.data[i] = 0.0;
+            if (this.data[i] > 1.0)
+                this.data[i] = 1.0;
+        }
     }
 
     validate() {
@@ -470,7 +473,8 @@ class Filter extends Data
 {
     get reflection() {
         // Lazy-getters to compute reflection.
-        const reflection = this.transmission.map(x => 1-x);
+        const data = this.transmission.data.map(x => 1.0 -x);
+        const reflection = new Spectrum(this.transmission.wavelength, data);
         delete this.reflection;
         Object.defineProperty(this, 'reflection', {value: reflection});
         return this.reflection;
@@ -488,79 +492,6 @@ class Filter extends Data
         if (! this.transmission.isValid())
             return this.transmission.validation_error;
     }
-}
-Filter.prototype.properties = [
-    'transmission',
-];
-
-
-class FilterSet extends Model
-{
-    constructor(name, dye, excitation, ex_path, em_path) {
-        super();
-        this.name = name
-        this.preferred_dye = dye
-        this.preferred_excitation = excitation;
-
-        // These are Objects with 'id' and 'mode' keys.
-        this.ex_path = ex_path;
-        this.em_path = em_path;
-    }
-
-    static parseFilterField(field) {
-        // Parses a filter definition as it appears on the sets file,
-        // i.e., 'filter_name [mode]' where mode is optional and R|T
-        const field_parts = field.split(' ').map(x => x.trim());
-        if (field_parts.length > 2)
-            throw TypeError('invalid Filter definition ' + field);
-
-        const attrs = {name: field_parts[0]};
-        if (field_parts.length === 2)
-            attrs.mode = field_parts[1].toLowerCase();
-        return new Filter(attrs);
-    }
-
-    static parseFilterSet(line) {
-        // Expects line to be a setup definition.  It's the
-        // responsability of the caller to make sure that file
-        // comments and empty lines are filtered out.
-        const line_parts = line.split(',').map(x => x.trim());
-        const name = line_parts[0];
-        // const dye = new Dye(line_parts[1]); // construct
-        // const ex_source = new SpekCheck.Excitation({
-        //     'name': line_parts[2],
-        // });
-
-        // const ex_filters = [];
-        // const em_filters = [];
-        // let ex_path = true; // looking at filters in ex path until we see '::'
-        // for (let filt of line_parts.slice(3)) {
-        //     const c_idx = filt.search('::');
-        //     if (c_idx >= 0) {
-        //         if (! ex_path)
-        //             throw TypeError('more than one :: in set ' + name);
-        //         ex_filters.push
-        //         ex_path = false;
-        //         em_filters.push
-        //     }
-        //     else if (ex_path)
-        //         ex_filters.push
-        //     else // already looking at emission path
-        //         em_filters.push
-        // }
-        // const setup = new SpekCheck.Setup({
-        //     'name': name,
-        //     'dye': dye,
-        //     'ex_source': ex_source,
-        //     'ex_filters': ex_filters,
-        //     'em_filters': em_filters,
-        // });
-        // return setup;
-        return new Setup(name);
-    }
-
-    static parseText(text) {
-    }
 
     static constructFromText(text) {
         // Some Filter data files have reflection instead of
@@ -569,15 +500,20 @@ class FilterSet extends Model
         const factory = function(attrs) {
             if (attrs.reflection !== undefined) {
                 attrs.transmission = attrs.reflection;
-                attrs.transmission.data = attrs.reflection.data.map(x => 1-x);
+                const data = attrs.transmission.data;
+                for (let i = 0; i < data.length; i++)
+                    data[i] = 1.0 - data[i];
+                attrs.transmission.data = data;
                 delete attrs.reflection;
             }
             return new constructor(attrs);
         }
         return Spectrum.parseText(text, this.prototype.header_map, factory);
     }
-
 }
+Filter.prototype.properties = [
+    'transmission',
+];
 
 
 // A simple container of properties emitting triggers when they
@@ -700,7 +636,10 @@ class Collection extends Model
         // By default, data should be a JSON array with IDs, so we can
         // just pass through to reset().  It's only the FilterSet
         // collection that are a bit more weird.
-        this.reset(data);
+        this.uids = data.slice(0);
+        // XXX: maybe we should fill the models with promises?
+        this.models = new Array(this.uids.length);
+        this.trigger('reset');
     }
 
     reset(uids) {
@@ -709,7 +648,6 @@ class Collection extends Model
         this.models = new Array(this.uids.length);
         this.trigger('reset');
     }
-
 }
 
 
@@ -737,16 +675,11 @@ class DataCollection extends Collection
 }
 
 
-// A collection for Setups.  Needs a Collection of Dyes, Excitations,
-// and Filters to actually construct the Setups
-class SetupCollection extends Collection
+class FilterSetCollection extends Collection
 {
-    constructor(filename, dyes, excitations, filters) {
+    constructor(filename) {
         super();
         this.url += filename; // plain text file, no file extension
-        this.dyes = dyes;
-        this.excitations;
-        this.filters;
     }
 
     fetch() {
@@ -756,26 +689,75 @@ class SetupCollection extends Collection
     resetWithData(text) {
         this.uids = [];
         this.models = [];
-        this._unparsed_models = [];
         for (let line of text.split('\n')) {
             line = line.trim();
             if (line.startsWith('#') || line.length === 0)
                 continue; // skip comments and empty lines
             const split_index = line.indexOf(',');
             if (split_index === -1)
-                throw new Error('invalid setup line')
+                throw new Error(`invalid filterset '${ line }'`);
             const uid = line.slice(0, split_index);
-            const setup_line = line.slice(split_index+1);
+            const filterset_line = line.slice(split_index+1);
             this.uids.push(uid);
-            this._unparsed_models.push(setup_line);
+            this.models.push(new Promise(function(resolve, reject) {
+                resolve(FilterSetCollection.parseFilterSet(filterset_line));
+            }));
         }
+        this.trigger('reset');
     }
 
-    resetWithData(data) {
-        const uids = this.constructor.parseData(data);
-        this.reset(uids);
+    static parseFilterSet(line) {
+        // Args:
+        //     line (String): the second part of a FilterSet definition,
+        //         i.e., the whole line minus the first column which
+        //         has the FilterSet name.
+        //
+        // Returns:
+        //     An Object with the fields dye, excitation, ex_path, and
+        //     em_path.  The values for ex_path and em_path are Array
+        //     of Objects, with the values name and mode.
+        const line_parts = line.split(',').map(x => x.trim());
+        const filterset = {};
+
+        // Their values must be strings, so do pass an empty string if empty.
+        filterset.dye = line_parts[0];
+        filterset.excitation = line_parts[1];
+
+        const ex_path = [];
+        const em_path = [];
+        let path = ex_path; // push into ex_path until we see '::'
+        for (let filt of line_parts.slice(2)) {
+            const c_idx = filt.indexOf('::');
+            if (c_idx !== -1) {
+                let field = filt.slice(0, c_idx).trim();
+                path.push(FilterSetCollection.parseFilterField(field));
+                path = em_path; // Start filling em_path now
+                field = filt.slice(c_idx+2).trim();
+                path.push(FilterSetCollection.parseFilterField(field));
+            }
+            else
+                path.push(FilterSetCollection.parseFilterField(filt))
+        }
+        filterset.ex_path = ex_path;
+        filterset.em_path = em_path;
+        return filterset;
     }
 
+    static parseFilterField(field) {
+        // Args:
+        //     field (String): the filter definition, whose format is
+        //     'filter_name mode' where mode is 'R|T'
+        const split = field.lastIndexOf(' ');
+        if (split === -1)
+            throw new Error(`invalid filter definition '${ field }'`);
+
+        const name = field.slice(0, split);
+        const mode = field.slice(split+1).toLowerCase();
+        if (mode !== 't' && mode !== 'r')
+            throw new Error(`invalid filter mode '${ mode }'`);
+
+        return {'name': name, 'mode': mode};
+    }
 }
 
 
@@ -977,19 +959,29 @@ class OpticalSetupPlot
                                                 'Dye Emission'));
         }
 
-        for (let spectrum of Object.keys(this.setup.ex_path))
-            datasets.push(this.asChartjsDataset(spectrum), 'foo');
-        for (let spectrum of Object.keys(this.setup.em_path))
-            datasets.push(this.asChartjsDataset(spectrum), 'foo');
-
-        if (this.setup.excitation !== null &&
-            this.setup.ex_path.length !== 0) {
-            // adjust excitation to filters
+        for (let conf of this.setup.ex_path) {
+            let mode;
+            if (conf.mode === 't')
+                mode = 'transmission';
+            else if (conf.mode === 'r')
+                mode = 'reflection';
+            else
+                throw new Error(`invalid mode '${ conf.mode }'`);
+            const name = `${ conf.name} (${ conf.mode })`;
+            datasets.push(this.asChartjsDataset(conf.filter[mode],
+                                                name));
         }
+        // for (let spectrum of Object.keys(this.setup.em_path))
+        //     datasets.push(this.asChartjsDataset(spectrum), 'foo');
 
-        if (this.setup.em_path.length !== 0) {
-            // compute transmission
-        }
+        // if (this.setup.excitation !== null &&
+        //     this.setup.ex_path.length !== 0) {
+        //     // adjust excitation to filters
+        // }
+
+        // if (this.setup.em_path.length !== 0) {
+        //     // compute transmission
+        // }
 
         this.plot.data.datasets = datasets;
         this.plot.update();
@@ -1009,10 +1001,13 @@ class SpekCheckController
         this.plot = new OpticalSetupPlot($('#setup-plot')[0].getContext('2d'),
                                          this.setup);
 
+        this.filtersets = new FilterSetCollection('sets');
+        this.filtersets_view = new SelectView($('#filterset-selector'),
+                                          this.filtersets);
+
         const dye_reader = Dye.constructFromText.bind(Dye);
         this.dyes = new DataCollection('dyes', dye_reader);
-        this.dyes_view = new SelectView($('#dye-selector'),
-                                          this.dyes);
+        this.dyes_view = new SelectView($('#dye-selector'), this.dyes);
 
         const excitation_reader = Excitation.constructFromText.bind(Excitation);
         this.excitations = new DataCollection('excitation', excitation_reader);
@@ -1024,18 +1019,17 @@ class SpekCheckController
         this.filterset_builder = new FilterSetBuilder($('#filterset-builder'),
                                                       this.filters, this.setup);
 
-        this.setups = new SetupCollection('sets', this.dyes,
-                                          this.excitations, this.filters);
-        this.setups_view = new CollectionView($('#setup-selector'),
-                                               this.setups);
-
-        for (let x of [this.dyes, this.excitations, this.filters])
+        for (let x of [this.filtersets, this.dyes, this.excitations,
+                       this.filters])
             x.fetch();
 
+
+        this.filtersets_view.$el.on('change',
+                                    this.handleChangeFilterSetEv.bind(this));
         this.excitations_view.$el.on('change',
-                                     this.changeExcitation.bind(this));
+                                     this.handleChangeExcitationEv.bind(this));
         this.dyes_view.$el.on('change',
-                              this.changeDye.bind(this));
+                              this.handleChangeDyeEv.bind(this));
 
         // FilterSets have a preferred Dye and Excitation, the logic
         // being that they are often used with those.  In that case we
@@ -1071,43 +1065,98 @@ class SpekCheckController
         }).then(text => this.dyes.add(this.dyes.factory(text)));
     }
 
-    changeDye(ev) {
+    handleChangeDyeEv(ev) {
         const uid = ev.target.value;
         if (uid === '') {
             this.user_selected_dye = false;
-            this.setup.dye = undefined;
+            this.changeDye(null, uid);
         } else {
             this.user_selected_dye = true;
             this.dyes.get(uid).then(
-                dye => {this.setup.dye = dye}
+                d => this.changeDye(d, uid)
             );
         }
     }
+    changeDye(dye, uid) {
+        this.setup.dye = dye;
+        this.dyes_view.$el.val(uid);
+    }
 
-    changeExcitation(ev) {
+    handleChangeExcitationEv(ev) {
         const uid = ev.target.value;
         if (uid === '') {
             this.user_selected_excitation = false;
-            this.setup.excitation = undefined;
+            this.changeExcitation(null, uid);
         } else {
             this.user_selected_excitation = true;
             this.excitations.get(uid).then(
-                ex => {this.setup.excitation = ex}
+                ex => this.changeExcitation(ex, uid)
             );
         }
     }
+    changeExcitation(excitation, uid) {
+        this.setup.excitation = excitation;
+        this.excitations_view.$el.val(uid);
+    }
 
-    // changeFilter(ev) {
-    //     const uid = ev.target.value;
-    //     if (uid === '') {
-    //         this.setup.excitation = undefined;
-    //     } else {
-    //         this.user_selected_excitation = true;
-    //         this.filters.get(uid).then(
-    //             ex => {this.setup.excitation = ex}
-    //         );
-    //     }
-    // }
+    handleChangeFilterSetEv(ev) {
+        const uid = ev.target.value;
+        if (uid === '') {
+            this.changeFilterSet(null, uid);
+        } else {
+            // FIXME: possibility of a race condition if setups are
+            // changed rapidly.
+            this.filtersets.get(uid).then(fs => this.changeFilterSet(fs));
+        }
+    }
+
+    changeFilterSet(new_filterset) {
+        // The setup dye and excitation are only the setup preference
+        // but are actually part of a filter set.  So only change
+        // those if a user has not yet selected it manually.  This has
+        // the issue that a user is unable to see only the filter sets
+        // because if the dye and excitation are not selected,
+        // selecting a filterset will also display this preferences.
+        if (! this.user_selected_dye) {
+            const uid = new_filterset.dye;
+            if (uid === '')
+                this.changeDye(null, uid);
+            else
+                this.dyes.get(uid).then(
+                    dye => this.changeDye(dye, uid)
+                );
+        }
+        if (! this.user_selected_excitation) {
+            const uid = new_filterset.excitation;
+            if (uid === '')
+                this.changeExcitation(null, uid);
+            else
+                this.excitations.get(uid).then(
+                    ex => this.changeExcitation(ex, uid)
+                );
+        }
+
+        for (let path_name of ['ex_path', 'em_path']) {
+            const path = new_filterset[path_name];
+            const filter_promises = [];
+            for (let i = 0; i < path.length; i++) {
+                const uid = path[i].name;
+                filter_promises.push(
+                    this.filters.get(uid).then(
+                        f => ({
+                            name: uid,
+                            filter: f,
+                            mode: path[i].mode,
+                        })
+                    )
+                );
+            }
+
+            Promise.all(filter_promises).then(
+                (filters) => this.setup[path_name] = filters
+            );
+        }
+    }
 }
 
 $(document).ready(function() {

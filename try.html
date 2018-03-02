@@ -180,31 +180,31 @@
   -->
 
   <div id="spekcheck">
+
     <div class="container row">
       <div class="col-sm input-group">
         <div class="input-group-prepend">
-          <span class="input-group-text">Setup</span>
+          <span class="input-group-text">Filter Set</span>
         </div>
-        <select class="custom-select" id="setup-selector">
+        <select class="custom-select" id="filterset-selector">
         </select>
       </div>
       <div class="col-sm input-group">
         <div class="input-group-prepend">
           <span class="input-group-text">Dye</span>
         </div>
-        <select class="custom-select" id="dye-selector"
-                data-live-search="true">
+        <select class="custom-select" id="dye-selector">
         </select>
       </div>
       <div class="col-sm input-group">
         <div class="input-group-prepend">
           <span class="input-group-text">Source</span>
         </div>
-        <select class="custom-select" id="source-selector"
-                data-live-search="true">
+        <select class="custom-select" id="source-selector">
         </select>
       </div>
     </div>
+
     <div class="container row" id="filterset-builder">
       <div class="col-sm">
         <div class="card">
@@ -221,8 +221,8 @@
           <div class="card-header">
             Excitation Path
           </div>
-          <ul class="list-group list-group-flush spekcheck-filtersview" >
-            <li class="list-group-item">Dapibus ac facilisis in</li>
+          <ul class="list-group list-group-flush spekcheck-filtersview"
+              id="ex-path">
           </ul>
         </div>
       </div>
@@ -231,21 +231,13 @@
           <div class="card-header">
             Emission Path
           </div>
-          <!-- &#9808; sagitarius for transmission -->
-          <ul class="list-group list-group-flush spekcheck-filtersview">
-            <li class="list-group-item">Dapibus ac facilisis in<button type="button" class="close" aria-label="Close">
-  <span aria-hidden="true">&times;</span>
-</button></li>
-            <li class="list-group-item">Vestibulum at eros<button type="button" class="close" aria-label="Close">
-  <span aria-hidden="true">&times;</span>
-</button></li>
-            <li class="list-group-item">Dapibus ac facilisis in<button type="button" class="close" aria-label="Close">
-  <span aria-hidden="true">&times;</span>
-</button></li>
+          <ul class="list-group list-group-flush spekcheck-filtersview"
+              id="em-path">
           </ul>
         </div>
       </div>
     </div>
+
     <canvas id="setup-plot">
     </canvas>
   </div>
