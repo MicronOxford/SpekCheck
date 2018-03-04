@@ -982,16 +982,17 @@ class OpticalSetupPlot
         const datasets = [];
 
         if (this.setup.excitation !== null) {
-            const spectrum = this.setup.excitation.intensity;
-            datasets.push(this.asChartjsDataset(spectrum, 'Excitation'));
+            const excitation = this.setup.excitation;
+            datasets.push(this.asChartjsDataset(excitation.intensity,
+                                                excitation.name));
         }
 
         if (this.setup.dye !== null) {
             const dye = this.setup.dye;
             datasets.push(this.asChartjsDataset(dye.excitation,
-                                                'Dye Excitation'));
+                                                dye.name + '(ex)'));
             datasets.push(this.asChartjsDataset(dye.emission,
-                                                'Dye Emission'));
+                                                dye.name + '(em)'));
         }
 
         for (let conf of this.setup.ex_path) {
