@@ -29,7 +29,7 @@ class Model
 {
     constructor() {
         this.validation_error = null; // String or null
-        this._events = {};
+        this._events = {}; // {event_name: [callback1, callback2, ...]}
     }
 
     isValid() {
@@ -46,13 +46,15 @@ class Model
     trigger(event, args) {
         if (this._events[event] !== undefined)
             for (let callback of this._events[event])
+                // First argument is null because we already bound a
+                // thisArg when we created the callback.
                 callback.apply(null, args);
     }
 }
 
 
-// Call for Spectrum data and its computations.  Not for Dye, Filter,
-// or Excitation.  Those have a spectrum property but they are not a
+// Class for Spectrum data and its computations.  Not for Dye, Filter,
+// or Excitation.  Those have a Spectrum property but they are not a
 // Spectrum themselves.
 class Spectrum extends Model
 {
@@ -90,6 +92,8 @@ class Spectrum extends Model
             return "No 'data' property for spectrum";
         if (this.wavelength.length !== this.data.length)
             return "'data' and 'wavelength' arrays must have the same length";
+        if (this.data.some(x => x < 0.0 || x > 1.0))
+            return "all 'data' must be in the [0 1] interval";
     }
 
     area() {
@@ -189,9 +193,9 @@ class Spectrum extends Model
     }
 
     peakWavelength() {
-        // We could keep the value in cache but this is actually only
-        // used to create the dataset for Chartjs and SetupPlot
-        // already keeps the values in cache.
+        // We could keep the value in cache but this is only used to
+        // create the dataset for Chartjs and SetupPlot already keeps
+        // the values in cache.
         const max_index= this.data.reduce(
             (iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0
         );
@@ -407,18 +411,34 @@ class Data extends Model
                 throw new Error(`missing property '${ p }'`);
             this[p] = attrs[p];
         }
-        this.uid = null;
     }
 
-    static constructFromText(text) {
-        const factory = (attrs) => new this.prototype.constructor(attrs);
-        return Spectrum.parseText(text, this.prototype.header_map, factory);
+    // A Factory.
+    //
+    // Args:
+    //     text: the file content for data of the returned type.
+    //     given_args: Object which will be merged with the values
+    //         read in 'text'.  Used by Collection to inject the
+    //         name into the attrs passed to the constructor.
+    //
+    // Returns:
+    //    A new object of the class used to call this method.
+    static constructFromText(text, given_attrs = {}) {
+        const cls = this.prototype;
+        const factory = function(file_attrs) {
+            const attrs = Object.assign({}, given_attrs, file_attrs);
+            return new cls.constructor(attrs);
+        }
+        return Spectrum.parseText(text, cls.header_map, factory);
     }
 }
 Data.prototype.header_map = {
     'Name' : null,
     'Type' : null,
 };
+Data.prototype.properties = [
+    'name',
+];
 
 
 class Dye extends Data
@@ -445,12 +465,12 @@ Dye.prototype.header_map = Object.assign({}, Data.prototype.header_map, {
     'Extinction coefficient': 'ex_coeff',
     'Quantum Yield': 'q_yield',
 });
-Dye.prototype.properties = [
+Dye.prototype.properties = Data.prototype.properties.concat([
     'emission',
     'ex_coeff',
     'excitation',
     'q_yield',
-];
+]);
 
 
 class Excitation extends Data
@@ -462,21 +482,45 @@ class Excitation extends Data
             return this.intensity.validation_error;
     }
 }
-Excitation.prototype.properties = [
+Excitation.prototype.properties = Data.prototype.properties.concat([
     'intensity',
-];
+]);
 
 
 // Reflection/Transmission mode is not a property of the filter, it's
-// a property of the Optical Setup.  So it's up to Setup to handle it.
+// a property of the Optical Setup.  So it's up to Setup to keep track
+// of how the filter is being used.
 class Filter extends Data
 {
+    constructor(attrs) {
+        // Some Filter data files have reflection instead of
+        // transmission.
+        if (attrs.reflection !== undefined) {
+            const data = attrs.reflection.data.map(x => 1.0 -x);
+            const wavelength = attrs.reflection.wavelength;
+            attrs.transmission = new Spectrum(wavelength, data);
+            // attrs.transmission = attrs.reflection;
+            // const data = file_attrs.transmission.data;
+            // for (let i = 0; i < data.length; i++)
+            //     data[i] = 1.0 - data[i];
+            // file_attrs.transmission.data = data;
+            // delete attrs.reflection;
+        }
+        super(attrs);
+        if (attrs.reflection !== undefined)
+            this._set_reflection(attrs.reflection);
+    }
+
+    _set_reflection(reflection) {
+        delete this.reflection;
+        Object.defineProperty(this, 'reflection', {value: reflection});
+    }
+
     get reflection() {
         // Lazy-getters to compute reflection.
         const data = this.transmission.data.map(x => 1.0 -x);
         const reflection = new Spectrum(this.transmission.wavelength, data);
-        delete this.reflection;
-        Object.defineProperty(this, 'reflection', {value: reflection});
+        this._set_reflection(reflection);
         return this.reflection;
     }
 
@@ -492,28 +536,10 @@ class Filter extends Data
         if (! this.transmission.isValid())
             return this.transmission.validation_error;
     }
-
-    static constructFromText(text) {
-        // Some Filter data files have reflection instead of
-        // transmission so fix that before calling the constructor.
-        const constructor = this.prototype.constructor;
-        const factory = function(attrs) {
-            if (attrs.reflection !== undefined) {
-                attrs.transmission = attrs.reflection;
-                const data = attrs.transmission.data;
-                for (let i = 0; i < data.length; i++)
-                    data[i] = 1.0 - data[i];
-                attrs.transmission.data = data;
-                delete attrs.reflection;
-            }
-            return new constructor(attrs);
-        }
-        return Spectrum.parseText(text, this.prototype.header_map, factory);
-    }
 }
-Filter.prototype.properties = [
+Filter.prototype.properties = Data.prototype.properties.concat([
     'transmission',
-];
+]);
 
 
 // A simple container of properties emitting triggers when they
@@ -667,10 +693,19 @@ class DataCollection extends Collection
 
     fetch_model(uid) {
         const fpath = this.dir_url + uid + '.csv';
+        // Inject the uid/name into the initial list of attributes
+        // passed to the factory.  The name in the file content is
+        // ignored because 1) experience has shown us that most of the
+        // file content is wrong anyway; and 2) needs to be equal as
+        // the value used for ID by the Collection so the name on the
+        // dropdown menu matches the name shown on the plot.
+        const attrs = {
+            name: uid
+        };
         return $.ajax({
             url: fpath,
             dataType: 'text',
-        }).then(text => this.factory(text));
+        }).then(text => this.factory(text, attrs));
     }
 }
 
