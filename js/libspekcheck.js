@@ -718,7 +718,7 @@ class FilterSetCollection extends Collection
     }
 
     fetch() {
-        super.fetch({dataType: 'text'});
+        return super.fetch({dataType: 'text'});
     }
 
     resetWithData(text) {
@@ -931,7 +931,7 @@ class OpticalSetupPlot
                     xAxes: [{
                         scaleLabel: {
                             display: true,
-                            labelString: 'Wavelength / nm',
+                            labelString: 'Wavelength (nm)',
                         },
                         ticks: {
                             suggestedMin: 380,
@@ -943,6 +943,14 @@ class OpticalSetupPlot
                             beginAtZero: true,
                             min: 0,
                             max: 1,
+                        },
+                    }],
+                    // Seems like we only want to show this range,
+                    // even if we have spectrum data beyond it.
+                    xAxes: [{
+                        ticks: {
+                            min: 300,
+                            max: 800,
                         },
                     }],
                 },
@@ -1007,17 +1015,6 @@ class OpticalSetupPlot
             datasets.push(this.asChartjsDataset(conf.filter[mode],
                                                 name));
         }
-        // for (let spectrum of Object.keys(this.setup.em_path))
-        //     datasets.push(this.asChartjsDataset(spectrum), 'foo');
-
-        // if (this.setup.excitation !== null &&
-        //     this.setup.ex_path.length !== 0) {
-        //     // adjust excitation to filters
-        // }
-
-        // if (this.setup.em_path.length !== 0) {
-        //     // compute transmission
-        // }
 
         this.plot.data.datasets = datasets;
         this.plot.update();
@@ -1055,10 +1052,11 @@ class SpekCheckController
         this.filterset_builder = new FilterSetBuilder($('#filterset-builder'),
                                                       this.filters, this.setup);
 
-        for (let x of [this.filtersets, this.dyes, this.excitations,
-                       this.filters])
-            x.fetch();
-
+        // We need to fetch the list of dyes, excitations, and
+        // filters, before we can load existing filtersets.
+        Promise.all(
+            [this.dyes, this.excitations, this.filters].map(x => x.fetch())
+        ).then(() => this.filtersets.fetch())
 
         this.filtersets_view.$el.on('change',
                                     this.handleChangeFilterSetEv.bind(this));
