@@ -50,30 +50,31 @@
       <ul class="navbar-nav">
         <li class="nav-item dropdown">
           <div class="btn-group">
-            <button class="btn btn-secondary" data-toggle="modal"
+            <button class="btn btn-primary" data-toggle="modal"
                     data-target="#import-file" type="submit">
               Import …
             </button>
           </div>
           <div class="btn-group">
-            <button class="btn btn-secondary" data-toggle="modal"
-                    data-target="#add-setup" type="submit">
+            <button class="btn btn-primary" data-toggle="modal"
+                    data-target="#add-setup-dialog" type="submit">
               Add Setup
             </button>
           </div>
           <div class="btn-group">
-            <button class="btn btn-secondary" data-toggle="modal"
-                    data-target="#import-file" type="submit">
+            <button class="btn btn-primary" data-toggle="collapse"
+                    data-target="#filterset-builder" type="submit"
+                    aria-expanded="false" aria-controls="#filterset-builder">
               Customise Filter Set
             </button>
           </div>
           <div class="btn-group">
-            <button class="btn btn-secondary" type="submit">
+            <button class="btn btn-primary" type="submit">
               Optimise Dye
             </button>
           </div>
           <div class="btn-group">
-            <button class="btn btn-secondary" type="submit">
+            <button class="btn btn-primary" type="submit">
               Save Plot
             </button>
           </div>
@@ -140,12 +141,12 @@
     </div>
   </div>
 
-    <div class="modal fade" id="add-setup" tabindex="-1" role="dialog"
-       aria-labelledby="import-file-title" aria-hidden="true">
+  <div class="modal fade" id="add-setup-dialog" tabindex="-1" role="dialog"
+       aria-labelledby="add-setup-title" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="import-file-title">Import file</h5>
+          <h5 class="modal-title" id="add-setup-title">Add Setup</h5>
           <button type="button" class="close" data-dismiss="modal"
                   aria-label="Close">
             <span aria-hidden="true">&times;</span>
@@ -153,23 +154,29 @@
         </div>
         <div class="modal-body">
           <div class="input-group mb-3">
-            <input type="text" class="form-control" id="name-input"
-                   aria-describedby="name"/>
-            <div class="input-group-append">
-              <span class="input-group-text" id="name">Name</span>
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="name-label">
+                Name
+              </span>
             </div>
+            <input type="text" class="form-control" id="name"
+                   aria-labelledby="name-label"/>
           </div>
           <div class="input-group mb-3">
-            <input type="text" class="form-control" id="name-input"
-                   aria-describedby="name"/>
-            <div class="input-group-append">
-              <span class="input-group-text" id="name">Configuration</span>
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="configuration-label">
+                Configuration
+              </span>
             </div>
+            <input type="text" class="form-control" id="configuration"
+                   aria-labelledby="configuration-label"/>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary">Import</button>
+          <button type="button" class="btn btn-secondary"
+                  data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary"
+                  id="add-setup">Add</button>
         </div>
       </div>
     </div>
@@ -184,7 +191,7 @@
     <div class="container row">
       <div class="col-sm input-group">
         <div class="input-group-prepend">
-          <span class="input-group-text">Filter Set</span>
+          <span class="input-group-text">Setup</span>
         </div>
         <select class="custom-select" id="filterset-selector">
         </select>
@@ -205,35 +212,37 @@
       </div>
     </div>
 
-    <div class="container row" id="filterset-builder">
-      <div class="col-sm">
-        <div class="card">
-          <div class="card-header">
-            Filters
+    <div class="collapse container" id="filterset-builder">
+      <div class="row">
+        <div class="col-sm">
+          <div class="card">
+            <div class="card-header">
+              Filters
+            </div>
+            <ul class="list-group list-group-flush spekcheck-filtersview"
+                id="filters-view">
+            </ul>
           </div>
-          <ul class="list-group list-group-flush spekcheck-filtersview"
-              id="filters-view">
-          </ul>
         </div>
-      </div>
-      <div class="col-sm">
-        <div class="card">
-          <div class="card-header">
-            Excitation Path
+        <div class="col-sm">
+          <div class="card">
+            <div class="card-header">
+              Excitation Path
+            </div>
+            <ul class="list-group list-group-flush spekcheck-filtersview"
+                id="ex-path">
+            </ul>
           </div>
-          <ul class="list-group list-group-flush spekcheck-filtersview"
-              id="ex-path">
-          </ul>
         </div>
-      </div>
-      <div class="col-sm">
-        <div class="card">
-          <div class="card-header">
-            Emission Path
+        <div class="col-sm">
+          <div class="card">
+            <div class="card-header">
+              Emission Path
+            </div>
+            <ul class="list-group list-group-flush spekcheck-filtersview"
+                id="em-path">
+            </ul>
           </div>
-          <ul class="list-group list-group-flush spekcheck-filtersview"
-              id="em-path">
-          </ul>
         </div>
       </div>
     </div>

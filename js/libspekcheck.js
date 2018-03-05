@@ -193,16 +193,17 @@ class Spectrum extends Model
     }
 
     peakWavelength() {
-        // We could keep the value in cache but this is only used to
-        // create the dataset for Chartjs and SetupPlot already keeps
-        // the values in cache.
+        // We could keep the computed value in cache for next time.
+        // However, this is only used by OpticalSetupPlot which
+        // already keeps a cache of his own.
         const max_index= this.data.reduce(
             (iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0
         );
         return this.wavelength[max_index];
     }
 
-    static parseHeader(header, header_map) {
+    static
+    parseHeader(header, header_map) {
         // Args:
         //     header(Array): one item per text line.
         //     header_map(Object): see doc for parseFile.
@@ -250,7 +251,8 @@ class Spectrum extends Model
         return attrs;
     }
 
-    static parseCSV(csv) {
+    static
+    parseCSV(csv) {
         // Args:
         //    csv(Array): one item per line.
         //
@@ -284,7 +286,8 @@ class Spectrum extends Model
         return attrs;
     }
 
-    static parseText(text, header_map, factory) {
+    static
+    parseText(text, header_map, factory) {
         // Parse our spectra files (text header followed with CSV)
         //
         // Our spectra files have a multi-line text header of the
@@ -493,40 +496,31 @@ Excitation.prototype.properties = Data.prototype.properties.concat([
 class Filter extends Data
 {
     constructor(attrs) {
-        // Some Filter data files have reflection instead of
-        // transmission.
+        // Some Filter files have reflection instead of transmission
+        // so compute it.
         if (attrs.reflection !== undefined) {
             const data = attrs.reflection.data.map(x => 1.0 -x);
             const wavelength = attrs.reflection.wavelength;
             attrs.transmission = new Spectrum(wavelength, data);
-            // attrs.transmission = attrs.reflection;
-            // const data = file_attrs.transmission.data;
-            // for (let i = 0; i < data.length; i++)
-            //     data[i] = 1.0 - data[i];
-            // file_attrs.transmission.data = data;
-            // delete attrs.reflection;
         }
         super(attrs);
         if (attrs.reflection !== undefined)
-            this._set_reflection(attrs.reflection);
+            this.reflection = attrs.reflection;
     }
 
-    _set_reflection(reflection) {
-        delete this.reflection;
-        Object.defineProperty(this, 'reflection', {value: reflection});
-    }
-
-    get reflection() {
-        // Lazy-getters to compute reflection.
+    get
+    reflection() {
+        // lazy-get reflection, only compute if needed.
         const data = this.transmission.data.map(x => 1.0 -x);
         const reflection = new Spectrum(this.transmission.wavelength, data);
-        this._set_reflection(reflection);
+        this.reflection = reflection;
         return this.reflection;
     }
 
-    set reflection(val) {
-        // We just declare this because we need to declare a setter
-        // with everty getter.
+    set
+    reflection(val) {
+        // Delete the lazy-getter when setting the value
+        delete this.reflection;
         Object.defineProperty(this, 'reflection', {value: val});
     }
 
@@ -606,21 +600,14 @@ class Collection extends Model
     constructor() {
         super();
         this.url = '../data/';
-        this.models = []; // Actually, promises of a model.
+        this._models = []; // Actually, promises of a model.
         this.uids = []; // Array of Strings (the names which are unique)
-
-        // This callbacks are usually arrays.  We can probably get
-        // away with only one callback.
-        //
-        // TODO: add this event handling to the Model parent class.
-        this.add_callback = undefined;
-        this.reset_callback = undefined;
     }
 
     validate() {
-        if (this.models.length !== this.uids.length)
+        if (this._models.length !== this.uids.length)
             return 'Number of models and uids is not the same';
-        if (this.models.some(x => x !== undefined && ! x instanceof Promise))
+        if (this._models.some(x => x !== undefined && ! x instanceof Promise))
             return 'Models must all be promises (or undefined)';
     }
 
@@ -630,7 +617,7 @@ class Collection extends Model
         if (! model instanceof Promise)
             throw new Error('New model being added is not a Promise');
 
-        this.models.push(model);
+        this._models.push(model);
         this.uids.push(uid);
         this.trigger('add', object);
     }
@@ -640,9 +627,9 @@ class Collection extends Model
         const index = this.uids.indexOf(uid);
         if (index === -1)
             throw new Error(`No object named '${ uid }' in collection`);
-        if (this.models[index] === undefined)
-            this.models[index] = this.fetch_model(uid);
-        return this.models[index];
+        if (this._models[index] === undefined)
+            this._models[index] = this.fetch_model(uid);
+        return this._models[index];
     }
 
     fetch(new_options) {
@@ -664,14 +651,14 @@ class Collection extends Model
         // collection that are a bit more weird.
         this.uids = data.slice(0);
         // XXX: maybe we should fill the models with promises?
-        this.models = new Array(this.uids.length);
+        this._models = new Array(this.uids.length);
         this.trigger('reset');
     }
 
     reset(uids) {
         this.uids = uids.slice(0);
         // XXX: maybe we should fill the models with promises?
-        this.models = new Array(this.uids.length);
+        this._models = new Array(this.uids.length);
         this.trigger('reset');
     }
 }
@@ -723,7 +710,7 @@ class FilterSetCollection extends Collection
 
     resetWithData(text) {
         this.uids = [];
-        this.models = [];
+        this._models = [];
         for (let line of text.split('\n')) {
             line = line.trim();
             if (line.startsWith('#') || line.length === 0)
@@ -734,14 +721,15 @@ class FilterSetCollection extends Collection
             const uid = line.slice(0, split_index);
             const filterset_line = line.slice(split_index+1);
             this.uids.push(uid);
-            this.models.push(new Promise(function(resolve, reject) {
+            this._models.push(new Promise(function(resolve, reject) {
                 resolve(FilterSetCollection.parseFilterSet(filterset_line));
             }));
         }
         this.trigger('reset');
     }
 
-    static parseFilterSet(line) {
+    static
+    parseFilterSet(line) {
         // Args:
         //     line (String): the second part of a FilterSet definition,
         //         i.e., the whole line minus the first column which
@@ -778,7 +766,8 @@ class FilterSetCollection extends Collection
         return filterset;
     }
 
-    static parseFilterField(field) {
+    static
+    parseFilterField(field) {
         // Args:
         //     field (String): the filter definition, whose format is
         //     'filter_name mode' where mode is 'R|T'
@@ -936,6 +925,11 @@ class OpticalSetupPlot
                         ticks: {
                             suggestedMin: 380,
                             suggestedMax: 780,
+                            // Seems like we only want to show this
+                            // range, even if we have spectrum data
+                            // beyond it.
+                            min: 300,
+                            max: 800,
                         },
                     }],
                     yAxes: [{
@@ -943,14 +937,6 @@ class OpticalSetupPlot
                             beginAtZero: true,
                             min: 0,
                             max: 1,
-                        },
-                    }],
-                    // Seems like we only want to show this range,
-                    // even if we have spectrum data beyond it.
-                    xAxes: [{
-                        ticks: {
-                            min: 300,
-                            max: 800,
                         },
                     }],
                 },
@@ -1080,7 +1066,9 @@ class SpekCheckController
         this.user_selected_excitation = false;
 
         $('.custom-file-input').on('change', this.selectFile);
+
         $('#import-dye').on('click', this.addDye.bind(this));
+        $('#add-setup').on('click', this.addSetup.bind(this));
     }
 
     selectFile(ev) {
@@ -1097,6 +1085,17 @@ class SpekCheckController
             url: file_url,
             dataType: 'text',
         }).then(text => this.dyes.add(this.dyes.factory(text)));
+    }
+    addSetup(ev) {
+        // FIXME: this transversing and searching can't be right.
+        const $dialog = $($(ev.target).parents('div')[3]);
+        const name = $dialog.find('#name').val().trim();
+        if (! name)
+            ups()
+        const line = $dialog.find('#configuration').val().trim();
+        const filterset = FilterSetCollection.parseFilterSet(line);
+        console.log(name);
+        console.log(filterset);
     }
 
     handleChangeDyeEv(ev) {
