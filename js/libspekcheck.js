@@ -86,9 +86,9 @@ class Spectrum extends Model
     }
 
     validate() {
-        if (! this.wavelength instanceof Array)
+        if (! (this.wavelength instanceof Array))
             return "No 'wavelength' property for spectrum";
-        if (! this.data instanceof Array)
+        if (! (this.data instanceof Array))
             return "No 'data' property for spectrum";
         if (this.wavelength.length !== this.data.length)
             return "'data' and 'wavelength' arrays must have the same length";
@@ -118,7 +118,7 @@ class Spectrum extends Model
         //
         // Returns:
         //     A new Spectrum object.
-        if (! points instanceof Array)
+        if (! (points instanceof Array))
             throw new TypeError('POINTS must be an Array');
         if (this.wavelength.length === 1)
             return new Spectrum(points.slice(0),
@@ -448,7 +448,7 @@ class Dye extends Data
 {
     validate() {
         for (let s_name of ['emission', 'excitation']) {
-            if (! this[s_name] instanceof Spectrum)
+            if (! (this[s_name] instanceof Spectrum))
                 return `${ s_name } property is not a Spectrum object`;
             if (! this[s_name].isValid())
                 return this[s_name].validation_error;
@@ -479,7 +479,7 @@ Dye.prototype.properties = Data.prototype.properties.concat([
 class Excitation extends Data
 {
     validate() {
-        if (! this.intensity instanceof Spectrum)
+        if (! (this.intensity instanceof Spectrum))
             return "'intensity' property is not a Spectrum object";
         if (! this.intensity.isValid())
             return this.intensity.validation_error;
@@ -525,7 +525,7 @@ class Filter extends Data
     }
 
     validate() {
-        if (! this.transmission instanceof Spectrum)
+        if (! (this.transmission instanceof Spectrum))
             return "'transmission' property is not a Spectrum object";
         if (! this.transmission.isValid())
             return this.transmission.validation_error;
@@ -535,6 +535,76 @@ Filter.prototype.properties = Data.prototype.properties.concat([
     'transmission',
 ]);
 
+
+class FilterSet extends Model
+{
+    constructor(dye, excitation, ex_path, em_path) {
+        super();
+        this.dye = dye;
+        this.excitation = excitation;
+        this.ex_path = ex_path;
+        this.em_path = em_path;
+    }
+
+    validate() {
+        for (let path of [this.ex_path, this.em_path])
+            for (let f of path)
+                if (f.mode !== 'r' || f.mode !== 't')
+                    return `mode of '${ f.name }' must be r or t`;
+    }
+
+    static
+    parseFilterSet(line) {
+        // Args:
+        //     line (String): the second part of a FilterSet definition,
+        //         i.e., the whole line minus the first column which
+        //         has the FilterSet name.
+        //
+        // Returns:
+        //     An Object with the fields dye, excitation, ex_path, and
+        //     em_path.  The values for ex_path and em_path are Array
+        //     of Objects, with the values name and mode.
+        const line_parts = line.split(',').map(x => x.trim());
+
+        // Their values must be strings, so do pass an empty string if empty.
+        const dye = line_parts[0];
+        const excitation = line_parts[1];
+
+        const ex_path = [];
+        const em_path = [];
+        let path = ex_path; // push into ex_path until we see '::'
+        for (let filt of line_parts.slice(2)) {
+            const c_idx = filt.indexOf('::');
+            if (c_idx !== -1) {
+                let field = filt.slice(0, c_idx).trim();
+                path.push(FilterSet.parseFilterField(field));
+                path = em_path; // Start filling em_path now
+                field = filt.slice(c_idx+2).trim();
+                path.push(FilterSet.parseFilterField(field));
+            }
+            else
+                path.push(FilterSet.parseFilterField(filt))
+        }
+        return new FilterSet(dye, excitation, ex_path, em_path);
+    }
+
+    static
+    parseFilterField(field) {
+        // Args:
+        //     field (String): the filter definition, whose format is
+        //     'filter_name mode' where mode is 'R|T'
+        const split = field.lastIndexOf(' ');
+        if (split === -1)
+            throw new Error(`invalid filter definition '${ field }'`);
+
+        const name = field.slice(0, split);
+        const mode = field.slice(split+1).toLowerCase();
+        if (mode !== 't' && mode !== 'r')
+            throw new Error(`invalid filter mode '${ mode }'`);
+
+        return {'name': name, 'mode': mode};
+    }
+}
 
 // A simple container of properties emitting triggers when they
 // change.  This is the model for what will eventually get displayed.
@@ -575,6 +645,19 @@ class OpticalSetup extends Model
         }
     }
 
+    // FIXME: this returns a filterset for historical reasons
+    clone() {
+        const clone = new FilterSet();
+        clone.dye = this.dye.name;
+        clone.excitation = this.excitation.name;
+        for (let path_name of ['ex_path', 'em_path']) {
+            clone[path_name] = this[path_name].map(
+                x => ({name: x.filter.name, mode: x.mode})
+            )
+        }
+        return clone;
+    }
+
     transmission() {
         //
     }
@@ -607,19 +690,23 @@ class Collection extends Model
     validate() {
         if (this._models.length !== this.uids.length)
             return 'Number of models and uids is not the same';
-        if (this._models.some(x => x !== undefined && ! x instanceof Promise))
+        if (this._models.some(x => x !== undefined && ! (x instanceof Promise)))
             return 'Models must all be promises (or undefined)';
     }
 
     add(uid, model) {
         if (this.uids.indexOf(uid) !== -1)
             throw new Error(`There is already '${ uid }' in collection`);
-        if (! model instanceof Promise)
-            throw new Error('New model being added is not a Promise');
+        if (! (model instanceof Promise))
+            model = new Promise((r) => r(model));
 
         this._models.push(model);
         this.uids.push(uid);
-        this.trigger('add', object);
+        this.trigger('add', model);
+    }
+
+    has(uid) {
+        return this.uids.indexOf(uid) !== -1;
     }
 
     get(uid) {
@@ -722,66 +809,12 @@ class FilterSetCollection extends Collection
             const filterset_line = line.slice(split_index+1);
             this.uids.push(uid);
             this._models.push(new Promise(function(resolve, reject) {
-                resolve(FilterSetCollection.parseFilterSet(filterset_line));
+                resolve(FilterSet.parseFilterSet(filterset_line));
             }));
         }
         this.trigger('reset');
     }
 
-    static
-    parseFilterSet(line) {
-        // Args:
-        //     line (String): the second part of a FilterSet definition,
-        //         i.e., the whole line minus the first column which
-        //         has the FilterSet name.
-        //
-        // Returns:
-        //     An Object with the fields dye, excitation, ex_path, and
-        //     em_path.  The values for ex_path and em_path are Array
-        //     of Objects, with the values name and mode.
-        const line_parts = line.split(',').map(x => x.trim());
-        const filterset = {};
-
-        // Their values must be strings, so do pass an empty string if empty.
-        filterset.dye = line_parts[0];
-        filterset.excitation = line_parts[1];
-
-        const ex_path = [];
-        const em_path = [];
-        let path = ex_path; // push into ex_path until we see '::'
-        for (let filt of line_parts.slice(2)) {
-            const c_idx = filt.indexOf('::');
-            if (c_idx !== -1) {
-                let field = filt.slice(0, c_idx).trim();
-                path.push(FilterSetCollection.parseFilterField(field));
-                path = em_path; // Start filling em_path now
-                field = filt.slice(c_idx+2).trim();
-                path.push(FilterSetCollection.parseFilterField(field));
-            }
-            else
-                path.push(FilterSetCollection.parseFilterField(filt))
-        }
-        filterset.ex_path = ex_path;
-        filterset.em_path = em_path;
-        return filterset;
-    }
-
-    static
-    parseFilterField(field) {
-        // Args:
-        //     field (String): the filter definition, whose format is
-        //     'filter_name mode' where mode is 'R|T'
-        const split = field.lastIndexOf(' ');
-        if (split === -1)
-            throw new Error(`invalid filter definition '${ field }'`);
-
-        const name = field.slice(0, split);
-        const mode = field.slice(split+1).toLowerCase();
-        if (mode !== 't' && mode !== 'r')
-            throw new Error(`invalid filter mode '${ mode }'`);
-
-        return {'name': name, 'mode': mode};
-    }
 }
 
 
@@ -791,6 +824,7 @@ class CollectionView
         this.$el = $el;
         this.collection = collection;
         this.collection.on('reset', this.render, this);
+        this.collection.on('add', this.render, this);
     }
 
     render() {
@@ -1013,6 +1047,110 @@ class OpticalSetupPlot
 }
 
 
+class AddDialog
+{
+    constructor($el, collections) {
+        this.$el = $el;
+        this.collections = collections;
+
+        this.$failure = $el.find('#failure');
+        this.model = null;
+
+        // This will empty all text from the modal dialog.  This text
+        // may be from a previous session but may also be from the
+        // last view of the modal dialog.  Removing it each time means
+        // that the setup line needs to be typed in one go since the
+        // user won't be able to exit the modal to take a look at the
+        // list of filters and dyes and then come back to continue.
+        //
+        // If we have to reset the object each time, maybe this should
+        // constructed each time instead?
+        this.$el.on('show.bs.modal', this.reset.bind(this));
+        this.$add_button.on('click', this.add.bind(this));
+    }
+
+    reset() {
+        // FIXME:
+        // This is suggesting me that instead of reseting we should be
+        // constructing a new Dialog each time.
+        this.$failure.attr('hidden', '');
+        this.model = null;
+    }
+
+
+    add() {
+        // TODO check validation section on bootstrap forms section
+        try {
+            this.readModel();
+        } catch (e) {
+            this.showFailure(e.message);
+            return;
+        }
+        const uid = this.model.name;
+        if (! uid) {
+            this.showFailure('A name is required');
+            return;
+        } else {
+            try {
+                this.collection.add(uid, this.model);
+            } catch (e) {
+                this.showFailure(e.message);
+                return;
+            }
+        }
+        this.$el.modal('hide');
+    }
+
+    showFailure(text) {
+        this.$failure.html(text);
+        this.$failure.removeAttr('hidden');
+    }
+}
+
+
+class SaveSetupDialog
+{
+    constructor($el, filtersets, setup) {
+        this.$el = $el;
+        this.filtersets = filtersets; // filterset collection
+        this.setup = setup; // Current setup
+
+        this.$name = $el.find('#setup-name');
+        this.$save_button = $el.find('#save-button');
+        this.$failure = $el.find('#failure');
+
+        this.$el.on('show.bs.modal', this.reset.bind(this));
+        this.$save_button.on('click', this.add.bind(this));
+    }
+
+    reset() {
+        this.$name.val('');
+        this.$failure.attr('hidden', '');
+    }
+
+    add() {
+        const uid = this.$name.val().trim();
+        if (! uid) {
+            this.showFailure('A name is required');
+            return;
+        } else {
+            try {
+                const setup = this.setup.clone();
+                this.filtersets.add(uid, setup);
+            } catch (e) {
+                this.showFailure(e.message);
+                return;
+            }
+        }
+        this.$el.modal('hide');
+    }
+
+    showFailure(text) {
+        this.$failure.html(text);
+        this.$failure.removeAttr('hidden');
+    }
+}
+
 class SpekCheckController
 {
     constructor() {
@@ -1068,7 +1206,14 @@ class SpekCheckController
         $('.custom-file-input').on('change', this.selectFile);
 
         $('#import-dye').on('click', this.addDye.bind(this));
-        $('#add-setup').on('click', this.addSetup.bind(this));
+        this.save_setup_dialog = new SaveSetupDialog($('#save-setup-dialog'),
+                                                    this.filtersets,
+                                                   this.setup);
+
+        this.import_dialog = new ImportDialog($('#import-dialog'),
+                                              {'Dye': this.dyes,
+                                               'Filter': this.filters,
+                                               'Source': this.sources,});
     }
 
     selectFile(ev) {
@@ -1093,7 +1238,7 @@ class SpekCheckController
         if (! name)
             ups()
         const line = $dialog.find('#configuration').val().trim();
-        const filterset = FilterSetCollection.parseFilterSet(line);
+        const filterset = FilterSet.parseFilterSet(line);
         console.log(name);
         console.log(filterset);
     }

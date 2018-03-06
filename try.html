@@ -36,6 +36,7 @@
   <script src="js/libspekcheck.js"></script>
 </head>
 <body>
+
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <a class="navbar-brand" href="#">
       <span class="spekcheck-logo">&#10004;</span><span style="font-weight:bold">SPEK</span>check
@@ -51,13 +52,13 @@
         <li class="nav-item dropdown">
           <div class="btn-group">
             <button class="btn btn-primary" data-toggle="modal"
-                    data-target="#import-file" type="submit">
+                    data-target="#import-dialog" type="submit">
               Import …
             </button>
           </div>
           <div class="btn-group">
             <button class="btn btn-primary" data-toggle="modal"
-                    data-target="#add-setup-dialog" type="submit">
+                    data-target="#save-setup-dialog" type="submit">
               Add Setup
             </button>
           </div>
@@ -91,7 +92,7 @@
     `.modal` within another fixed element.
   -->
 
-  <div class="modal fade" id="import-file" tabindex="-1" role="dialog"
+  <div class="modal fade" id="import-dialog" tabindex="-1" role="dialog"
        aria-labelledby="import-file-title" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
@@ -131,6 +132,16 @@
               <label class="custom-file-label" for="file-selector"/>
             </div>
           </div>
+          <p>The configuration of a Setup is as:
+          </p>
+          <code>
+            DYE, EXCITATION, FILTER1 FILTER1mode, filrer
+          </code>
+          <p>
+            The DYE and EXCITATION are only preferences.  The :: marks
+            the end of path.  If there is no dye and excitation, the
+            fields need to be empty.
+          </p>
         </div>
 
         <div class="modal-footer">
@@ -141,12 +152,12 @@
     </div>
   </div>
 
-  <div class="modal fade" id="add-setup-dialog" tabindex="-1" role="dialog"
-       aria-labelledby="add-setup-title" aria-hidden="true">
+  <div class="modal fade" id="save-setup-dialog" tabindex="-1" role="dialog"
+       aria-labelledby="save-setup-title" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="add-setup-title">Add Setup</h5>
+          <h5 class="modal-title" id="save-setup-title">Save Setup</h5>
           <button type="button" class="close" data-dismiss="modal"
                   aria-label="Close">
             <span aria-hidden="true">&times;</span>
@@ -159,24 +170,17 @@
                 Name
               </span>
             </div>
-            <input type="text" class="form-control" id="name"
+            <input type="text" class="form-control" id="setup-name"
                    aria-labelledby="name-label"/>
           </div>
-          <div class="input-group mb-3">
-            <div class="input-group-prepend">
-              <span class="input-group-text" id="configuration-label">
-                Configuration
-              </span>
-            </div>
-            <input type="text" class="form-control" id="configuration"
-                   aria-labelledby="configuration-label"/>
+          <div class="alert alert-danger" role="alert" id="failure" hidden="">
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary"
                   data-dismiss="modal">Close</button>
           <button type="button" class="btn btn-primary"
-                  id="add-setup">Add</button>
+                  id="save-button">Save</button>
         </div>
       </div>
     </div>
