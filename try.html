@@ -52,7 +52,7 @@
         <li class="nav-item dropdown">
           <div class="btn-group">
             <button class="btn btn-primary" data-toggle="modal"
-                    data-target="#import-dialog" type="submit">
+                    data-target="#import-file-dialog" type="submit">
               Import …
             </button>
           </div>
@@ -92,37 +92,36 @@
     `.modal` within another fixed element.
   -->
 
-  <div class="modal fade" id="import-dialog" tabindex="-1" role="dialog"
+  <div class="modal fade" id="import-file-dialog" tabindex="-1" role="dialog"
        aria-labelledby="import-file-title" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="import-file-title">Import file</h5>
+          <h5 class="modal-title" id="import-file-title">Import File</h5>
           <button type="button" class="close" data-dismiss="modal"
                   aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
 
+        <form class="needs-validation" novalidate>
         <div class="modal-body">
           <div class="input-group mb-3">
-            <select class="custom-select" id="import-file-type">
+            <select class="custom-select" id="file-type">
               <option value="dye">Dye</option>
               <option value="filter">Filter</option>
               <option value="source">Source</option>
             </select>
             <div class="input-group-append">
-              <label class="input-group-text" for="import-file-type">
-                Type
-              </label>
+              <label class="input-group-text" for="file-type">Type</label>
             </div>
           </div>
 
           <div class="input-group mb-3">
-            <input type="text" class="form-control" id="name-input"
-                   aria-describedby="name"/>
+            <input type="text" class="form-control" id="file-name"
+                   aria-describedby="name" required/>
             <div class="input-group-append">
-              <span class="input-group-text" id="name">Name</span>
+              <label class="input-group-text" for="file-name">Name</label>
             </div>
           </div>
 
@@ -132,22 +131,25 @@
               <label class="custom-file-label" for="file-selector"/>
             </div>
           </div>
-          <p>The configuration of a Setup is as:
-          </p>
-          <code>
-            DYE, EXCITATION, FILTER1 FILTER1mode, filrer
-          </code>
+
           <p>
-            The DYE and EXCITATION are only preferences.  The :: marks
-            the end of path.  If there is no dye and excitation, the
-            fields need to be empty.
+            Each type of data file has a specific configuration.  See
+            the help.  An hopefully better help message will be
+            displayed if it fails to parse the file during import.
           </p>
+
+          <!-- To be filled and show if it fails to import the file. -->
+          <div class="alert alert-danger" role="alert" id="failure" hidden="">
+          </div>
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary" id="import-dye">Import</button>
+          <button type="button" class="btn btn-secondary"
+                  data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary"
+                  id="import-button">Import</button>
         </div>
+        </form>
       </div>
     </div>
   </div>
@@ -163,19 +165,22 @@
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
+
         <div class="modal-body">
           <div class="input-group mb-3">
             <div class="input-group-prepend">
-              <span class="input-group-text" id="name-label">
+              <label class="input-group-text" for="setup-name">
                 Name
-              </span>
+              </label>
             </div>
-            <input type="text" class="form-control" id="setup-name"
-                   aria-labelledby="name-label"/>
+            <input type="text" class="form-control" id="setup-name"/>
           </div>
+
+          <!-- To be filled and show if it fails to save the setup. -->
           <div class="alert alert-danger" role="alert" id="failure" hidden="">
           </div>
         </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary"
                   data-dismiss="modal">Close</button>

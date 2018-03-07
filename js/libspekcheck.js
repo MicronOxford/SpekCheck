@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with SpekCheck.  If not, see <http://www.gnu.org/licenses/>.
 
+'use strict';
 
 // Base class to provide model validation and event callbacks.
 //
@@ -40,15 +41,22 @@ class Model
     on(event, callback, thisArg=callback) {
         if (this._events[event] === undefined)
             this._events[event] = [];
+        console.log(this._events[event]);
         this._events[event].push(callback.bind(thisArg));
+        console.log(this._events[event]);
     }
 
     trigger(event, args) {
+        console.log(this._events[event]);
         if (this._events[event] !== undefined)
-            for (let callback of this._events[event])
+            for (let callback of this._events[event]) {
                 // First argument is null because we already bound a
                 // thisArg when we created the callback.
+                console.log(callback);
                 callback.apply(null, args);
+                console.log('lll');
+
+            }
     }
 }
 
@@ -536,7 +544,9 @@ Filter.prototype.properties = Data.prototype.properties.concat([
 ]);
 
 
-class FilterSet extends Model
+// Like an OpticalSetup object but with Models replaced with their
+// uids.
+class OpticalSetupMock extends Model
 {
     constructor(dye, excitation, ex_path, em_path) {
         super();
@@ -550,7 +560,7 @@ class FilterSet extends Model
         for (let path of [this.ex_path, this.em_path])
             for (let f of path)
                 if (f.mode !== 'r' || f.mode !== 't')
-                    return `mode of '${ f.name }' must be r or t`;
+                    return `mode of '${ f.filter }' must be r or t`;
     }
 
     static
@@ -563,7 +573,7 @@ class FilterSet extends Model
         // Returns:
         //     An Object with the fields dye, excitation, ex_path, and
         //     em_path.  The values for ex_path and em_path are Array
-        //     of Objects, with the values name and mode.
+        //     of Objects, with the values filter and mode.
         const line_parts = line.split(',').map(x => x.trim());
 
         // Their values must be strings, so do pass an empty string if empty.
@@ -577,15 +587,15 @@ class FilterSet extends Model
             const c_idx = filt.indexOf('::');
             if (c_idx !== -1) {
                 let field = filt.slice(0, c_idx).trim();
-                path.push(FilterSet.parseFilterField(field));
+                path.push(OpticalSetupMock.parseFilterField(field));
                 path = em_path; // Start filling em_path now
                 field = filt.slice(c_idx+2).trim();
-                path.push(FilterSet.parseFilterField(field));
+                path.push(OpticalSetupMock.parseFilterField(field));
             }
             else
-                path.push(FilterSet.parseFilterField(filt))
+                path.push(OpticalSetupMock.parseFilterField(filt))
         }
-        return new FilterSet(dye, excitation, ex_path, em_path);
+        return new OpticalSetupMock(dye, excitation, ex_path, em_path);
     }
 
     static
@@ -602,9 +612,10 @@ class FilterSet extends Model
         if (mode !== 't' && mode !== 'r')
             throw new Error(`invalid filter mode '${ mode }'`);
 
-        return {'name': name, 'mode': mode};
+        return {'filter': name, 'mode': mode};
     }
 }
+
 
 // A simple container of properties emitting triggers when they
 // change.  This is the model for what will eventually get displayed.
@@ -645,17 +656,18 @@ class OpticalSetup extends Model
         }
     }
 
-    // FIXME: this returns a filterset for historical reasons
-    clone() {
-        const clone = new FilterSet();
-        clone.dye = this.dye.name;
-        clone.excitation = this.excitation.name;
+    // Mock this instance, i.e., replace the Filter, Dye, and
+    // Excitation objects with their names.
+    mock() {
+        const mock = new OpticalSetupMock();
+        mock.dye = this.dye.name;
+        mock.excitation = this.excitation.name;
         for (let path_name of ['ex_path', 'em_path']) {
-            clone[path_name] = this[path_name].map(
-                x => ({name: x.filter.name, mode: x.mode})
+            mock[path_name] = this[path_name].map(
+                x => ({filter: x.filter.name, mode: x.mode})
             )
         }
-        return clone;
+        return mock;
     }
 
     transmission() {
@@ -702,6 +714,7 @@ class Collection extends Model
 
         this._models.push(model);
         this.uids.push(uid);
+        console.log(this._events['add']);
         this.trigger('add', model);
     }
 
@@ -809,7 +822,7 @@ class FilterSetCollection extends Collection
             const filterset_line = line.slice(split_index+1);
             this.uids.push(uid);
             this._models.push(new Promise(function(resolve, reject) {
-                resolve(FilterSet.parseFilterSet(filterset_line));
+                resolve(OpticalSetupMock.parseFilterSet(filterset_line));
             }));
         }
         this.trigger('reset');
@@ -1047,63 +1060,82 @@ class OpticalSetupPlot
 }
 
 
-class AddDialog
+class ImportDialog
 {
-    constructor($el, collections) {
+    constructor($el, options) {
         this.$el = $el;
-        this.collections = collections;
+        this.options = options; // maps option value to a DataCollection
 
-        this.$failure = $el.find('#failure');
-        this.model = null;
+        this._$name = $el.find('#file-name');
+        this._$file_type = $el.find('#file-type');
+        this._$file_input = $el.find('#file-selector');
+        this._$file_label = $el.find('.custom-file-label');
+        this._$import_button = $el.find('#import-button');
+        this._$failure = $el.find('#failure');
 
-        // This will empty all text from the modal dialog.  This text
-        // may be from a previous session but may also be from the
-        // last view of the modal dialog.  Removing it each time means
-        // that the setup line needs to be typed in one go since the
-        // user won't be able to exit the modal to take a look at the
-        // list of filters and dyes and then come back to continue.
-        //
-        // If we have to reset the object each time, maybe this should
-        // constructed each time instead?
         this.$el.on('show.bs.modal', this.reset.bind(this));
-        this.$add_button.on('click', this.add.bind(this));
+        this._$import_button.on('click', this.import.bind(this));
+        this._$file_input.on('change', this.selectFile.bind(this));
     }
 
     reset() {
-        // FIXME:
-        // This is suggesting me that instead of reseting we should be
-        // constructing a new Dialog each time.
-        this.$failure.attr('hidden', '');
-        this.model = null;
+        this._$failure.attr('hidden', '');
+
+        this._$name.val(''); // Maybe we shouldn't reset the name?
+
+        // Don't empty the filelist so that selecting a new file will
+        // start where the last one was selected from.
+        const filelist = this._$file_input[0].files;
+        if (filelist.length !== 0)
+            this._$file_label.text(filelist[0].name);
     }
 
+    selectFile() {
+        this.$file_label.text(this._$file_input[0].files[0].name);
+    }
 
-    add() {
-        // TODO check validation section on bootstrap forms section
-        try {
-            this.readModel();
-        } catch (e) {
-            this.showFailure(e.message);
+    // TODO: might not be a bad idea to use bootstrap form validation.
+    import() {
+        const type = this._$file_type.val();
+        const collection = this.options[type];
+        if (! (collection instanceof DataCollection))
+            throw new Error(`invalid data type ${ type } selected`);
+
+        const name = this._$name.val();
+        if (! name) {
+            this.showFailure('Name is required');
             return;
         }
-        const uid = this.model.name;
-        if (! uid) {
-            this.showFailure('A name is required');
+        const filelist = this._$file_input[0].files;
+        if (! (filelist[0] instanceof File)) {
+            this.showFailure('File is required');
             return;
-        } else {
+        }
+
+        const reader = new FileReader;
+
+        reader.onload = (function() {
+            const attrs = {'name': name};
             try {
-                this.collection.add(uid, this.model);
+                const data = collection.factory(reader.result, attrs);
+                collection.add(name, data);
             } catch (e) {
                 this.showFailure(e.message);
                 return;
             }
-        }
-        this.$el.modal('hide');
+            this.$el.modal('hide');
+        }).bind(this);
+
+        reader.onerror = (function(ev) {
+            this.showFailure(ev.message);
+        }).bind(this);
+
+        reader.readAsText(filelist[0]);
     }
 
     showFailure(text) {
-        this.$failure.html(text);
-        this.$failure.removeAttr('hidden');
+        this._$failure.html(text);
+        this._$failure.removeAttr('hidden');
     }
 }
 
@@ -1112,30 +1144,30 @@ class SaveSetupDialog
 {
     constructor($el, filtersets, setup) {
         this.$el = $el;
-        this.filtersets = filtersets; // filterset collection
+        this.setups = filtersets; // OpticalSetupMock collection
         this.setup = setup; // Current setup
 
-        this.$name = $el.find('#setup-name');
-        this.$save_button = $el.find('#save-button');
-        this.$failure = $el.find('#failure');
+        this._$name = $el.find('#setup-name');
+        this._$save_button = $el.find('#save-button');
+        this._$failure = $el.find('#failure');
 
         this.$el.on('show.bs.modal', this.reset.bind(this));
-        this.$save_button.on('click', this.add.bind(this));
+        this._$save_button.on('click', this.add.bind(this));
     }
 
     reset() {
-        this.$name.val('');
-        this.$failure.attr('hidden', '');
+        this._$name.val('');
+        this._$failure.attr('hidden', '');
     }
 
     add() {
-        const uid = this.$name.val().trim();
+        const uid = this._$name.val().trim();
         if (! uid) {
             this.showFailure('A name is required');
             return;
         } else {
             try {
-                const setup = this.setup.clone();
+                const setup = this.setup.mock();
                 this.filtersets.add(uid, setup);
             } catch (e) {
                 this.showFailure(e.message);
@@ -1146,8 +1178,8 @@ class SaveSetupDialog
     }
 
     showFailure(text) {
-        this.$failure.html(text);
-        this.$failure.removeAttr('hidden');
+        this._$failure.html(text);
+        this._$failure.removeAttr('hidden');
     }
 }
 
@@ -1203,23 +1235,19 @@ class SpekCheckController
         this.user_selected_dye = false;
         this.user_selected_excitation = false;
 
-        $('.custom-file-input').on('change', this.selectFile);
-
         $('#import-dye').on('click', this.addDye.bind(this));
         this.save_setup_dialog = new SaveSetupDialog($('#save-setup-dialog'),
                                                     this.filtersets,
                                                    this.setup);
 
-        this.import_dialog = new ImportDialog($('#import-dialog'),
-                                              {'Dye': this.dyes,
-                                               'Filter': this.filters,
-                                               'Source': this.sources,});
-    }
+        this.import_dialog = new ImportDialog($('#import-file-dialog'),
+                                              {'dye': this.dyes,
+                                               'filter': this.filters,
+                                               'source': this.excitations,});
 
-    selectFile(ev) {
-        const filename = ev.target.files[0].name;
-        const label = $(ev.target).next('.custom-file-label');
-        label.html(filename);
+        // If someone imports a Dye or ExcitationSource, change to it.
+        console.log('adding');
+        this.dyes.on('add', (d) => console.log(d), this);
     }
 
     addDye(ev) {
@@ -1238,9 +1266,7 @@ class SpekCheckController
         if (! name)
             ups()
         const line = $dialog.find('#configuration').val().trim();
-        const filterset = FilterSet.parseFilterSet(line);
-        console.log(name);
-        console.log(filterset);
+        const filterset = OpticalSetupMock.parseFilterSet(line);
     }
 
     handleChangeDyeEv(ev) {
@@ -1256,6 +1282,7 @@ class SpekCheckController
         }
     }
     changeDye(dye, uid) {
+        console.log(dye);
         this.setup.dye = dye;
         this.dyes_view.$el.val(uid);
     }
@@ -1318,7 +1345,7 @@ class SpekCheckController
             const path = new_filterset[path_name];
             const filter_promises = [];
             for (let i = 0; i < path.length; i++) {
-                const uid = path[i].name;
+                const uid = path[i].filter;
                 filter_promises.push(
                     this.filters.get(uid).then(
                         f => ({

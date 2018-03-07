@@ -26,60 +26,10 @@
     overflow-y: auto;
 }
 
-
-body {
-    font-family: sans-serif;
-}
-
-
-*.selected {
-    background: #999;
-}
-
-#dyes, #filters, #sets, #excitation {
-    overflow-y: scroll;
-    border: ridge;
-    height: 12em;
-}
-#fset, #exset {
-    overflow-y: scroll;
-    border: ridge;
-    height: 5em;
-}
-
-
-label {
-    margin-top: 3px;
-}
-
+/*
+  We shouldn't need this...
+*/
 .container {
     float: left;
     margin: 1em;
-}
-
-
-#fset > * {
-    display: flex;
-    justify-content: space-between;
-    width: 12em;
-}
-
-#exset > * {
-    display: flex;
-    justify-content: space-between;
-    width: 12em;
-}
-
-
-label {
-    display: inline-block;
-}
-
-.button {
-    background-color: gray; /* Gray*/
-    text-align: center;
-    padding: 5px;
-    border-radius: 8px;
-    margin: 10px;
-    color: white;
 }
