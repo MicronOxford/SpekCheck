@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with SpekCheck.  If not, see <http://www.gnu.org/licenses/>.
 
+
 'use strict';
 
 // Base class to provide model validation and event callbacks.
@@ -41,22 +42,15 @@ class Model
     on(event, callback, thisArg=callback) {
         if (this._events[event] === undefined)
             this._events[event] = [];
-        console.log(this._events[event]);
         this._events[event].push(callback.bind(thisArg));
-        console.log(this._events[event]);
     }
 
     trigger(event, args) {
-        console.log(this._events[event]);
         if (this._events[event] !== undefined)
-            for (let callback of this._events[event]) {
+            for (let callback of this._events[event])
                 // First argument is null because we already bound a
                 // thisArg when we created the callback.
-                console.log(callback);
                 callback.apply(null, args);
-                console.log('lll');
-
-            }
     }
 }
 
@@ -126,6 +120,7 @@ class Spectrum extends Model
         //
         // Returns:
         //     A new Spectrum object.
+
         if (! (points instanceof Array))
             throw new TypeError('POINTS must be an Array');
         if (this.wavelength.length === 1)
@@ -159,8 +154,6 @@ class Spectrum extends Model
                 j++;
 
             // This case should be quite common since most data is actually
-
-            measurements
             // (original data) are often done at integer values, and
             // the sampling is done at integers wavelengths too.
             if (old_w[j] === new_w[i])
@@ -184,6 +177,7 @@ class Spectrum extends Model
         // Spectrum instance.  The wavelength range of the new
         // Spectrum is the intersection of the two wavelength ranges
         // (values outside the range are interpreted as zeros anyway).
+
         this._points = null;
         this.interpolate();
         var oldMax = Math.max(...this._interp[1]);
@@ -202,23 +196,54 @@ class Spectrum extends Model
 
     peakWavelength() {
         // We could keep the computed value in cache for next time.
-        // However, this is only used by OpticalSetupPlot which
+        // However, this is only used by SetupPlot which
         // already keeps a cache of his own.
         const max_index= this.data.reduce(
             (iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0
         );
         return this.wavelength[max_index];
     }
+}
+
+
+// Base class for our Data: Dye, Excitation, and Filter classes.
+//
+// It provides a nice default constructor and factory from file text.
+// It requires two static data members wich configure the constructor
+// and the factory/reader:
+//
+//    properties: an Array of property names which will be defined on
+//        a class instance, and are required to be keys on the Object
+//        passed to the factory.
+//    header_map: used to map the keys on the header of the files to
+//        the keys used on the Object passed to the factory.  null
+//        values mean fields to ignore.
+//
+// TODO: call it something other than Data.  It is meant to represent
+//       the things that we have a data file for.
+class Data extends Model
+{
+    constructor(attrs) {
+        super();
+        // All declared properties must be defined.
+        for (let p of this.constructor.prototype.properties) {
+            if (attrs[p] === undefined)
+                throw new Error(`missing property '${ p }'`);
+            this[p] = attrs[p];
+        }
+    }
 
     static
-    parseHeader(header, header_map) {
+    parseHeader(header) {
         // Args:
-        //     header(Array): one item per text line.
-        //     header_map(Object): see doc for parseFile.
+        //     header (Array): one item per text line.
         //
         // Returns:
-        //     An Object of attributes, keys taken from 'header_map'
-        //     values.
+        //     An Object of attributes, keys taken from the class
+        //     'header_map' property.
+
+        const header_map = this.prototype.header_map;
+
         const attrs = {};
         for (let line of header) {
             if (line.startsWith('#'))
@@ -262,7 +287,7 @@ class Spectrum extends Model
     static
     parseCSV(csv) {
         // Args:
-        //    csv(Array): one item per line.
+        //    csv (Array): one item per line.
         //
         // Returns:
         //    An Object with the spectrum names as keys, and Spectrum
@@ -271,7 +296,8 @@ class Spectrum extends Model
         // First line of CSV content tells us: 1) the number of
         // columns/spectrum; 2) name to give to each spectrum.  We
         // ignore the name of the first column, but it should be
-        // wavelength.
+        // 'wavelength'.
+
         const attrs = {};
 
         const spectra_names = csv[0].split(',').slice(1).map(x => x.trim());
@@ -295,83 +321,37 @@ class Spectrum extends Model
     }
 
     static
-    parseText(text, header_map, factory) {
-        // Parse our spectra files (text header followed with CSV)
+    constructFromText(text, caller_attrs) {
+        // Construct an instance from file content.
         //
-        // Our spectra files have a multi-line text header of the
-        // form:
+        // Our data files have a multi-line text header of the form:
         //
-        //    key: some-value
+        //    key 1: float value
+        //    key 2: float value
         //    # An optional comment
         //
         // This header is followed by CSV like:
         //
-        //    wavelengths, spectra name #1, spectra name #2
+        //    wavelength, spectra name #1, spectra name #2
         //    x, y, z
         //
         // The 'key' values are case-sensitive and used to index
         // 'header_map'.  The 'spectra name #N' will be used as a
-        // property keys on the Object passed to 'factory'.
+        // property keys on attrs passed to the constructor.
         // Everything is case-sensitive.
         //
         // Args:
         //     text (String): the file content.
         //
-        //     header_map (Object): maps header keys from the file
-        //        header to property names used for the Object passed
-        //        to 'factory'.  If the value is 'null', those keys
-        //        are ignored.
-        //
-        //     factory (function): the function for the returned
-        //         object.  It must accept an Object as input.  The
-        //         keys of that Object will be the values of
-        //         'header_map' and the CSV spectrum names.
+        //     caller_attrs (Object): will be merged with the
+        //         attributes read from the file.  Can be used to
+        //         inject extra attributes not available on the file
+        //         or to overwrite the values read from the file.
         //
         // Returns:
-        //    The return value from 'factory'.
-        //
-        // This is meant to construct the Dye, Excitation, Filter, and
-        // Source objects which have one or more Spectrum objects.  So
-        // if we have a file like this:
-        //
-        //     Name: really cool dye
-        //     Type: vegan-eco-bio-green dye
-        //     Quantum Yield: 9001
-        //     Extinction coefficient: 0.9
-        //     wavelength, excitation, emission
-        //     300.0, 0.5, 0.07
-        //     ...
-        //
-        // The the function would be called like this:
-        //
-        //      parseText(text,
-        //                {
-        //                    'Name': null, // Ignore this
-        //                    'Type': null, // Ignore this
-        //                    'Quantum Yield': 'q_yield',
-        //                    'Extinction coefficient': 'ext_coeff'
-        //                },
-        //                (attrs) => new Dye(attrs))
-        //
-        // To have 'factory' called like this (the names 'q_yield' and
-        // 'ext_coeff' are values from 'header_map', while the names
-        // 'excitation' and 'emission' come from the first line of the
-        // CSV text):
-        //
-        //    factory({
-        //        q_yield: 9001,
-        //        ext_coeff: 0.9,
-        //        excitation: new Spectrum({
-        //            wavelength: [300.0, ...],
-        //            data: [0.5, ...],
-        //        },
-        //        emission: new Spectrum({
-        //            wavelength: [300.0, ...],
-        //            data: [0.0.7, ...],
-        //        },
-        //    });
+        //    A Data instance (dependent on the class used to call it).
 
-        const attrs = {}; // to be used when calling factory
+        const header_map = this.prototype.header_map;
 
         const lines = text.split('\n');
 
@@ -386,66 +366,22 @@ class Spectrum extends Model
         const header = lines.slice(0, header_length);
         const csv = lines.slice(header_length);
 
-        const header_attrs = this.parseHeader(header, header_map);
+        const header_attrs = this.parseHeader(header);
         const csv_attrs = this.parseCSV(csv);
+
+        // The file header and CSV contents must not have duplicated
+        // properties.  However, enable the overwriting of properties
+        // by the caller.
         if (Object.keys(header_attrs).some(x => csv_attrs.hasOwnProperty(x)))
             throw new Error('csv and header have duplicate properties');
+        const attrs = Object.assign({}, header_attrs, csv_attrs, caller_attrs);
 
-        Object.assign(attrs, header_attrs, csv_attrs);
-        return factory(attrs);
-    }
-}
-
-
-// Base class for our Data, Excitation, and Filter classes.
-//
-// It provides a nice default constructor and factory from file text.
-// It requires two static data members wich configure the constructor
-// and the reader:
-//
-//    properties: an Array of property names which will be defined on
-//        a class instance, and are required to be keys on the Object
-//        passed to the factory.
-//    header_map: used to map the keys on the header of the files to
-//        the keys used on the Object passed to the factory.  null
-//        values mean fields to ignore.
-//
-// TODO: call it something other than Data.  It is meant to represent
-//       the things that we have a data file for.
-class Data extends Model
-{
-    constructor(attrs) {
-        super();
-        // Make sure that all properties are defined.
-        for (let p of this.constructor.prototype.properties) {
-            if (attrs[p] === undefined)
-                throw new Error(`missing property '${ p }'`);
-            this[p] = attrs[p];
-        }
-    }
-
-    // A Factory.
-    //
-    // Args:
-    //     text: the file content for data of the returned type.
-    //     given_args: Object which will be merged with the values
-    //         read in 'text'.  Used by Collection to inject the
-    //         name into the attrs passed to the constructor.
-    //
-    // Returns:
-    //    A new object of the class used to call this method.
-    static constructFromText(text, given_attrs = {}) {
-        const cls = this.prototype;
-        const factory = function(file_attrs) {
-            const attrs = Object.assign({}, given_attrs, file_attrs);
-            return new cls.constructor(attrs);
-        }
-        return Spectrum.parseText(text, cls.header_map, factory);
+        return new this.prototype.constructor(attrs);
     }
 }
 Data.prototype.header_map = {
-    'Name' : null,
-    'Type' : null,
+    'Name': null,
+    'Type': null,
 };
 Data.prototype.properties = [
     'name',
@@ -544,58 +480,40 @@ Filter.prototype.properties = Data.prototype.properties.concat([
 ]);
 
 
-// Like an OpticalSetup object but with Models replaced with their
-// uids.
-class OpticalSetupMock extends Model
+// Like an Setup object but with Data instances (Dye,
+// Excitation, and Filter) replaced with their names/uids.  This let
+// us to have a representation of them without parsing all the
+// filters, excitation, and dyes files.  Also much easier to save
+// them.
+//
+// See also the Setup class.
+class SetupDescription extends Model
 {
     constructor(dye, excitation, ex_path, em_path) {
         super();
-        this.dye = dye;
-        this.excitation = excitation;
-        this.ex_path = ex_path;
-        this.em_path = em_path;
+        this.dye = dye; // String or null
+        this.excitation = excitation; // String or null
+        this.ex_path = ex_path; // Array of {filter: 'name', mode: 'r|t'}
+        this.em_path = em_path; // Array of {filter: 'name', mode: 'r|t'}
     }
 
     validate() {
-        for (let path of [this.ex_path, this.em_path])
-            for (let f of path)
+        for (let name of ['dye', 'excitation'])
+            if (! (this[name] instanceof String) && this[name] !== null)
+                return `${ name } must be a String or null`;
+
+        for (let path_name of ['ex_path', 'em_path']) {
+            const path = this[path_name];
+            if (! (path instanceof Array))
+                return `${ path_name } must be an Array`;
+
+            for (let f of path) {
+                if (! (f.filter instanceof String))
+                    return `values of ${ path_name } must have 'filter'`;
                 if (f.mode !== 'r' || f.mode !== 't')
                     return `mode of '${ f.filter }' must be r or t`;
-    }
-
-    static
-    parseFilterSet(line) {
-        // Args:
-        //     line (String): the second part of a FilterSet definition,
-        //         i.e., the whole line minus the first column which
-        //         has the FilterSet name.
-        //
-        // Returns:
-        //     An Object with the fields dye, excitation, ex_path, and
-        //     em_path.  The values for ex_path and em_path are Array
-        //     of Objects, with the values filter and mode.
-        const line_parts = line.split(',').map(x => x.trim());
-
-        // Their values must be strings, so do pass an empty string if empty.
-        const dye = line_parts[0];
-        const excitation = line_parts[1];
-
-        const ex_path = [];
-        const em_path = [];
-        let path = ex_path; // push into ex_path until we see '::'
-        for (let filt of line_parts.slice(2)) {
-            const c_idx = filt.indexOf('::');
-            if (c_idx !== -1) {
-                let field = filt.slice(0, c_idx).trim();
-                path.push(OpticalSetupMock.parseFilterField(field));
-                path = em_path; // Start filling em_path now
-                field = filt.slice(c_idx+2).trim();
-                path.push(OpticalSetupMock.parseFilterField(field));
             }
-            else
-                path.push(OpticalSetupMock.parseFilterField(filt))
         }
-        return new OpticalSetupMock(dye, excitation, ex_path, em_path);
     }
 
     static
@@ -614,19 +532,56 @@ class OpticalSetupMock extends Model
 
         return {'filter': name, 'mode': mode};
     }
+
+    static
+    constructFromText(text) {
+        // Args:
+        //     line (String): the actual SetupDescription,
+        //         i.e., the whole line on the 'sets' file minus the
+        //         first column (which has the Setup name).
+        //
+        // Returns:
+        //     An SetupDescription instance.
+        const fields = text.split(',').map(x => x.trim());
+
+        const dye = fields[0] || null;
+        const excitation = fields[1] || null;
+
+        const ex_path = [];
+        const em_path = [];
+        let path = ex_path; // push into ex_path until we see '::'
+        for (let filt of fields.slice(2)) {
+            const c_idx = filt.indexOf('::');
+            if (c_idx !== -1) {
+                let field = filt.slice(0, c_idx).trim();
+                path.push(this.parseFilterField(field));
+                path = em_path; // Start filling em_path now
+                field = filt.slice(c_idx+2).trim();
+                path.push(this.parseFilterField(field));
+            }
+            else
+                path.push(this.parseFilterField(filt))
+        }
+        return new SetupDescription(dye, excitation, ex_path, em_path);
+    }
 }
 
 
-// A simple container of properties emitting triggers when they
-// change.  This is the model for what will eventually get displayed.
-// All user interactions get modelled into changes to an OpticalSetup
+// Handles the computation of the Setup efficiency, transmission, etc.
+//
+// It triggers change events for the dye, excitation, ex_path, and
+// em_path.  This is the model for what will eventually get displayed.
+// All user interactions get modelled into changes to an Setup
 // instance.
-class OpticalSetup extends Model
+//
+// There is also an SetupDescription which does not have the
+// actual Dye, Excitation, and Filter objects.
+class Setup extends Model
 {
     constructor() {
         super();
-        // Adds a setter and getter for all properties, so it triggers
-        // change events.
+        // Adds a setter and getter for this properties, so it
+        // triggers change events for all of them.
         const defaults = {
             dye: null,
             excitation: null,
@@ -656,40 +611,43 @@ class OpticalSetup extends Model
         }
     }
 
-    // Mock this instance, i.e., replace the Filter, Dye, and
+    // Describe this instance, i.e., replace the Filter, Dye, and
     // Excitation objects with their names.
-    mock() {
-        const mock = new OpticalSetupMock();
-        mock.dye = this.dye.name;
-        mock.excitation = this.excitation.name;
-        for (let path_name of ['ex_path', 'em_path']) {
-            mock[path_name] = this[path_name].map(
-                x => ({filter: x.filter.name, mode: x.mode})
-            )
-        }
-        return mock;
+    describe() {
+        const description = SetupDescription(
+            this.dye ? this.dye.name : null,
+            this.excitation ? this.excitation.name : null,
+            this.ex_path.map(x => ({filter: x.filter.name, mode: x.mode})),
+            this.em_path.map(x => ({filter: x.filter.name, mode: x.mode})),
+        );
+        if (! description.isValid())
+            throw new Error(description.validation_error);
+        return description;
     }
 
     transmission() {
-        //
+        // TODO
     }
 
     ex_efficiency() {
+        // TODO
     }
 
     em_efficiency() {
+        // TODO
     }
 
     brightness() {
+        // TODO
     }
 }
 
 
 // Our base class for Collections.
 //
-// A lot of functionality here is asynchronous because the actual
-// Models it stores will only be created when it's required to access
-// them (so that the data files are only parsed when required).
+// A lot of functionality here is async because the actual Model it
+// stores will only be created when required (so that the data files
+// are only parsed if needed).
 class Collection extends Model
 {
     constructor() {
@@ -714,8 +672,7 @@ class Collection extends Model
 
         this._models.push(model);
         this.uids.push(uid);
-        console.log(this._events['add']);
-        this.trigger('add', model);
+        model.then((m) => this.trigger('add', [uid, m]));
     }
 
     has(uid) {
@@ -797,7 +754,7 @@ class DataCollection extends Collection
 }
 
 
-class FilterSetCollection extends Collection
+class SetupCollection extends Collection
 {
     constructor(filename) {
         super();
@@ -817,17 +774,16 @@ class FilterSetCollection extends Collection
                 continue; // skip comments and empty lines
             const split_index = line.indexOf(',');
             if (split_index === -1)
-                throw new Error(`invalid filterset '${ line }'`);
+                throw new Error(`invalid setup line '${ line }'`);
             const uid = line.slice(0, split_index);
-            const filterset_line = line.slice(split_index+1);
+            const setup_line = line.slice(split_index+1);
             this.uids.push(uid);
-            this._models.push(new Promise(function(resolve, reject) {
-                resolve(OpticalSetupMock.parseFilterSet(filterset_line));
+            this._models.push(new Promise(function(resolve, failure) {
+                resolve(SetupDescription.constructFromText(setup_line));
             }));
         }
         this.trigger('reset');
     }
-
 }
 
 
@@ -842,10 +798,13 @@ class CollectionView
 
     render() {
     }
+
+    append(name) {
+    }
 }
 
 // Displays a Collection as option lists in a select menu with an
-// empty entry at the top.  Used to select a FilterSet, a Dye, and
+// empty entry at the top.  Used to select a Setup, a Dye, and
 // Excitation.
 class SelectView extends CollectionView
 {
@@ -853,6 +812,10 @@ class SelectView extends CollectionView
         const names = [''].concat(this.collection.uids);
         const html = names.map(name => this.option_html(name));
         this.$el.html(html);
+    }
+
+    append(name, model) {
+        this.$el.append(this.option_html(name));
     }
 
     option_html(name) {
@@ -897,9 +860,9 @@ class PathView
 }
 
 
-// Displays the GUI to construct a FilterSet.  This a bit more complex
-// that just a drop down menu, it also includes the list-group for the
-// emission and excitation paths.
+// Displays the GUI to modify the light paths.  This a bit more
+// complex that just a drop down menu, it also includes the list-group
+// for the emission and excitation paths.
 //
 // There must be three ul elements inside $el with ids:
 //    #filters
@@ -911,7 +874,7 @@ class FilterSetBuilder
         // Args:
         //     $el: jquery for the builder div
         //     filters (DataCollection<Filter>)
-        //     setup (OpticalSetup)
+        //     setup (Setup)
         this.$el = $el;
         this.filters = filters;
         this.setup = setup;
@@ -949,7 +912,7 @@ class FilterSetBuilder
 }
 
 
-class OpticalSetupPlot
+class SetupPlot
 {
     constructor($el, setup) {
         this.$el = $el;
@@ -1142,10 +1105,10 @@ class ImportDialog
 
 class SaveSetupDialog
 {
-    constructor($el, filtersets, setup) {
+    constructor($el, setups, setup) {
         this.$el = $el;
-        this.setups = filtersets; // OpticalSetupMock collection
-        this.setup = setup; // Current setup
+        this.setups = setups; // Collection<SetupDescription>
+        this.setup = setup; // Setup
 
         this._$name = $el.find('#setup-name');
         this._$save_button = $el.find('#save-button');
@@ -1167,8 +1130,8 @@ class SaveSetupDialog
             return;
         } else {
             try {
-                const setup = this.setup.mock();
-                this.filtersets.add(uid, setup);
+                const description = this.setup.describe();
+                this.setups.add(uid, description);
             } catch (e) {
                 this.showFailure(e.message);
                 return;
@@ -1183,42 +1146,78 @@ class SaveSetupDialog
     }
 }
 
-class SpekCheckController
+class Controller
 {
     constructor() {
-        this.setup = new OpticalSetup;
-        this.plot = new OpticalSetupPlot($('#setup-plot')[0].getContext('2d'),
-                                         this.setup);
+        // Changes are done to this instance of Setup which then
+        // triggers the SetupPlot to update its display.
+        this.live_setup = new Setup;
+        this.plot = new SetupPlot(
+            $('#setup-plot')[0].getContext('2d'),
+            this.live_setup,
+        );
 
-        this.filtersets = new FilterSetCollection('sets');
-        this.filtersets_view = new SelectView($('#filterset-selector'),
-                                          this.filtersets);
+        this.setup = {};
+        this.setup.collection = new SetupCollection('sets');
+        this.setup.view = new SelectView(
+            $('#setup-selector'),
+            this.setup.collection,
+        );
 
-        const dye_reader = Dye.constructFromText.bind(Dye);
-        this.dyes = new DataCollection('dyes', dye_reader);
-        this.dyes_view = new SelectView($('#dye-selector'), this.dyes);
+        const data_map = {
+            dye: {
+                filename: 'dyes',
+                reader: Dye.constructFromText.bind(Dye),
+            },
+            excitation: {
+                filename: 'excitation',
+                reader: Excitation.constructFromText.bind(Excitation),
+            },
+            filter: {
+                filename: 'filters',
+                reader: Filter.constructFromText.bind(Filter),
+            },
+        };
 
-        const excitation_reader = Excitation.constructFromText.bind(Excitation);
-        this.excitations = new DataCollection('excitation', excitation_reader);
-        this.excitations_view = new SelectView($('#source-selector'),
-                                                 this.excitations);
+        // A Collection for each data type.
+        for (let type of Object.keys(data_map)) {
+            this[type] = {
+                collection: new DataCollection(
+                    data_map[type].filename,
+                    data_map[type].reader,
+                ),
+            };
+        }
 
-        const filter_reader = Filter.constructFromText.bind(Filter);
-        this.filters = new DataCollection('filters', filter_reader);
-        this.filterset_builder = new FilterSetBuilder($('#filterset-builder'),
-                                                      this.filters, this.setup);
+        // A View for this collections.
+        for (let type of ['dye', 'excitation']) {
+            this[type].view = new SelectView(
+                $('#' + type + '-selector'),
+                this[type].collection,
+            );
+        }
 
-        // We need to fetch the list of dyes, excitations, and
-        // filters, before we can load existing filtersets.
+        // The Filters Collection does not have a View.  Instead, it
+        // is part of the FilterSetBuilder GUI.
+        this.filterset_builder = new FilterSetBuilder(
+            $('#filterset-builder'),
+            this.filter.collection,
+            this.live_setup,
+        );
+
+        // Need to fetch the list of dyes, excitations, and filters,
+        // before loadind the setup configurations.  This prevents the
+        // user from selecting a setup before the list of its
+        // components is available.
         Promise.all(
-            [this.dyes, this.excitations, this.filters].map(x => x.fetch())
-        ).then(() => this.filtersets.fetch())
+            Object.keys(data_map).map(x => this[x].collection.fetch())
+        ).then(() => this.setup.collection.fetch())
 
-        this.filtersets_view.$el.on('change',
-                                    this.handleChangeFilterSetEv.bind(this));
-        this.excitations_view.$el.on('change',
+        this.setup.view.$el.on('change',
+                                    this.handleChangeSetupEv.bind(this));
+        this.excitation.view.$el.on('change',
                                      this.handleChangeExcitationEv.bind(this));
-        this.dyes_view.$el.on('change',
+        this.dye.view.$el.on('change',
                               this.handleChangeDyeEv.bind(this));
 
         // FilterSets have a preferred Dye and Excitation, the logic
@@ -1233,58 +1232,39 @@ class SpekCheckController
         // Dye and Excitation selection comes from manual choice, and
         // only change them to a FilterSet prefered if not.
         this.user_selected_dye = false;
+
+        // UNDO this
         this.user_selected_excitation = false;
 
-        $('#import-dye').on('click', this.addDye.bind(this));
         this.save_setup_dialog = new SaveSetupDialog($('#save-setup-dialog'),
-                                                    this.filtersets,
-                                                   this.setup);
+                                                     this.setup.collection,
+                                                     this.live_setup);
 
         this.import_dialog = new ImportDialog($('#import-file-dialog'),
-                                              {'dye': this.dyes,
-                                               'filter': this.filters,
-                                               'source': this.excitations,});
+                                              {'dye': this.dye.collection,
+                                               'filter': this.filter.collection,
+                                               'source': this.excitation.collection,});
 
         // If someone imports a Dye or ExcitationSource, change to it.
-        console.log('adding');
-        this.dyes.on('add', (d) => console.log(d), this);
-    }
-
-    addDye(ev) {
-        const file = $('#file-selector')[0].files[0];
-        // We should probably be using a FileReader...
-        const file_url = window.URL.createObjectURL(file);
-        return $.ajax({
-            url: file_url,
-            dataType: 'text',
-        }).then(text => this.dyes.add(this.dyes.factory(text)));
-    }
-    addSetup(ev) {
-        // FIXME: this transversing and searching can't be right.
-        const $dialog = $($(ev.target).parents('div')[3]);
-        const name = $dialog.find('#name').val().trim();
-        if (! name)
-            ups()
-        const line = $dialog.find('#configuration').val().trim();
-        const filterset = OpticalSetupMock.parseFilterSet(line);
+        this.dye.collection.on('add', this.changeDye, this);
+        this.excitation.collection.on('add', this.changeExcitation, this);
     }
 
     handleChangeDyeEv(ev) {
         const uid = ev.target.value;
         if (uid === '') {
             this.user_selected_dye = false;
-            this.changeDye(null, uid);
+            this.changeDye(uid, null);
         } else {
             this.user_selected_dye = true;
-            this.dyes.get(uid).then(
-                d => this.changeDye(d, uid)
+            this.dye.collection.get(uid).then(
+                d => this.changeDye(uid, d)
             );
         }
     }
-    changeDye(dye, uid) {
-        console.log(dye);
-        this.setup.dye = dye;
-        this.dyes_view.$el.val(uid);
+    changeDye(uid, dye) {
+        this.live_setup.dye = dye;
+        this.dye.view.$el.val(uid);
     }
 
     handleChangeExcitationEv(ev) {
@@ -1294,28 +1274,28 @@ class SpekCheckController
             this.changeExcitation(null, uid);
         } else {
             this.user_selected_excitation = true;
-            this.excitations.get(uid).then(
+            this.excitation.collection.get(uid).then(
                 ex => this.changeExcitation(ex, uid)
             );
         }
     }
     changeExcitation(excitation, uid) {
-        this.setup.excitation = excitation;
-        this.excitations_view.$el.val(uid);
+        this.live_setup.excitation = excitation;
+        this.excitation.view.$el.val(uid);
     }
 
-    handleChangeFilterSetEv(ev) {
+    handleChangeSetupEv(ev) {
         const uid = ev.target.value;
         if (uid === '') {
-            this.changeFilterSet(null, uid);
+            this.changeSetup(null, uid);
         } else {
             // FIXME: possibility of a race condition if setups are
             // changed rapidly.
-            this.filtersets.get(uid).then(fs => this.changeFilterSet(fs));
+            this.setup.collection.get(uid).then(s => this.changeSetup(s));
         }
     }
 
-    changeFilterSet(new_filterset) {
+    changeSetup(setup) {
         // The setup dye and excitation are only the setup preference
         // but are actually part of a filter set.  So only change
         // those if a user has not yet selected it manually.  This has
@@ -1323,26 +1303,26 @@ class SpekCheckController
         // because if the dye and excitation are not selected,
         // selecting a filterset will also display this preferences.
         if (! this.user_selected_dye) {
-            const uid = new_filterset.dye;
+            const uid = setup.dye;
             if (uid === '')
                 this.changeDye(null, uid);
             else
-                this.dyes.get(uid).then(
+                this.dye.collection.get(uid).then(
                     dye => this.changeDye(dye, uid)
                 );
         }
         if (! this.user_selected_excitation) {
-            const uid = new_filterset.excitation;
+            const uid = setup.excitation;
             if (uid === '')
                 this.changeExcitation(null, uid);
             else
-                this.excitations.get(uid).then(
+                this.excitation.collection.get(uid).then(
                     ex => this.changeExcitation(ex, uid)
                 );
         }
 
         for (let path_name of ['ex_path', 'em_path']) {
-            const path = new_filterset[path_name];
+            const path = setup[path_name];
             const filter_promises = [];
             for (let i = 0; i < path.length; i++) {
                 const uid = path[i].filter;
@@ -1358,12 +1338,12 @@ class SpekCheckController
             }
 
             Promise.all(filter_promises).then(
-                (filters) => this.setup[path_name] = filters
+                (filters) => this.live_setup[path_name] = filters
             );
         }
     }
 }
 
 $(document).ready(function() {
-    const spekcheck = new SpekCheckController;
+    const spekcheck = new Controller;
 });
