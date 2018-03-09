@@ -843,19 +843,27 @@ class PathView
     }
 
     render() {
-        this.path.map(f => li_html(f.filter.name, f.mode));
+        const html = this.path.map(f => this.li_html(f.filter.name, f.mode));
+        this.$el.html(html);
     }
 
     li_html(name, mode) {
-        return '<li class="list-group-item">' +
-            `${ name }` +
-            '<button type="button" class="close" aria-label="Mode">' +
-            `<span aria-hidden="true">${ mode }</span>` +
-            '</button>' +
-            '<button type="button" class="close" aria-label="Close">' +
-            '<span aria-hidden="true">&times;</span>' +
-            '</button>' +
-            '</li>';
+        const html = `
+<li class="list-group-item">
+  ${ name } fo
+  <div class="btn-group btn-group-toggle" data-toggle="buttons">
+    <label class="btn btn-sm ${ mode === 't' ? 'btn-primary active' : 'btn-secondary' }">
+      <input type="radio" ${ mode === 't' ? 'checked' : '' }>T
+    </label>
+    <label class="btn btn-sm ${ mode === 'r' ? 'btn-primary active' : 'btn-secondary' }">
+      <input type="radio" ${ mode === 'r' ? 'checked' : '' }>R
+    </label>
+  </div>
+  <button type="button" class="close" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</li>`
+        return html;
     }
 }
 
@@ -917,7 +925,7 @@ class SetupPlot
     constructor($el, setup) {
         this.$el = $el;
         this.setup = setup;
-        this.plot = new Chart(this.$el, {
+        this.plot = new Chart(this.$el[0].getContext('2d'), {
             type: 'scatter',
             data: {
                 datasets: [],
@@ -1153,9 +1161,11 @@ class Controller
         // triggers the SetupPlot to update its display.
         this.live_setup = new Setup;
         this.plot = new SetupPlot(
-            $('#setup-plot')[0].getContext('2d'),
+            $('#setup-plot'),
             this.live_setup,
         );
+
+        $('#save-plot-button').on('click', this.savePlot.bind(this));
 
         const data_map = {
             dye: {
@@ -1266,6 +1276,15 @@ class Controller
             this.excitation.view.$el.val(ex_val).trigger('change');
 
             for (let path_name of ['ex_path', 'em_path']) {
+                const path = this.live_setup[path_name];
+
+                // We need to empty and refill the path, and not just
+                // replace the Array, because the Views have a
+                // reference for the Array.
+                for (let i = 0; i < path.length; i++)
+                    path.pop();
+                this.live_setup.trigger('change');
+
                 const filter_promises = [];
                 for (let fpos of data[path_name]) {
                     filter_promises.push(
@@ -1275,7 +1294,7 @@ class Controller
                     );
                 }
                 Promise.all(filter_promises).then(
-                    (filters) => this.live_setup[path_name] = filters
+                    (filters) => path.push(...filters) && this.live_setup.trigger('change')
                 );
             }
         } else {
@@ -1304,6 +1323,12 @@ class Controller
                 m => this.changeData(type, uid, m)
             );
         }
+    }
+
+    savePlot(ev) {
+        ev.target.href = this.plot.$el[0].toDataURL('image/png');
+        ev.target.download = 'spekcheck-plot.png';
+        // TODO: would be nice to reset the URL back to # after the download.
     }
 }
 
