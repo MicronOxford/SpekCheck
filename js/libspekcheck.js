@@ -1007,7 +1007,7 @@ class SetupPlot
                 mode = 'reflection';
             else
                 throw new Error(`invalid mode '${ conf.mode }'`);
-            const name = `${ conf.name} (${ conf.mode })`;
+            const name = `${ conf.filter.name } (${ conf.mode })`;
             datasets.push(this.asChartjsDataset(conf.filter[mode],
                                                 name));
         }
@@ -1157,13 +1157,6 @@ class Controller
             this.live_setup,
         );
 
-        this.setup = {};
-        this.setup.collection = new SetupCollection('sets');
-        this.setup.view = new SelectView(
-            $('#setup-selector'),
-            this.setup.collection,
-        );
-
         const data_map = {
             dye: {
                 filename: 'dyes',
@@ -1177,10 +1170,13 @@ class Controller
                 filename: 'filters',
                 reader: Filter.constructFromText.bind(Filter),
             },
+            setup: {
+                filename: 'sets',
+            },
         };
 
         // A Collection for each data type.
-        for (let type of Object.keys(data_map)) {
+        for (let type of ['dye', 'excitation', 'filter']) {
             this[type] = {
                 collection: new DataCollection(
                     data_map[type].filename,
@@ -1188,9 +1184,13 @@ class Controller
                 ),
             };
         }
+        // Setup Collection is special
+        this.setup = {
+            collection: new SetupCollection('sets')
+        };
 
         // A View for this collections.
-        for (let type of ['dye', 'excitation']) {
+        for (let type of ['dye', 'excitation', 'setup']) {
             this[type].view = new SelectView(
                 $('#' + type + '-selector'),
                 this[type].collection,
@@ -1210,31 +1210,24 @@ class Controller
         // user from selecting a setup before the list of its
         // components is available.
         Promise.all(
-            Object.keys(data_map).map(x => this[x].collection.fetch())
+            ['dye', 'excitation', 'filter'].map(x => this[x].collection.fetch())
         ).then(() => this.setup.collection.fetch())
 
-        this.setup.view.$el.on('change',
-                                    this.handleChangeSetupEv.bind(this));
-        this.excitation.view.$el.on('change',
-                                     this.handleChangeExcitationEv.bind(this));
-        this.dye.view.$el.on('change',
-                              this.handleChangeDyeEv.bind(this));
+        for (let type of ['setup', 'excitation', 'dye']) {
+            this[type].view.$el.on('change',
+                                   this.handleChangeEv.bind(this, type));
+        }
 
-        // FilterSets have a preferred Dye and Excitation, the logic
-        // being that they are often used with those.  In that case we
-        // should change Dye and Excitation when changing FilterSet.
-        // However, a user can also be interested in inspecting
-        // different FilterSets for a specific Dye and Excitation in
-        // which case they should remain fixed when changing
-        // FilterSet.
+        // Setup description includes a Dye, the logic being that the
+        // setup is often designed for it.  However, a user can also
+        // be interested in inspecting different Setups for a specific
+        // Dye in which case the Dye selection should remain fixed
+        // when changing Setup.
         //
         // To support both cases, we keep track whether the current
-        // Dye and Excitation selection comes from manual choice, and
-        // only change them to a FilterSet prefered if not.
+        // Dye selection comes from manual choice, and only change it
+        // to the Setup.dye if not.
         this.user_selected_dye = false;
-
-        // UNDO this
-        this.user_selected_excitation = false;
 
         this.save_setup_dialog = new SaveSetupDialog($('#save-setup-dialog'),
                                                      this.setup.collection,
@@ -1245,100 +1238,70 @@ class Controller
                                                'filter': this.filter.collection,
                                                'source': this.excitation.collection,});
 
-        // If someone imports a Dye or ExcitationSource, change to it.
-        this.dye.collection.on('add', this.changeDye, this);
-        this.excitation.collection.on('add', this.changeExcitation, this);
+        // If someone imports a Dye or Excitation, change to it.
+        for (let type of ['dye', 'excitation'])
+            this[type].collection.on('add', this.changeData.bind(this, type));
     }
 
-    handleChangeDyeEv(ev) {
-        const uid = ev.target.value;
-        if (uid === '') {
-            this.user_selected_dye = false;
-            this.changeDye(uid, null);
-        } else {
-            this.user_selected_dye = true;
-            this.dye.collection.get(uid).then(
-                d => this.changeDye(uid, d)
-            );
-        }
-    }
-    changeDye(uid, dye) {
-        this.live_setup.dye = dye;
-        this.dye.view.$el.val(uid);
-    }
+    changeData(type, val, data) {
+        // Args:
+        //     type (String): one of 'dye', 'excitation', or 'setup'
+        //     uid (String): the value to display on the GUI.  Likely
+        //         an empty string if 'data' is null.
+        //     data (Model): a Dye, Excitation, or SetupDescription
+        //         object dependent on the value of 'type', which will
+        //         modify this.live_setup.
 
-    handleChangeExcitationEv(ev) {
-        const uid = ev.target.value;
-        if (uid === '') {
-            this.user_selected_excitation = false;
-            this.changeExcitation(null, uid);
-        } else {
-            this.user_selected_excitation = true;
-            this.excitation.collection.get(uid).then(
-                ex => this.changeExcitation(ex, uid)
-            );
-        }
-    }
-    changeExcitation(excitation, uid) {
-        this.live_setup.excitation = excitation;
-        this.excitation.view.$el.val(uid);
-    }
+        if (type === 'setup') {
 
-    handleChangeSetupEv(ev) {
-        const uid = ev.target.value;
-        if (uid === '') {
-            this.changeSetup(null, uid);
-        } else {
-            // FIXME: possibility of a race condition if setups are
-            // changed rapidly.
-            this.setup.collection.get(uid).then(s => this.changeSetup(s));
-        }
-    }
-
-    changeSetup(setup) {
-        // The setup dye and excitation are only the setup preference
-        // but are actually part of a filter set.  So only change
-        // those if a user has not yet selected it manually.  This has
-        // the issue that a user is unable to see only the filter sets
-        // because if the dye and excitation are not selected,
-        // selecting a filterset will also display this preferences.
-        if (! this.user_selected_dye) {
-            const uid = setup.dye;
-            if (uid === '')
-                this.changeDye(null, uid);
-            else
-                this.dye.collection.get(uid).then(
-                    dye => this.changeDye(dye, uid)
-                );
-        }
-        if (! this.user_selected_excitation) {
-            const uid = setup.excitation;
-            if (uid === '')
-                this.changeExcitation(null, uid);
-            else
-                this.excitation.collection.get(uid).then(
-                    ex => this.changeExcitation(ex, uid)
-                );
-        }
-
-        for (let path_name of ['ex_path', 'em_path']) {
-            const path = setup[path_name];
-            const filter_promises = [];
-            for (let i = 0; i < path.length; i++) {
-                const uid = path[i].filter;
-                filter_promises.push(
-                    this.filters.get(uid).then(
-                        f => ({
-                            name: uid,
-                            filter: f,
-                            mode: path[i].mode,
-                        })
-                    )
-                );
+            // Only change dye if a user has not selected it manually.
+            if (! this.user_selected_dye) {
+                const dye_val = data.dye === null ? '' : data.dye;
+                this.dye.view.$el.val(dye_val).trigger('change');
+                // trigger makes it look like the user did it, so fix it.
+                this.user_selected_dye = false;
             }
 
-            Promise.all(filter_promises).then(
-                (filters) => this.live_setup[path_name] = filters
+            const ex_val = data.excitation === null ? '' : data.excitation;
+            this.excitation.view.$el.val(ex_val).trigger('change');
+
+            for (let path_name of ['ex_path', 'em_path']) {
+                const filter_promises = [];
+                for (let fpos of data[path_name]) {
+                    filter_promises.push(
+                        this.filter.collection.get(fpos.filter).then(
+                            (f) => ({filter: f, mode: fpos.mode})
+                        )
+                    );
+                }
+                Promise.all(filter_promises).then(
+                    (filters) => this.live_setup[path_name] = filters
+                );
+            }
+        } else {
+            this.live_setup[type]= data;
+            this[type].view.$el.val(val);
+        }
+    }
+
+    handleChangeEv(type, ev) {
+        const uid = ev.target.value;
+
+        // Remember when a user selects a dye manually to prevent
+        // changing it as part of changing setup.  Forget about it,
+        // when a user unselects a dye.
+        if (type === ' dye') {
+            if (uid === '')
+                this.user_selected_dye = false;
+            else
+                this.user_selected_dye = true;
+        }
+
+        if (uid === '') {
+            this.changeData(type, uid, null);
+        } else {
+            this[type].collection.get(uid).then(
+                m => this.changeData(type, uid, m)
             );
         }
     }
