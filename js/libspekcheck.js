@@ -480,11 +480,55 @@ Filter.prototype.properties = Data.prototype.properties.concat([
 ]);
 
 
-// Like an Setup object but with Data instances (Dye,
-// Excitation, and Filter) replaced with their names/uids.  This let
-// us to have a representation of them without parsing all the
-// filters, excitation, and dyes files.  Also much easier to save
-// them.
+// Represents one of the two paths (excitation and emission) on a
+// Setup.  This is pretty much an Array with empty() and on() methods.
+class Path extends Model
+{
+    constructor(array=[]) {
+        super();
+        this._filters = array; // Array of {filter: Filter, mode: 'r'|'t'}
+    }
+
+    validate() {
+        for (let x of this._filters) {
+            if (! (x.filter instanceof Filter))
+                return "all elements of Path must have a 'Filter'";
+            if (! x.filter.isValid())
+                return x.filter.validation_error;
+            if (x.mode !== 'r' || x.mode !== 't')
+                return `mode of '${ x.filter.name }' must be r or t`;
+        }
+    }
+
+    describe() {
+        return this._filters.map(x => ({filter: x.filter.name, mode: x.mode}));
+    }
+
+    empty() {
+        this._filters = [];
+        this.trigger('change');
+    }
+
+    map(callback) {
+        return this._filters.map(callback);
+    }
+
+    push() {
+        const count = this._filters.push(...arguments);
+        this.trigger('change');
+        return count;
+    }
+
+    [Symbol.iterator]() {
+        return this._filters[Symbol.iterator]();
+    }
+}
+
+// Like an Setup object but with Data instances (Dye, Excitation, and
+// Filter) replaced with their names/uids, and Path replaced with an
+// Array.  This let us to have a representation of them without
+// parsing all the filters, excitation, and dyes files.  Also much
+// easier to save them.
 //
 // See also the Setup class.
 class SetupDescription extends Model
@@ -493,8 +537,8 @@ class SetupDescription extends Model
         super();
         this.dye = dye; // String or null
         this.excitation = excitation; // String or null
-        this.ex_path = ex_path; // Array of {filter: 'name', mode: 'r|t'}
-        this.em_path = em_path; // Array of {filter: 'name', mode: 'r|t'}
+        this.ex_path = ex_path; // Array of {filter: String, mode: 'r'|'t'}
+        this.em_path = em_path; // Array of {filter: String, mode: 'r'|'t'}
     }
 
     validate() {
@@ -507,11 +551,11 @@ class SetupDescription extends Model
             if (! (path instanceof Array))
                 return `${ path_name } must be an Array`;
 
-            for (let f of path) {
-                if (! (f.filter instanceof String))
+            for (let x of path) {
+                if (! (x.filter instanceof String))
                     return `values of ${ path_name } must have 'filter'`;
-                if (f.mode !== 'r' || f.mode !== 't')
-                    return `mode of '${ f.filter }' must be r or t`;
+                if (x.mode !== 'r' || x.mode !== 't')
+                    return `mode of '${ x.filter }' must be r or t`;
             }
         }
     }
@@ -590,8 +634,8 @@ class Setup extends Model
             // because we may have the same filter multiple times.
             // 'filter' value is a Filter object. 'mode' value is a
             // char with value of 'r' or 't'.
-            ex_path: [],
-            em_path: [],
+            ex_path: new Path,
+            em_path: new Path,
         };
         for (let p_name of Object.keys(defaults)) {
             const attr_name = `_${ p_name }`;
@@ -609,6 +653,9 @@ class Setup extends Model
                 },
             });
         }
+
+        this.ex_path.on('change', this.trigger.bind(this, 'change'));
+        this.em_path.on('change', this.trigger.bind(this, 'change'));
     }
 
     // Describe this instance, i.e., replace the Filter, Dye, and
@@ -617,12 +664,20 @@ class Setup extends Model
         const description = SetupDescription(
             this.dye ? this.dye.name : null,
             this.excitation ? this.excitation.name : null,
-            this.ex_path.map(x => ({filter: x.filter.name, mode: x.mode})),
-            this.em_path.map(x => ({filter: x.filter.name, mode: x.mode})),
+            this.ex_path.describe(),
+            this.em_path.describe(),
         );
         if (! description.isValid())
             throw new Error(description.validation_error);
         return description;
+    }
+
+    empty() {
+        this.dye = null;
+        this.excitation = null;
+        this.ex_path.empty();
+        this.em_path.empty();
+        this.trigger('change');
     }
 
     transmission() {
@@ -840,6 +895,7 @@ class PathView
     constructor($el, path) {
         this.$el = $el;
         this.path = path;
+        this.path.on('change', this.render, this);
     }
 
     render() {
@@ -884,15 +940,16 @@ class FilterSetBuilder
         //     filters (DataCollection<Filter>)
         //     setup (Setup)
         this.$el = $el;
-        this.filters = filters;
         this.setup = setup;
-        // Maybe we should do some checking here...
-        this.$filters = $($el.find('#filters-view')[0]);
-        this.$ex_path = $($el.find('#ex-path')[0]);
-        this.$em_path = $($el.find('#em-path')[0]);
 
-        this.filters_view = new ListItemView(this.$filters, this.filters);
-        this.filters_view.li_html = function(name) {
+        this.filters = {
+            collection: filters,
+            $el: $($el.find('#filters-view')[0]),
+        };
+
+        this.filters.view = new ListItemView(this.filters.$el,
+                                             this.filters.collection);
+        this.filters.view.li_html = function(name) {
             return '<li class="list-group-item">' +
                   `${ name }` +
                 '<button type="button" class="close" aria-label="Add to excitation">' +
@@ -904,13 +961,13 @@ class FilterSetBuilder
                 '</li>';
         }
 
-        this.ex_path_view = new PathView(this.$ex_path, this.setup.ex_path);
-        this.em_path_view = new PathView(this.$em_path, this.setup.em_path);
-
-        this.setup.on('change', this.ex_path_view.render, this.ex_path_view);
-        this.setup.on('change', this.em_path_view.render, this.em_path_view);
-        // on adding filter to ex_path, get the filter name from the
-        // collection, and then add
+        for (let path of ['ex_path', 'em_path']) {
+            const $el_path = $($el.find('#' + path)[0]);
+            this[path] = {
+                '$el': $el_path,
+                'view': new PathView($el_path, this.setup[path]),
+            };
+        }
     }
 
     render() {
@@ -1007,21 +1064,18 @@ class SetupPlot
                                                 dye.name + '(em)'));
         }
 
-        for (let conf of this.setup.ex_path) {
-            let mode;
-            if (conf.mode === 't')
-                mode = 'transmission';
-            else if (conf.mode === 'r')
-                mode = 'reflection';
-            else
-                throw new Error(`invalid mode '${ conf.mode }'`);
-            const name = `${ conf.filter.name } (${ conf.mode })`;
-            datasets.push(this.asChartjsDataset(conf.filter[mode],
-                                                name));
+        for (let x of [...this.setup.ex_path, ...this.setup.em_path]) {
+            const mode = x.mode === 't' ? 'transmission' : 'reflection';
+            const name = `${ x.filter.name } (${ x.mode })`;
+            datasets.push(this.asChartjsDataset(x.filter[mode], name));
         }
 
         this.plot.data.datasets = datasets;
         this.plot.update();
+    }
+
+    downloadLink(format='image/png') {
+        return this.$el[0].toDataURL(format);
     }
 
     static dashes() {
@@ -1263,6 +1317,10 @@ class Controller
         //         modify this.live_setup.
 
         if (type === 'setup') {
+            if (data === null) {
+                this.live_setup.empty();
+                return;
+            }
 
             // Only change dye if a user has not selected it manually.
             if (! this.user_selected_dye) {
@@ -1277,14 +1335,7 @@ class Controller
 
             for (let path_name of ['ex_path', 'em_path']) {
                 const path = this.live_setup[path_name];
-
-                // We need to empty and refill the path, and not just
-                // replace the Array, because the Views have a
-                // reference for the Array.
-                for (let i = 0; i < path.length; i++)
-                    path.pop();
-                this.live_setup.trigger('change');
-
+                path.empty();
                 const filter_promises = [];
                 for (let fpos of data[path_name]) {
                     filter_promises.push(
@@ -1294,7 +1345,7 @@ class Controller
                     );
                 }
                 Promise.all(filter_promises).then(
-                    (filters) => path.push(...filters) && this.live_setup.trigger('change')
+                    (filters) => path.push(...filters)
                 );
             }
         } else {
@@ -1326,9 +1377,12 @@ class Controller
     }
 
     savePlot(ev) {
-        ev.target.href = this.plot.$el[0].toDataURL('image/png');
-        ev.target.download = 'spekcheck-plot.png';
-        // TODO: would be nice to reset the URL back to # after the download.
+        // A useful name for the downloaded image.
+        const setup_uid = this.setup.view.$el.val();
+        const name = setup_uid !== '' ? setup_uid : 'custom';
+        ev.target.download = 'spekcheck-' + name + '.png';
+
+        ev.target.href = this.plot.downloadLink('image/png');
     }
 }
 
