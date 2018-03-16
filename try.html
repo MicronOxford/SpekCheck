@@ -34,6 +34,15 @@
           crossorigin="anonymous"></script>
 
   <script src="js/libspekcheck.js"></script>
+
+  <script>
+    read_collections(spekcheck_db).then(
+        (collections) => $(document).ready(
+            () => new SpekCheck($('#spekcheck'), collections)
+        ),
+        () => new Error('failed to read spekcheck collections'),
+    );
+  </script>
 </head>
 <body>
 
@@ -64,9 +73,9 @@
           </div>
           <div class="btn-group">
             <button class="btn btn-primary" data-toggle="collapse"
-                    data-target="#filterset-builder" type="submit"
-                    aria-expanded="false" aria-controls="#filterset-builder">
-              Customise Filter Set
+                    data-target="#path-builder" type="submit"
+                    aria-expanded="false" aria-controls="#path-builder">
+              Customise Filters
             </button>
           </div>
           <div class="btn-group">
@@ -111,7 +120,7 @@
             <select class="custom-select" id="file-type">
               <option value="dye">Dye</option>
               <option value="filter">Filter</option>
-              <option value="source">Source</option>
+              <option value="excitation">Excitation</option>
             </select>
             <div class="input-group-append">
               <label class="input-group-text" for="file-type">Type</label>
@@ -222,7 +231,7 @@
       </div>
     </div>
 
-    <div class="collapse container" id="filterset-builder">
+    <div class="collapse container" id="path-builder">
       <div class="row">
         <div class="col-sm">
           <div class="card">

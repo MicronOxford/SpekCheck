@@ -18,6 +18,11 @@
 
 'use strict';
 
+function isaString(x) {
+    return typeof(x) === 'string' || x instanceof String;
+}
+
+
 // Base class to provide model validation and event callbacks.
 //
 // For validation, subclasses should overload the 'validate' method.
@@ -37,6 +42,12 @@ class Model
     isValid() {
         this.validation_error = this.validate() || null;
         return this.validation_error === null;
+    }
+
+    // Subclasses should overload it to return a String with error
+    // message, or null if validation passes.
+    validate() {
+        return null;
     }
 
     on(event, callback, thisArg=callback) {
@@ -65,7 +76,9 @@ class Spectrum extends Model
         this.wavelength = wavelength.slice(0); // Array of floats
         this.data = data.slice(0); // Array of floats
 
+        //
         // Data corrections:
+        //
 
         // Rescale to [0 1] if it looks like data is on percent.  If
         // the data is in percentage but all values are below 10%, it
@@ -113,19 +126,14 @@ class Spectrum extends Model
     interpolate(points) {
         // TODO: needs testing
         //
-        // Interpolate data to specific wavelengths.
+        // Interpolate data to specific wavelengths.  Also
+        // extrapolates to zero.
         //
         // Args:
         //     points(Array<float>): should sort in increasing order.
         //
         // Returns:
-        //     A new Spectrum object.
-
-        if (! (points instanceof Array))
-            throw new TypeError('POINTS must be an Array');
-        if (this.wavelength.length === 1)
-            return new Spectrum(points.slice(0),
-                                new Array(points.length).fill(0));
+        //     An Array with interpolated values.
 
         const old_w = this.wavelength;
         const old_d = this.data;
@@ -384,7 +392,7 @@ Data.prototype.header_map = {
     'Type': null,
 };
 Data.prototype.properties = [
-    'name',
+    'uid',
 ];
 
 
@@ -481,8 +489,8 @@ Filter.prototype.properties = Data.prototype.properties.concat([
 
 
 // Represents one of the two paths (excitation and emission) on a
-// Setup.  This is pretty much an Array with empty() and on() methods.
-class Path extends Model
+// Setup.
+class Path extends Model // also kind of an Array
 {
     constructor(array=[]) {
         super();
@@ -496,12 +504,12 @@ class Path extends Model
             if (! x.filter.isValid())
                 return x.filter.validation_error;
             if (x.mode !== 'r' || x.mode !== 't')
-                return `mode of '${ x.filter.name }' must be r or t`;
+                return `mode of '${ x.filter.uid }' must be r or t`;
         }
     }
 
     describe() {
-        return this._filters.map(x => ({filter: x.filter.name, mode: x.mode}));
+        return this._filters.map(x => ({filter: x.filter.uid, mode: x.mode}));
     }
 
     empty() {
@@ -543,7 +551,7 @@ class SetupDescription extends Model
 
     validate() {
         for (let name of ['dye', 'excitation'])
-            if (! (this[name] instanceof String) && this[name] !== null)
+            if (! isaString(this[name]) && this[name] !== null)
                 return `${ name } must be a String or null`;
 
         for (let path_name of ['ex_path', 'em_path']) {
@@ -552,9 +560,9 @@ class SetupDescription extends Model
                 return `${ path_name } must be an Array`;
 
             for (let x of path) {
-                if (! (x.filter instanceof String))
+                if (! isaString(x.filter))
                     return `values of ${ path_name } must have 'filter'`;
-                if (x.mode !== 'r' || x.mode !== 't')
+                if (x.mode !== 'r' && x.mode !== 't')
                     return `mode of '${ x.filter }' must be r or t`;
             }
         }
@@ -569,12 +577,12 @@ class SetupDescription extends Model
         if (split === -1)
             throw new Error(`invalid filter definition '${ field }'`);
 
-        const name = field.slice(0, split);
+        const uid = field.slice(0, split);
         const mode = field.slice(split+1).toLowerCase();
         if (mode !== 't' && mode !== 'r')
             throw new Error(`invalid filter mode '${ mode }'`);
 
-        return {'filter': name, 'mode': mode};
+        return {'filter': uid, 'mode': mode};
     }
 
     static
@@ -582,7 +590,7 @@ class SetupDescription extends Model
         // Args:
         //     line (String): the actual SetupDescription,
         //         i.e., the whole line on the 'sets' file minus the
-        //         first column (which has the Setup name).
+        //         first column (which has the Setup uid).
         //
         // Returns:
         //     An SetupDescription instance.
@@ -661,9 +669,9 @@ class Setup extends Model
     // Describe this instance, i.e., replace the Filter, Dye, and
     // Excitation objects with their names.
     describe() {
-        const description = SetupDescription(
-            this.dye ? this.dye.name : null,
-            this.excitation ? this.excitation.name : null,
+        const description = new SetupDescription(
+            this.dye ? this.dye.uid : null,
+            this.excitation ? this.excitation.uid : null,
             this.ex_path.describe(),
             this.em_path.describe(),
         );
@@ -698,154 +706,166 @@ class Setup extends Model
 }
 
 
-// Our base class for Collections.
-//
-// A lot of functionality here is async because the actual Model it
-// stores will only be created when required (so that the data files
-// are only parsed if needed).
-class Collection extends Model
+// Pretty much a wrapper around Map to trigger events when it changes.
+class Collection extends Model // also kind of a Map
 {
-    constructor() {
+    constructor(iterable) {
         super();
-        this.url = '../data/';
-        this._models = []; // Actually, promises of a model.
-        this.uids = []; // Array of Strings (the names which are unique)
+        this._map = new Map(iterable);
+        this._updateSize();
     }
 
-    validate() {
-        if (this._models.length !== this.uids.length)
-            return 'Number of models and uids is not the same';
-        if (this._models.some(x => x !== undefined && ! (x instanceof Promise)))
-            return 'Models must all be promises (or undefined)';
+    // A bit of a pain, need to call this each time we change map.  I
+    // guess we could just have a size function but a property kind
+    // makes more sense.
+    _updateSize() {
+        this.size = this._map.size;
     }
 
-    add(uid, model) {
-        if (this.uids.indexOf(uid) !== -1)
-            throw new Error(`There is already '${ uid }' in collection`);
-        if (! (model instanceof Promise))
-            model = new Promise((r) => r(model));
-
-        this._models.push(model);
-        this.uids.push(uid);
-        model.then((m) => this.trigger('add', [uid, m]));
+    clear() {
+        this._map.clear();
+        this._updateSize();
+        this.trigger('clear');
     }
 
-    has(uid) {
-        return this.uids.indexOf(uid) !== -1;
+    delete(key) {
+        const deleted_something = this._map.delete(key);
+        this._updateSize();
+        if (deleted_something)
+            this.trigger('delete', key);
+        this._updateSize();
+        return deleted_something;
     }
 
-    get(uid) {
-        // Returns a Promise!!!
-        const index = this.uids.indexOf(uid);
-        if (index === -1)
-            throw new Error(`No object named '${ uid }' in collection`);
-        if (this._models[index] === undefined)
-            this._models[index] = this.fetch_model(uid);
-        return this._models[index];
+    entries() {
+        return this._map.entries();
     }
 
-    fetch(new_options) {
-        // Async method!!!
-        const defaults = {
-            url: this.url,
-            dataType: 'json',
-        };
-        const options = Object.assign({}, defaults, new_options);
-        // In case of error reading the collection file we set an
-        // empty collection.  Maybe we should throw something?
-        return $.ajax(options).then(data => this.resetWithData(data),
-                                    () => this.reset([]));
+    get(key) {
+        return this._map.get(key);
     }
 
-    resetWithData(data) {
-        // By default, data should be a JSON array with IDs, so we can
-        // just pass through to reset().  It's only the FilterSet
-        // collection that are a bit more weird.
-        this.uids = data.slice(0);
-        // XXX: maybe we should fill the models with promises?
-        this._models = new Array(this.uids.length);
-        this.trigger('reset');
+    has(key) {
+        return this._map.has(key);
     }
 
-    reset(uids) {
-        this.uids = uids.slice(0);
-        // XXX: maybe we should fill the models with promises?
-        this._models = new Array(this.uids.length);
-        this.trigger('reset');
+    keys() {
+        return this._map.keys();
+    }
+
+    set(key, value) {
+        const event = this._map.has(key) ? 'change' : 'add';
+        this._map.set(key, value);
+        this._updateSize();
+        this.trigger(event, value);
+    }
+
+    values() {
+        return this._map.values();
+    }
+
+    [Symbol.iterator]() {
+        return this._map[Symbol.iterator]();
     }
 }
 
 
-// Collections for filters, dyes, and excitation sources.
+// Like Collection for Filter, Dyes, and Excitation.
+//
+// The elements of this collection will all be promises of our Data
+// instances.  The reading of the data files is actually delayed until
+// it is requested, hence it should be used like:
+//
+//    collection.get(uid).then(...)
+//
+// XXX: the first argument of the constructor is Array<key> instead of
+//     Array<[key, val]> like the base classes Collection and Map.
+//     This is weird and not great design.
+//
+// Args:
+//     uids (Array<String>): these are expected to be filenames too
+//       (without the .csv extension (lowercase)
+//     datadir(String): directory where the files from uids will be
+//     reader (function): will parse the text of a file and
+//        return a Data object.  See Data.constructFromText.
 class DataCollection extends Collection
 {
-    constructor(filename, factory) {
-        // Args:
-        //    filename (String):
-        //    factory (function): will parse the text of a file and
-        //        return a Data object.  See Data.constructFromText.
-        super();
-        this.dir_url = this.url + filename + '/';
-        this.url += filename + '.json';
-        this.factory = factory;
+    constructor(uids, datadir, reader) {
+        // We can keep track of which ones have already been read,
+        // because their value will be undefined.
+        super(uids.map(x => [x, undefined]));
+        this.datadir = datadir;
+        this.reader = reader;
     }
 
-    fetch_model(uid) {
-        const fpath = this.dir_url + uid + '.csv';
-        // Inject the uid/name into the initial list of attributes
-        // passed to the factory.  The name in the file content is
-        // ignored because 1) experience has shown us that most of the
-        // file content is wrong anyway; and 2) needs to be equal as
-        // the value used for ID by the Collection so the name on the
-        // dropdown menu matches the name shown on the plot.
-        const attrs = {
-            name: uid
-        };
-        return $.ajax({
-            url: fpath,
-            dataType: 'text',
-        }).then(text => this.factory(text, attrs));
-    }
-}
-
-
-class SetupCollection extends Collection
-{
-    constructor(filename) {
-        super();
-        this.url += filename; // plain text file, no file extension
-    }
-
-    fetch() {
-        return super.fetch({dataType: 'text'});
-    }
-
-    resetWithData(text) {
-        this.uids = [];
-        this._models = [];
-        for (let line of text.split('\n')) {
-            line = line.trim();
-            if (line.startsWith('#') || line.length === 0)
-                continue; // skip comments and empty lines
-            const split_index = line.indexOf(',');
-            if (split_index === -1)
-                throw new Error(`invalid setup line '${ line }'`);
-            const uid = line.slice(0, split_index);
-            const setup_line = line.slice(split_index+1);
-            this.uids.push(uid);
-            this._models.push(new Promise(function(resolve, failure) {
-                resolve(SetupDescription.constructFromText(setup_line));
-            }));
+    get(key) {
+        // Also check if the key actually exists first, because get
+        // returns undefined if not, and so we couldn't distinguish
+        // between an invalid key and not yet read value.
+        if (this.has(key) && super.get(key) === undefined) {
+            const fpath = this.datadir + key + '.csv';
+            const value = $.ajax({
+                url: fpath,
+                dataType: 'text',
+            }).then(text => this.reader(text, {'uid': key}));
+            this._map.set(key, value);
         }
-        this.trigger('reset');
+        return super.get(key);
+    }
+
+    // This methods would require reading all of the data files which
+    // kinda defeats the purpose of this class.
+    entries() {
+        throw new Error('not a useful method for lazy loading');
+    }
+    values() {
+        throw new Error('not a useful method for lazy loading');
+    }
+    [Symbol.iterator]() {
+        throw new Error('not a useful method for lazy loading');
     }
 }
 
 
-class CollectionView
+// Parses the kinda CSV that defines an Optical Setup, and returns a
+// Collection of them.
+function setupCollectionFromKindaCSV(text) {
+    const setups = [];
+    for (let line of text.split('\n')) {
+        line = line.trim();
+        if (line.startsWith('#') || line.length === 0)
+            continue; // skip comments and empty lines
+        const split_index = line.indexOf(',');
+        if (split_index === -1)
+            throw new Error(`invalid setup line '${ line }'`);
+        const uid = line.slice(0, split_index);
+        const setup_line = line.slice(split_index+1);
+        const setup = SetupDescription.constructFromText(setup_line);
+        setups.push([uid, setup]);
+    }
+    return new Collection(setups);
+}
+
+
+class View
+{
+    constructor($el) {
+        this.$el = $el;
+    }
+
+    on() {
+        return this.$el.on(...arguments);
+    }
+
+    val() {
+        return this.$el.val(...arguments);
+    }
+}
+
+class CollectionView extends View
 {
     constructor($el, collection) {
-        this.$el = $el;
+        super($el);
         this.collection = collection;
         this.collection.on('reset', this.render, this);
         this.collection.on('add', this.render, this);
@@ -864,49 +884,50 @@ class CollectionView
 class SelectView extends CollectionView
 {
     render() {
-        const names = [''].concat(this.collection.uids);
-        const html = names.map(name => this.option_html(name));
+        const uids = [''].concat(Array.from(this.collection.keys()));
+        const html = uids.map(uid => this.option_html(uid));
         this.$el.html(html);
     }
 
-    append(name, model) {
-        this.$el.append(this.option_html(name));
+    append(uid, model) {
+        this.$el.append(this.option_html(uid));
     }
 
-    option_html(name) {
-        return `<option value="${ name }">${ name }</option>\n`;
+    option_html(uid) {
+        return `<option value="${ uid }">${ uid }</option>\n`;
     }
 }
 
-// Used for list-group, the ones used by the FilterSetBuilder
+// Used for list-group, the ones used by the PathBuilder
 class ListItemView extends CollectionView
 {
     render() {
-        this.$el.html(this.collection.uids.map(name => this.li_html(name)));
+        const uids = Array.from(this.collection.uids());
+        this.$el.html(uids.map(uid => this.li_html(uid)));
     }
 
-    li_html(name) {
-        return `<li class="list-group-item">${ name }</li>\n`;
+    li_html(uid) {
+        return `<li class="list-group-item">${ uid }</li>\n`;
     }
 }
 
-class PathView
+class PathView extends View
 {
     constructor($el, path) {
-        this.$el = $el;
+        super($el);
         this.path = path;
         this.path.on('change', this.render, this);
     }
 
     render() {
-        const html = this.path.map(f => this.li_html(f.filter.name, f.mode));
+        const html = this.path.map(f => this.li_html(f.filter.uid, f.mode));
         this.$el.html(html);
     }
 
-    li_html(name, mode) {
+    li_html(uid, mode) {
         const html = `
 <li class="list-group-item">
-  ${ name } fo
+  ${ uid } fo
   <div class="btn-group btn-group-toggle" data-toggle="buttons">
     <label class="btn btn-sm ${ mode === 't' ? 'btn-primary active' : 'btn-secondary' }">
       <input type="radio" ${ mode === 't' ? 'checked' : '' }>T
@@ -932,14 +953,15 @@ class PathView
 //    #filters
 //    #ex-path
 //    #em-path
-class FilterSetBuilder
+//
+// Args:
+//     $el: jquery for the builder div
+//     filters (DataCollection<Filter>)
+//     setup (Setup)
+class PathBuilder extends View
 {
     constructor($el, filters, setup) {
-        // Args:
-        //     $el: jquery for the builder div
-        //     filters (DataCollection<Filter>)
-        //     setup (Setup)
-        this.$el = $el;
+        super($el);
         this.setup = setup;
 
         this.filters = {
@@ -949,9 +971,9 @@ class FilterSetBuilder
 
         this.filters.view = new ListItemView(this.filters.$el,
                                              this.filters.collection);
-        this.filters.view.li_html = function(name) {
+        this.filters.view.li_html = function(uid) {
             return '<li class="list-group-item">' +
-                  `${ name }` +
+                  `${ uid }` +
                 '<button type="button" class="close" aria-label="Add to excitation">' +
                 '<span aria-hidden="true">&#8668;</span>' +
                 '</button>' +
@@ -971,16 +993,17 @@ class FilterSetBuilder
     }
 
     render() {
-        const html = this.collection.uids.map(name => this.option_html(name));
+        const uids = Array.from(this.collection.keys());
+        const html = uids.map(uid => this.option_html(uid));
         this.$el.html(html);
     }
 }
 
 
-class SetupPlot
+class SetupPlot extends View
 {
     constructor($el, setup) {
-        this.$el = $el;
+        super($el);
         this.setup = setup;
         this.plot = new Chart(this.$el[0].getContext('2d'), {
             type: 'scatter',
@@ -1053,21 +1076,21 @@ class SetupPlot
         if (this.setup.excitation !== null) {
             const excitation = this.setup.excitation;
             datasets.push(this.asChartjsDataset(excitation.intensity,
-                                                excitation.name));
+                                                excitation.uid));
         }
 
         if (this.setup.dye !== null) {
             const dye = this.setup.dye;
             datasets.push(this.asChartjsDataset(dye.excitation,
-                                                dye.name + '(ex)'));
+                                                dye.uid + '(ex)'));
             datasets.push(this.asChartjsDataset(dye.emission,
-                                                dye.name + '(em)'));
+                                                dye.uid + '(em)'));
         }
 
         for (let x of [...this.setup.ex_path, ...this.setup.em_path]) {
             const mode = x.mode === 't' ? 'transmission' : 'reflection';
-            const name = `${ x.filter.name } (${ x.mode })`;
-            datasets.push(this.asChartjsDataset(x.filter[mode], name));
+            const uid = `${ x.filter.uid } (${ x.mode })`;
+            datasets.push(this.asChartjsDataset(x.filter[mode], uid));
         }
 
         this.plot.data.datasets = datasets;
@@ -1085,10 +1108,10 @@ class SetupPlot
 }
 
 
-class ImportDialog
+class ImportDialog extends View
 {
     constructor($el, options) {
-        this.$el = $el;
+        super($el);
         this.options = options; // maps option value to a DataCollection
 
         this._$name = $el.find('#file-name');
@@ -1140,10 +1163,10 @@ class ImportDialog
         const reader = new FileReader;
 
         reader.onload = (function() {
-            const attrs = {'name': name};
+            const attrs = {'uid': uid};
             try {
                 const data = collection.factory(reader.result, attrs);
-                collection.add(name, data);
+                collection.add(uid, data);
             } catch (e) {
                 this.showFailure(e.message);
                 return;
@@ -1165,10 +1188,10 @@ class ImportDialog
 }
 
 
-class SaveSetupDialog
+class SaveSetupDialog extends View
 {
     constructor($el, setups, setup) {
-        this.$el = $el;
+        super($el);
         this.setups = setups; // Collection<SetupDescription>
         this.setup = setup; // Setup
 
@@ -1193,7 +1216,7 @@ class SaveSetupDialog
         } else {
             try {
                 const description = this.setup.describe();
-                this.setups.add(uid, description);
+                this.setups.set(uid, description);
             } catch (e) {
                 this.showFailure(e.message);
                 return;
@@ -1208,79 +1231,51 @@ class SaveSetupDialog
     }
 }
 
-class Controller
+// The SpekCheck App / Controller
+//
+// Args:
+//   $el: jquery div where the app will be created.
+//   collections (Object): keys will be the 4 required collections and
+//     their corresponding Collection instances.
+class SpekCheck
 {
-    constructor() {
+    constructor($el, collections) {
+        this.$el = $el;
+        this.collection = collections;
+        for (let dtype of ['setup', 'dye', 'excitation', 'filter'])
+            if (! (collections[dtype] instanceof Collection))
+                throw new Error(`no Collection for type '${ dtype }'`);
+
         // Changes are done to this instance of Setup which then
         // triggers the SetupPlot to update its display.
         this.live_setup = new Setup;
         this.plot = new SetupPlot(
-            $('#setup-plot'),
+            this.$el.find('#setup-plot'),
             this.live_setup,
         );
 
-        $('#save-plot-button').on('click', this.savePlot.bind(this));
+        // A button to save the plot
+        this.$el.find('#save-plot-button').on('click',
+                                              this.savePlot.bind(this));
 
-        const data_map = {
-            dye: {
-                filename: 'dyes',
-                reader: Dye.constructFromText.bind(Dye),
-            },
-            excitation: {
-                filename: 'excitation',
-                reader: Excitation.constructFromText.bind(Excitation),
-            },
-            filter: {
-                filename: 'filters',
-                reader: Filter.constructFromText.bind(Filter),
-            },
-            setup: {
-                filename: 'sets',
-            },
-        };
-
-        // A Collection for each data type.
-        for (let type of ['dye', 'excitation', 'filter']) {
-            this[type] = {
-                collection: new DataCollection(
-                    data_map[type].filename,
-                    data_map[type].reader,
-                ),
-            };
-        }
-        // Setup Collection is special
-        this.setup = {
-            collection: new SetupCollection('sets')
-        };
-
-        // A View for this collections.
-        for (let type of ['dye', 'excitation', 'setup']) {
-            this[type].view = new SelectView(
-                $('#' + type + '-selector'),
-                this[type].collection,
+        // Note that there's no SelectView for the filters.  Those are
+        // not selectable, they're part of the path customisation GUI.
+        this.view = {};
+        for (let dtype of ['dye', 'excitation', 'setup']) {
+            const view = new SelectView(
+                this.$el.find('#' + dtype + '-selector'),
+                this.collection[dtype],
             );
+            view.on('change', this.handleChangeEv.bind(this, dtype));
+            view.render();
+            this.view[dtype] = view;
         }
 
-        // The Filters Collection does not have a View.  Instead, it
-        // is part of the FilterSetBuilder GUI.
-        this.filterset_builder = new FilterSetBuilder(
-            $('#filterset-builder'),
-            this.filter.collection,
+        this.path_builder = new PathBuilder(
+            this.$el.find('#path-builder'),
+            this.collection.filter,
             this.live_setup,
         );
-
-        // Need to fetch the list of dyes, excitations, and filters,
-        // before loadind the setup configurations.  This prevents the
-        // user from selecting a setup before the list of its
-        // components is available.
-        Promise.all(
-            ['dye', 'excitation', 'filter'].map(x => this[x].collection.fetch())
-        ).then(() => this.setup.collection.fetch())
-
-        for (let type of ['setup', 'excitation', 'dye']) {
-            this[type].view.$el.on('change',
-                                   this.handleChangeEv.bind(this, type));
-        }
 
         // Setup description includes a Dye, the logic being that the
         // setup is often designed for it.  However, a user can also
@@ -1289,103 +1284,181 @@ class Controller
         // when changing Setup.
         //
         // To support both cases, we keep track whether the current
-        // Dye selection comes from manual choice, and only change it
-        // to the Setup.dye if not.
+        // Dye selection comes from manual choice.  If the last Dye
+        // was manualy selected, changing preset Setups will not
+        // trigger a change of Dye.
         this.user_selected_dye = false;
 
         this.save_setup_dialog = new SaveSetupDialog($('#save-setup-dialog'),
-                                                     this.setup.collection,
+                                                     this.collection.setup,
                                                      this.live_setup);
 
-        this.import_dialog = new ImportDialog($('#import-file-dialog'),
-                                              {'dye': this.dye.collection,
-                                               'filter': this.filter.collection,
-                                               'source': this.excitation.collection,});
+        this.import_dialog = new ImportDialog($('#import-file-dialog'), {
+            dye: this.collection.dye,
+            filter: this.collection.filter,
+            excitation: this.collection.excitation,
+        });
 
         // If someone imports a Dye or Excitation, change to it.
-        for (let type of ['dye', 'excitation'])
-            this[type].collection.on('add', this.changeData.bind(this, type));
+        for (let dtype of ['dye', 'excitation'])
+            this.collection[dtype].on('add', this.changeData.bind(this, dtype));
     }
 
-    changeData(type, val, data) {
-        // Args:
-        //     type (String): one of 'dye', 'excitation', or 'setup'
-        //     uid (String): the value to display on the GUI.  Likely
-        //         an empty string if 'data' is null.
-        //     data (Model): a Dye, Excitation, or SetupDescription
-        //         object dependent on the value of 'type', which will
-        //         modify this.live_setup.
+    // Modify live_setup according to a new SetupDescription.
+    //
+    // Args:
+    //     val (String): value displayed on the setup SelectView.
+    //     setup (SetupDescription): may be null if user selects the
+    //       empty setup on the SelectView.
+    changeSetup(uid) {
+        if (uid === null) {
+            return this.live_setup.empty();
+        }
+        const setup = this.collection.setup.get(uid);
+        const promises = [];
 
-        if (type === 'setup') {
-            if (data === null) {
-                this.live_setup.empty();
-                return;
-            }
+        // Only change dye if a user has not selected it manually.
+        if (! this.user_selected_dye)
+            promises.push(this.changeData('dye', setup.dye));
 
-            // Only change dye if a user has not selected it manually.
-            if (! this.user_selected_dye) {
-                const dye_val = data.dye === null ? '' : data.dye;
-                this.dye.view.$el.val(dye_val).trigger('change');
-                // trigger makes it look like the user did it, so fix it.
-                this.user_selected_dye = false;
-            }
+        promises.push(this.changeData('excitation', setup.excitation));
 
-            const ex_val = data.excitation === null ? '' : data.excitation;
-            this.excitation.view.$el.val(ex_val).trigger('change');
-
-            for (let path_name of ['ex_path', 'em_path']) {
-                const path = this.live_setup[path_name];
-                path.empty();
-                const filter_promises = [];
-                for (let fpos of data[path_name]) {
-                    filter_promises.push(
-                        this.filter.collection.get(fpos.filter).then(
-                            (f) => ({filter: f, mode: fpos.mode})
-                        )
-                    );
-                }
-                Promise.all(filter_promises).then(
-                    (filters) => path.push(...filters)
+        for (let path_name of ['ex_path', 'em_path']) {
+            const path = this.live_setup[path_name];
+            // TODO: new replace method on path so that it can
+            // identify if the change is small (or maybe none)
+            path.empty();
+            const filter_promises = [];
+            for (let fpos of setup[path_name]) {
+                filter_promises.push(
+                    this.collection.filter.get(fpos.filter).then(
+                        (f) => ({filter: f, mode: fpos.mode})
+                    )
                 );
             }
-        } else {
-            this.live_setup[type]= data;
-            this[type].view.$el.val(val);
+            promises.push(Promise.all(filter_promises).then(
+                (filters) => path.push(...filters)
+            ));
         }
+        return promises;
     }
 
-    handleChangeEv(type, ev) {
-        const uid = ev.target.value;
+    changeData(dtype, uid) {
+        const change = (function(data) {
+            this.live_setup[dtype] = data;
+            const val = uid === null ? '' : uid;
+            this.view[dtype].val(val);
+        }).bind(this);
 
-        // Remember when a user selects a dye manually to prevent
-        // changing it as part of changing setup.  Forget about it,
-        // when a user unselects a dye.
-        if (type === ' dye') {
-            if (uid === '')
-                this.user_selected_dye = false;
-            else
-                this.user_selected_dye = true;
-        }
+        let get_data;
+        if (uid === null)
+            get_data = new Promise((r) => r(null));
+        else
+            get_data = this.collection[dtype].get(uid);
+        return get_data.then(change);
+    }
 
-        if (uid === '') {
-            this.changeData(type, uid, null);
-        } else {
-            this[type].collection.get(uid).then(
-                m => this.changeData(type, uid, m)
-            );
+    handleChangeEv(dtype, ev) {
+        const val = ev.target.value;
+        const uid = val === '' ? null : val;
+
+        if (dtype === 'setup')
+            return this.changeSetup(uid);
+        else {
+            // Remember when a user selects a dye manually to prevent
+            // changing it as part of changing setup.  Forget about
+            // it, when a user unselects a dye.
+            if (dtype === ' dye') {
+                if (val === '')
+                    this.user_selected_dye = false;
+                else
+                    this.user_selected_dye = true;
+            }
+            return this.changeData(dtype, uid);
         }
     }
 
     savePlot(ev) {
         // A useful name for the downloaded image.
-        const setup_uid = this.setup.view.$el.val();
-        const name = setup_uid !== '' ? setup_uid : 'custom';
-        ev.target.download = 'spekcheck-' + name + '.png';
+        const setup_uid = this.view.$el.val();
+        const uid = setup_uid !== '' ? setup_uid : 'custom';
+        ev.target.download = 'spekcheck-' + uid + '.png';
 
         ev.target.href = this.plot.downloadLink('image/png');
     }
 }
 
-$(document).ready(function() {
-    const spekcheck = new Controller;
-});
+// Configuration to use whole data from SpekCheck site.
+//
+// This can be passed to read_collections() if using the spekcheck
+// database of data files.  Note the path which is relative to the
+// SpekCheck site.
+const spekcheck_db = {
+    dye: {
+        filepath: 'data/dyes.json',
+        datadir: 'data/dyes/',
+        reader: Dye.constructFromText.bind(Dye),
+    },
+    excitation: {
+        filepath: 'data/excitation.json',
+        datadir: 'data/excitation/',
+        reader: Excitation.constructFromText.bind(Excitation),
+    },
+    filter: {
+        filepath: 'data/filters.json',
+        datadir: 'data/filters/',
+        reader: Filter.constructFromText.bind(Filter),
+    },
+    setup: {
+        filepath: 'data/sets',
+        reader: setupCollectionFromKindaCSV,
+    },
+};
+
+// Returns a promise of an Object with the collections.
+//
+// Args:
+//     db (Object): keys are the individual collections that will be
+//         created.  See the spekcheck_db variable.
+//
+// Returns:
+//     A promise of the collections Object that can be passed to
+//     construct SpekCheck.
+function read_collections(db)
+{
+    const collections = {};
+    const promises = [];  // promises that the individual collections are ready
+
+    // Collection of SetupDescription is special.
+    promises.push($.ajax({
+        url: db.setup.filepath,
+        dataType: 'text',
+    }).then(
+        function(data) {
+            collections.setup = db.setup.reader(data);
+        },
+    ));
+
+    for (let dtype of ['dye', 'excitation', 'filter']) {
+        promises.push($.ajax({
+            url: db[dtype].filepath,
+            dataType: 'json',
+        }).then(
+            // data should be an Array of String, the uids
+            function(data) {
+                collections[dtype] = new DataCollection(
+                    data,
+                    db[dtype].datadir,
+                    db[dtype].reader,
+                );
+            },
+            // Not sure how we can handle a failure here.  We could
+            // create an empty collection but that's not actually very
+            // useful.
+        ));
+    }
+    return Promise.all(promises).then(
+        () => collections,
+        (reason) => {new Error('failed to read collection: ' + reason)},
+    );
+}

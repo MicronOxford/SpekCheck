@@ -47,3 +47,31 @@ on the client side in javascript.
 
 * Support Firefox and Chrome.  Again, we already do not support
   Internet Explorer, so no point in going back.
+
+##
+
+## Display SpekCheck with a subset of Setups and Excitations
+
+
+
+    const setup_filter = function(uid) {
+          const wanted = ['foo', 'bar'm 'qux'];
+          return wanted.some(w => 
+    }
+    const setup_done = SetupDescription.parseKindofCSV(
+        'http://....'
+    ).then(
+        (desc) => setups = (new Collection(desc)).filter(...),
+        (err) => new Error('failed to read')
+    );
+
+
+        const spekcheck_div = $('#spekcheck');
+        Promise.all([setup_done, excitations_done, $(document).ready()])
+    ).then(
+        () new SpekCheck(
+            spekcheck_div,
+            setups,
+            excitations)
+    );
+
