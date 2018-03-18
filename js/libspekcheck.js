@@ -712,28 +712,36 @@ class Collection extends Model // also kind of a Map
     constructor(iterable) {
         super();
         this._map = new Map(iterable);
-        this._updateSize();
     }
 
-    // A bit of a pain, need to call this each time we change map.  I
-    // guess we could just have a size function but a property kind
-    // makes more sense.
-    _updateSize() {
-        this.size = this._map.size;
+    get
+    size() {
+        return this._map.size;
     }
+
+    set
+    size(val) {
+        return this._map.size = val;
+    }
+    // // A bit of a pain, need to call this each time we change map.  I
+    // // guess we could just have a size function but a property kind
+    // // makes more sense.
+    // _updateSize() {
+    //     this.size = this._map.size;
+    // }
 
     clear() {
         this._map.clear();
-        this._updateSize();
+        // this._updateSize();
         this.trigger('clear');
     }
 
     delete(key) {
         const deleted_something = this._map.delete(key);
-        this._updateSize();
+        // this._updateSize();
         if (deleted_something)
             this.trigger('delete', key);
-        this._updateSize();
+        // this._updateSize();
         return deleted_something;
     }
 
@@ -756,7 +764,7 @@ class Collection extends Model // also kind of a Map
     set(key, value) {
         const event = this._map.has(key) ? 'change' : 'add';
         this._map.set(key, value);
-        this._updateSize();
+        // this._updateSize();
         this.trigger(event, value);
     }
 
