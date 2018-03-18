@@ -723,25 +723,16 @@ class Collection extends Model // also kind of a Map
     size(val) {
         return this._map.size = val;
     }
-    // // A bit of a pain, need to call this each time we change map.  I
-    // // guess we could just have a size function but a property kind
-    // // makes more sense.
-    // _updateSize() {
-    //     this.size = this._map.size;
-    // }
 
     clear() {
         this._map.clear();
-        // this._updateSize();
         this.trigger('clear');
     }
 
     delete(key) {
         const deleted_something = this._map.delete(key);
-        // this._updateSize();
         if (deleted_something)
             this.trigger('delete', key);
-        // this._updateSize();
         return deleted_something;
     }
 
@@ -764,7 +755,6 @@ class Collection extends Model // also kind of a Map
     set(key, value) {
         const event = this._map.has(key) ? 'change' : 'add';
         this._map.set(key, value);
-        // this._updateSize();
         this.trigger(event, value);
     }
 
@@ -875,8 +865,8 @@ class CollectionView extends View
     constructor($el, collection) {
         super($el);
         this.collection = collection;
-        this.collection.on('reset', this.render, this);
-        this.collection.on('add', this.render, this);
+        for (let change of ['clear', 'delete', 'change', 'add'])
+             this.collection.on(change, this.render, this);
     }
 
     render() {
@@ -910,7 +900,7 @@ class SelectView extends CollectionView
 class ListItemView extends CollectionView
 {
     render() {
-        const uids = Array.from(this.collection.uids());
+        const uids = Array.from(this.collection.keys());
         this.$el.html(uids.map(uid => this.li_html(uid)));
     }
 
@@ -980,16 +970,9 @@ class PathBuilder extends View
         this.filters.view = new ListItemView(this.filters.$el,
                                              this.filters.collection);
         this.filters.view.li_html = function(uid) {
-            return '<li class="list-group-item">' +
-                  `${ uid }` +
-                '<button type="button" class="close" aria-label="Add to excitation">' +
-                '<span aria-hidden="true">&#8668;</span>' +
-                '</button>' +
-                '<button type="button" class="close" aria-label="Add to emission">' +
-                '<span aria-hidden="true">&#8669;</span>' +
-                '</button>' +
-                '</li>';
+            return `<li class="list-group-item">${ uid }</li>`;
         }
+        this.filters.view.render();
 
         for (let path of ['ex_path', 'em_path']) {
             const $el_path = $($el.find('#' + path)[0]);
@@ -1388,7 +1371,7 @@ class SpekCheck
 
     savePlot(ev) {
         // A useful name for the downloaded image.
-        const setup_uid = this.view.$el.val();
+        const setup_uid = this.view.setup.$el.val();
         const uid = setup_uid !== '' ? setup_uid : 'custom';
         ev.target.download = 'spekcheck-' + uid + '.png';
 
