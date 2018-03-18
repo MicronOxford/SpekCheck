@@ -925,18 +925,20 @@ class PathView extends View
     li_html(uid, mode) {
         const html = `
 <li class="list-group-item">
-  ${ uid } fo
-  <div class="btn-group btn-group-toggle" data-toggle="buttons">
-    <label class="btn btn-sm ${ mode === 't' ? 'btn-primary active' : 'btn-secondary' }">
-      <input type="radio" ${ mode === 't' ? 'checked' : '' }>T
-    </label>
-    <label class="btn btn-sm ${ mode === 'r' ? 'btn-primary active' : 'btn-secondary' }">
-      <input type="radio" ${ mode === 'r' ? 'checked' : '' }>R
-    </label>
+  ${ uid }
+  <div class="float-right">
+    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+      <label class="btn btn-sm ${ mode === 't' ? 'btn-primary active' : 'btn-secondary' }">
+        <input type="radio" ${ mode === 't' ? 'checked' : '' }>T
+      </label>
+      <label class="btn btn-sm ${ mode === 'r' ? 'btn-primary active' : 'btn-secondary' }">
+        <input type="radio" ${ mode === 'r' ? 'checked' : '' }>R
+      </label>
+    </div>
+    <button type="button" class="close" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
   </div>
-  <button type="button" class="close" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button>
 </li>`
         return html;
     }
