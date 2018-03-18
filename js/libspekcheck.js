@@ -18,10 +18,6 @@
 
 'use strict';
 
-function isaString(x) {
-    return typeof(x) === 'string' || x instanceof String;
-}
-
 
 // Base class to provide model validation and event callbacks.
 //
@@ -551,7 +547,8 @@ class SetupDescription extends Model
 
     validate() {
         for (let name of ['dye', 'excitation'])
-            if (! isaString(this[name]) && this[name] !== null)
+            if (typeof(this[name]) !== 'string' && ! (x instanceof String)
+                && this[name] !== null)
                 return `${ name } must be a String or null`;
 
         for (let path_name of ['ex_path', 'em_path']) {
@@ -560,7 +557,7 @@ class SetupDescription extends Model
                 return `${ path_name } must be an Array`;
 
             for (let x of path) {
-                if (! isaString(x.filter))
+                if (typeof(this[name]) !== 'string' && ! (x instanceof String))
                     return `values of ${ path_name } must have 'filter'`;
                 if (x.mode !== 'r' && x.mode !== 't')
                     return `mode of '${ x.filter }' must be r or t`;
