@@ -25,8 +25,8 @@ OMXv2 Sedat_FITC, ,488-laser, R-0022 R, EM-510-10 T :: R-0022 R, R-0020 R
 OMXv2 Sedat_DAPI, ,405-laser, R-0022 T, R-0020 R, R-0024 T, EM-445-45 T :: R-0022 R, R-0020 R
 OMXv2 Sedat_Rhod, ,592-laser, R-0022 T, R-0020 R, R-0024 R, EM-593-40 T :: R-0022 R, R-0020 R
 //OMXV3 Red green set.
-OMXv3 GR_Red, ,592-laser , ZT488_592 T, T597dcsp R, EM-605-lp T :: ZT488_592 R
-OMXv3 GR_Green, ,488-laser , ZT488_592 R, EM-540-80x T :: ZT488_592 R
+OMXv3 GR_Red, ,592-laser , ZT488_592 T, T597dcsp R, EM-605-lp T :: ZT488_592 T
+OMXv3 GR_Green, ,488-laser , ZT488_592 R, EM-540-80x T :: ZT488_592 T
 //DeepSIM
 DeepSIM Green, GFP,488-laser , ZT405-488-561-647-22.5deg R, zt561rdc-xr R, EM-525-50 T
 DeepSIM Red, mCherry,561-laser , ZT405-488-561-647-22.5deg R, zt561rdc-xr T, EM-600-50m T
