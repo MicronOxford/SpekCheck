@@ -23,11 +23,6 @@
 // Alexa-488 birghtness for relative brightness calculations
 var ALEXABRIGHT= 0.92*73000;
 
-// Interpolation parameters.
-var WLMIN = 300.0;
-var WLMAX = 800.0;
-var WLSTEP = 1.0;
-
 // How many top dyes to return
 var NUMTOPDYES = 3;
 var TEXTLENGTH = 15;
@@ -122,6 +117,19 @@ class Spectrum extends Model
         }
     }
 
+    // Length of the wavelength and data arrays.
+    get
+    length() {
+        return this.wavelength.length;
+    }
+
+    set
+    length(val) {
+        // We need a setter to pair with the getter.  This shouldn't
+        // work and will throw as expected.
+        this.wavelength.length = val;
+    }
+
     validate() {
         if (! (this.wavelength instanceof Array))
             return "No 'wavelength' property for spectrum";
@@ -145,61 +153,54 @@ class Spectrum extends Model
         return area;
     }
 
+    // Interpolate data for specified wavelengths.
+    //
+    // Args:
+    //     points(Array<float>): wavelengths values for which we
+    //         should interpolate data.  Must be in increasing order.
+    //
+    // Returns:
+    //     Array with interpolated values.  For wavelengths, outside
+    //     this Spectrum range (extrapolation), data will be zero.
     interpolate(points) {
-        // TODO: needs testing
-        //
-        // Interpolate data to specific wavelengths.  Also
-        // extrapolates to zero.
-        //
-        // Args:
-        //     points(Array<float>): should sort in increasing order.
-        //
-        // Returns:
-        //     An Array with interpolated values.
-
-        const old_w = this.wavelength;
-        const old_d = this.data;
-
-        const new_w = points.slice(0);
-        const new_d = new Array(wl.length);
+        const new_data = new Array(points.length);
 
         let i = 0; // index into the interpolated data
 
-        // Outside the existing data, values are zero
-        for (; new_w[i] < old_w[0]; i++)
-            new_d[i] = 0;
+        // Outside the existing data.  Extrapolate to zero.
+        for (; points[i] < this.wavelength[0]; i++)
+            new_data[i] = 0.0;
 
-        // We loop this way under the assumption that the existing
-        // data has more points, and the purpose of this interpolation
-        // is to resample at a much lower resolution (see Lumencor and
-        // halogen excitation sources, and the DV-SSI filters which
-        // have >3000 data points).
-        let next_wl = new_w[i];
-        const last_wl = new_w[new_w.length -1];
-        let j = 0; // index into the original data
+        const this_last_w = 0;
 
-        const last_wavelength = old_w[old_w.length -1];
-        for (; new_w[i] < last_wavelength && i < new_w.length; i++) {
-            while (new_w[j] < new_w[i])
-                j++;
+        let this_i = 0; // index into the this data/wavelength
+        for (; i < points.length; i++) {
+            if (points[i] > this.wavelength[this.length -1]) {
+                // Outside the existing data.  Extrapolate to zero.
+                new_data.fill(0.0, i);
+                break;
+            }
 
-            // This case should be quite common since most data is actually
-            // (original data) are often done at integer values, and
-            // the sampling is done at integers wavelengths too.
-            if (old_w[j] === new_w[i])
-                new_d[i] = old_w[j];
+            while (points[i] > this.wavelength[this_i]) {
+                this_i++;
+            }
+
+            // Most data we have uses the same values (1nm steps of
+            // wavelength) so we often get away without actually
+            // interpolating anything.
+            if (points[i] === this.wavelength[this_i])
+                new_data[i] = this.data[this_i++];
             else {
-                // Linear interpolation.
-                const slope = (old_d[j] - old_d[j-1]) / (old_w[j] - old_w[j-1]);
-                new_d[i] = old_d[j-1] + slope * (new_w[i] - old_w[j-1]);
+                // Fine! We will do interpolation.
+                const x0 = this.wavelength[this_i -1];
+                const x1 = this.wavelength[this_i];
+                const y0 = this.data[this_i -1];
+                const y1 = this.data[this_i];
+                const slope = ((y1 - y0) / (x1 - x0));
+                new_data[i] = y0 + slope * (points[i] - x0);
             }
         }
-
-        // Outside the existing data, values are zero
-        for (; i < new_w.length; i++)
-            new_d[i] = 0;
-
-        return new Spectrum(new_w, new_d);
+        return new_data;
     }
 
     multiplyBy(other) {
@@ -235,41 +236,6 @@ class Spectrum extends Model
     }
 }
 
-
-Spectrum.prototype.interpolate = function () {
-    // Resample raw data. Assumes input data is sorted by wavelength.
-    if (!this._interp ||
-        this._interp[0][0] !== WLMIN ||
-        this._interp[0][this._interp[0].length-1] !== WLMAX ||
-        this._interp[0].length !== 1+(WLMAX-WLMIN) / WLSTEP) {
-        // Need to interpolate.
-        // Invalidates previously-interpolated points.
-        this._points = null;
-        this._interp = [[],[]];
-        var wls;
-        var vals;
-        [wls, vals] = this.raw || [[0,1], [0,0]];
-        var i = 1; // Index into original data.
-        for (wl = WLMIN; wl <= WLMAX; wl += WLSTEP) {
-            var val;
-            var t;
-            if (wl < wls[0] || wl > wls[wls.length-1]){
-                val = 0;
-            } else {
-                if (wl > wls[i]) {
-                    while(wl > wls[i]) {
-                        i += 1;
-                    }
-                }
-                t = (wl - wls[i-1]) / (wls[i] - wls[i-1]);
-                val = (1-t)*vals[i-1]+t*vals[i];
-            }
-            this._interp[0].push(wl);
-            this._interp[1].push(val);
-        }
-    }
-    return this._interp;
-};
 
 Spectrum.prototype.area = function (name) {
     // Return the area of the spectrum.
