@@ -141,14 +141,14 @@ class Spectrum extends Model
             return "all 'data' must be in the [0 1] interval";
     }
 
+    // Area of the spectrum.
     area() {
-        // Return the area of the spectrum.
-        // Clamps negative values to zero.
-        var w;
-        var v;
-        [w,v] = this.interpolate();
+        const w = this.wavelength;
+        const v = this.data;
         const area = 0.0;
-        for (let i=1; i < w.length; i++)
+        // We don't handle values below zero because spectrum data
+        // should be clipped to [0,1] in the constructor.
+        for (let i = 1; i < this.length; i++)
             area += 0.5 * (v[i] + v[i-1])*(w[i] - w[i-1]);
         return area;
     }
@@ -203,26 +203,30 @@ class Spectrum extends Model
         return new_data;
     }
 
+    // Multiply data by something else.
+    //
+    // Args:
+    //     other (Spectrum|Array|Number): if other is an Array, then
+    //         it should have the same length as this.
+    //
+    // Returns:
+    //     A new Array with this spectrum data multiplied, for the
+    //     wavelengths of 'this' (not the wavelength of 'other').
     multiplyBy(other) {
-        // Multiply by another spectrum instance and returns a new
-        // Spectrum instance.  The wavelength range of the new
-        // Spectrum is the intersection of the two wavelength ranges
-        // (values outside the range are interpreted as zeros anyway).
+        if (other instanceof Spectrum)
+            other = other.interpolate(this.wavelength);
 
-        this._points = null;
-        this.interpolate();
-        var oldMax = Math.max(...this._interp[1]);
-        if (other instanceof Spectrum) {
-            var m = other.interpolate()[1];
-            for (var i = 0; i < this._interp[1].length; i ++)
-                this._interp[1][i] *= m[i];
-        } else if (Array.isArray(other)) {
-            for (var i = 0; i < this._interp[1].length; i ++)
-                this._interp[1][i] *= other[i];
-        } else {
-            for (var i = 0; i < this._interp[1].length; i ++)
-                this._interp[1][i] *= other;
-        }
+        const new_data = this.data.slice(0);
+        if (Array.isArray(other))
+            for (let i = 0; i < this.length; i++)
+                new_data[i] *= other[i];
+        else if (typeof(other) === 'number' || other instanceof Number)
+            for (let i = 0; i < this.length; i++)
+                new_data[i] *= other;
+        else
+            throw new Error(`can\'t multiplyBy '${ typeof(other) }'`);
+
+        return new_data;
     }
 
     peakWavelength() {
@@ -235,42 +239,6 @@ class Spectrum extends Model
         return this.wavelength[max_index];
     }
 }
-
-
-Spectrum.prototype.area = function (name) {
-    // Return the area of the spectrum.
-    // Clamps negative values to zero.
-    var w;
-    var v;
-    [w,v] = this.interpolate();
-    var area = 0;
-    for (var i=1; i < w.length; i++) {
-        area += 0.5 * (Math.max(0, v[i]) + Math.max(0, v[i-1]))*(w[i] - w[i-1]);
-    }
-    return area;
-};
-
-Spectrum.prototype.multiplyBy = function (other) {
-    // multiplies this spectrum by other
-    // invalidates previously calculated _points
-    this._points = null;
-    this.interpolate();
-    var oldMax = Math.max(...this._interp[1]);
-    if (other instanceof Spectrum) {
-        var m = other.interpolate()[1];
-        for (var i = 0; i < this._interp[1].length; i ++) {
-            this._interp[1][i] *= m[i];
-        }
-    } else if (Array.isArray(other)) {
-        for (var i = 0; i < this._interp[1].length; i ++) {
-            this._interp[1][i] *= other[i];
-        }
-    } else {
-        for (var i = 0; i < this._interp[1].length; i ++) {
-            this._interp[1][i] *= other;
-        }
-    }
-};
 
 
 // Base class for our Data: Dye, Excitation, and Filter classes.
