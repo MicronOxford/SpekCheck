@@ -735,13 +735,13 @@ class SetupDescription extends Model
 
         const ex_path = [];
         const em_path = [];
-        let path = ex_path; // push into ex_path until we see '::'
+        let path = em_path; // push into em_path until we see '::'
         for (let filt of fields.slice(2)) {
             const c_idx = filt.indexOf('::');
             if (c_idx !== -1) {
                 let field = filt.slice(0, c_idx).trim();
                 path.push(this.parseFilterField(field));
-                path = em_path; // Start filling em_path now
+                path = ex_path; // Start filling ex_path now
                 field = filt.slice(c_idx+2).trim();
                 path.push(this.parseFilterField(field));
             }
