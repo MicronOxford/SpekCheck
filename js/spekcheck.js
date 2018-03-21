@@ -20,9 +20,6 @@
 
 
 
-// Alexa-488 birghtness for relative brightness calculations
-var ALEXABRIGHT= 0.92*73000;
-
 // How many top dyes to return
 var NUMTOPDYES = 3;
 var TEXTLENGTH = 15;
@@ -83,9 +80,16 @@ class Model
 }
 
 
-// Class for Spectrum data and its computations.  Not for Dye, Filter,
-// or Excitation.  Those have a Spectrum property but they are not a
-// Spectrum themselves.
+// Class for Spectrum data and its basic computations.
+//
+// Not for Dye, Filter, or Excitation.  Those have properties that are
+// Spectrum instances, but they are not a Spectrum themselves.  For
+// example, the Dye class will have a emission and excitation
+// properties, each of them a Spectrum instance.
+//
+// Args:
+//     wavelength (Array<float>):
+//     data (Array<float>):
 class Spectrum extends Model
 {
     constructor(wavelength, data) {
@@ -117,6 +121,15 @@ class Spectrum extends Model
         }
     }
 
+    clone() {
+        // Do not pass wavelength and data arrays to the constructor
+        // to avoid the data corrections loop.
+        const clone = new Spectrum([], []);
+        clone.wavelength = this.wavelength.slice(0);
+        clone.data = this.data.slice(0);
+        return clone;
+    }
+
     // Length of the wavelength and data arrays.
     get
     length() {
@@ -125,9 +138,39 @@ class Spectrum extends Model
 
     set
     length(val) {
-        // We need a setter to pair with the getter.  This shouldn't
-        // work and will throw as expected.
-        this.wavelength.length = val;
+        throw new Error('Spectrum.length is a read-only property');
+    }
+
+    // Wavelength where this data has its maximum value.
+    get
+    peak_wavelength() {
+        const max_index= this.data.reduce(
+            (iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0
+        );
+        return this.wavelength[max_index];
+    }
+
+    set
+    peak_wavelength(val) {
+        throw new Error('Spectrum.peak_wavelength is a read-only property');
+    }
+
+    // Area of the spectrum.
+    get
+    area() {
+        const w = this.wavelength;
+        const v = this.data;
+        const area = 0.0;
+        // We don't handle values below zero because spectrum data
+        // should be clipped to [0,1] in the constructor.
+        for (let i = 1; i < this.length; i++)
+            area += 0.5 * (v[i] + v[i-1])*(w[i] - w[i-1]);
+        return area;
+    }
+
+    set
+    area(val) {
+        throw new Error('Spectrum.area is a read-only property');
     }
 
     validate() {
@@ -141,22 +184,10 @@ class Spectrum extends Model
             return "all 'data' must be in the [0 1] interval";
     }
 
-    // Area of the spectrum.
-    area() {
-        const w = this.wavelength;
-        const v = this.data;
-        const area = 0.0;
-        // We don't handle values below zero because spectrum data
-        // should be clipped to [0,1] in the constructor.
-        for (let i = 1; i < this.length; i++)
-            area += 0.5 * (v[i] + v[i-1])*(w[i] - w[i-1]);
-        return area;
-    }
-
     // Interpolate data for specified wavelengths.
     //
     // Args:
-    //     points(Array<float>): wavelengths values for which we
+    //     points (Array<float>): wavelengths values for which we
     //         should interpolate data.  Must be in increasing order.
     //
     // Returns:
@@ -165,15 +196,13 @@ class Spectrum extends Model
     interpolate(points) {
         const new_data = new Array(points.length);
 
-        let i = 0; // index into the interpolated data
+        let i = 0; // index into the interpolated data (new_data)
 
         // Outside the existing data.  Extrapolate to zero.
         for (; points[i] < this.wavelength[0]; i++)
             new_data[i] = 0.0;
 
-        const this_last_w = 0;
-
-        let this_i = 0; // index into the this data/wavelength
+        let this_i = 0; // index into this data/wavelength
         for (; i < points.length; i++) {
             if (points[i] > this.wavelength[this.length -1]) {
                 // Outside the existing data.  Extrapolate to zero.
@@ -185,9 +214,9 @@ class Spectrum extends Model
                 this_i++;
             }
 
-            // Most data we have uses the same values (1nm steps of
-            // wavelength) so we often get away without actually
-            // interpolating anything.
+            // Most data we have uses the same wavelength values (1nm
+            // steps of wavelength) so we often get away without
+            // actually interpolating anything.
             if (points[i] === this.wavelength[this_i])
                 new_data[i] = this.data[this_i++];
             else {
@@ -203,15 +232,16 @@ class Spectrum extends Model
         return new_data;
     }
 
-    // Multiply data by something else.
+    // Multiply this instance data by something else.
     //
     // Args:
-    //     other (Spectrum|Array|Number): if other is an Array, then
+    //     other (Spectrum|Array|Number): if 'other' is an Array, then
     //         it should have the same length as this.
     //
     // Returns:
-    //     A new Array with this spectrum data multiplied, for the
-    //     wavelengths of 'this' (not the wavelength of 'other').
+    //     A new Array with this spectrum data multiplied by another.
+    //     If 'other' is another Spectrum instance, the wavelength of
+    //     this instance is used.
     multiplyBy(other) {
         if (other instanceof Spectrum)
             other = other.interpolate(this.wavelength);
@@ -228,16 +258,6 @@ class Spectrum extends Model
 
         return new_data;
     }
-
-    peakWavelength() {
-        // We could keep the computed value in cache for next time.
-        // However, this is only used by SetupPlot which
-        // already keeps a cache of his own.
-        const max_index= this.data.reduce(
-            (iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0
-        );
-        return this.wavelength[max_index];
-    }
 }
 
 
@@ -247,15 +267,18 @@ class Spectrum extends Model
 // It requires two static data members wich configure the constructor
 // and the factory/reader:
 //
-//    properties: an Array of property names which will be defined on
-//        a class instance, and are required to be keys on the Object
-//        passed to the factory.
-//    header_map: used to map the keys on the header of the files to
-//        the keys used on the Object passed to the factory.  null
-//        values mean fields to ignore.
+//    properties (Array): configures the constructor.  an Array of
+//        property names which will be defined on a class instance,
+//        and are required at construction time.
 //
-// TODO: call it something other than Data.  It is meant to represent
-//       the things that we have a data file for.
+//    header_map (Map): configures the factory/reader methods.  They
+//        map the fields on the header of the files to the keys of the
+//        Object passed to the constructor.  null values mean fields
+//        to ignore.
+//
+// Args:
+//     attrs(Object): all values in the properties Array must be keys
+//         of this 'attrs' instance and will be set on this instance.
 class Data extends Model
 {
     constructor(attrs) {
@@ -283,10 +306,10 @@ class Data extends Model
         for (let line of header) {
             if (line.startsWith('#'))
                 continue; // skip comments
-            for (let header_key of Object.keys(header_map)) {
+            for (let header_key of header_map.keys()) {
                 if (line.startsWith(header_key)
                     && line[header_key.length] === ':') {
-                    const attr_name = header_map[header_key];
+                    const attr_name = header_map.get(header_key);
                     if (attr_name === null)
                         break; // null means value to be ignored
 
@@ -297,12 +320,10 @@ class Data extends Model
                     // function together with the attribute name.
                     const val = parseFloat(line.slice(header_key.length+2));
 
-                    // Even though we only expect numeric input,
-                    // sometimes, the values are missing, e.g., we
-                    // don't have quantum yield for all dyes.  In that
-                    // case, the value will be a NaN.
+                    // If the value can't be parsed (maybe it is
+                    // missing), then it read as NaN.  Set to null.
+                    attrs[attr_name] = isNaN(val) ? null : val;
 
-                    attrs[header_map[header_key]] = val;
                     break; // found it, so move to next line
                 }
             }
@@ -312,7 +333,7 @@ class Data extends Model
         }
 
         // Confirm we got all properties from the header.
-        for (let attr_name of Object.values(header_map))
+        for (let attr_name of header_map.values())
             if (attr_name !== null && attrs[attr_name] === undefined)
                 throw new Error(`missing value for '${ attr_name }' in header`);
 
@@ -343,6 +364,8 @@ class Data extends Model
 
         const wavelengths = [];
         for (let line of csv.slice(1)) {
+            if (line.length === 0) // ignore empty lines
+                continue;
             let vals = line.split(',').map(x => parseFloat(x));
             wavelengths.push(vals[0]);
             for (let i = 0; i < n_spectra; i++)
@@ -370,10 +393,10 @@ class Data extends Model
         //    wavelength, spectra name #1, spectra name #2
         //    x, y, z
         //
-        // The 'key' values are case-sensitive and used to index
-        // 'header_map'.  The 'spectra name #N' will be used as a
-        // property keys on attrs passed to the constructor.
-        // Everything is case-sensitive.
+        // The 'key' values are case-sensitive and used to get the
+        // matching property name from 'header_map'.  The 'spectra
+        // name #N' will be used as a property keys on 'attrs' passed
+        // to the constructor.  Everything is case-sensitive.
         //
         // Args:
         //     text (String): the file content.
@@ -393,7 +416,7 @@ class Data extends Model
         // We want to support an arbitrary number of comment lines on
         // the file header so we also add lines starting with # to the
         // header length (which the header parser will ignore).
-        let header_length = Object.keys(header_map).length;
+        let header_length = header_map.size;
         for (let i = 0; i < header_length +1; i++)
             if (lines[i].startsWith('#'))
                 header_length++;
@@ -414,10 +437,10 @@ class Data extends Model
         return new this.prototype.constructor(attrs);
     }
 }
-Data.prototype.header_map = {
-    'Name': null,
-    'Type': null,
-};
+Data.prototype.header_map = new Map([
+    ['Name', null],
+    ['Type', null],
+]);
 Data.prototype.properties = [
     'uid',
 ];
@@ -437,22 +460,26 @@ class Dye extends Data
         // true so that it also checks for the right type.  If we did
         // 'ex_coeff < 0.0' it would return false even if 'ex_coeff'
         // was undefined a String or whatever.
-        if (! (this.ex_coeff >= 0.0) && ! isNaN(this.ex_coeff))
+        if (! (this.ex_coeff >= 0.0) && this.ex_coeff !== null)
             return 'Extinction Coefficient must be a positive number';
-        if (! (this.q_yield >= 0.0) && ! isNaN(this.q_yield))
+        if (! (this.q_yield >= 0.0) && this.q_yield !== null)
             return 'Quantum Yield must be a positive number';
     }
 }
-Dye.prototype.header_map = Object.assign({}, Data.prototype.header_map, {
-    'Extinction coefficient': 'ex_coeff',
-    'Quantum Yield': 'q_yield',
-});
+Dye.prototype.header_map = new Map([
+    ...(Data.prototype.header_map),
+    ['Extinction coefficient', 'ex_coeff'],
+    ['Quantum Yield', 'q_yield'],
+]);
 Dye.prototype.properties = Data.prototype.properties.concat([
     'emission',
     'ex_coeff',
     'excitation',
     'q_yield',
 ]);
+
+// Alexa-488 brightness for relative brightness calculations.
+Dye.Alexa488_brightness = 0.92 * 73000;
 
 
 class Excitation extends Data
@@ -475,8 +502,8 @@ Excitation.prototype.properties = Data.prototype.properties.concat([
 class Filter extends Data
 {
     constructor(attrs) {
-        // Some Filter files have reflection instead of transmission
-        // so compute it.
+        // Some Filter files have reflection data instead of
+        // transmission so compute it.
         if (attrs.reflection !== undefined) {
             const data = attrs.reflection.data.map(x => 1.0 -x);
             const wavelength = attrs.reflection.wavelength;
@@ -498,7 +525,7 @@ class Filter extends Data
 
     set
     reflection(val) {
-        // Delete the lazy-getter when setting the value
+        // Delete the lazy-getter and this setter when setting the value.
         delete this.reflection;
         Object.defineProperty(this, 'reflection', {value: val});
     }
@@ -519,13 +546,32 @@ Filter.prototype.properties = Data.prototype.properties.concat([
 // Setup.
 class Path extends Model // also kind of an Array
 {
-    constructor(array=[]) {
+    constructor(stack=[]) {
         super();
-        this._filters = array; // Array of {filter: Filter, mode: 'r'|'t'}
+        this._stack = stack; // Array of {filter: Filter, mode: 'r'|'t'}
+
+        this._transmission = null; // Spectrum or null
+
+        // Index of the next filter that needs to be used to update
+        // the transmission spectrum.
+        this._stack_i = 0;
+
+        // Cache of efficiency computations for other Spectrum.
+        this._efficiency_cache = new WeakMap;
+    }
+
+    get
+    length() {
+        return this._stack.length;
+    }
+
+    set
+    length(val) {
+        throw new Error('length is a read-only property');
     }
 
     validate() {
-        for (let x of this._filters) {
+        for (let x of this._stack) {
             if (! (x.filter instanceof Filter))
                 return "all elements of Path must have a 'Filter'";
             if (! x.filter.isValid())
@@ -535,134 +581,129 @@ class Path extends Model // also kind of an Array
         }
     }
 
+    // Transmission spectrum of the whole filter stack
+    get
+    transmission() {
+        // XXX: what to do about this?  In practice, this should mean
+        //     that we have complete transmission in all wavelengths.
+        //     However, the assumption in Spectrum is that data is
+        //     zero whenever we have no information.  So we error to
+        //     make note of the odd request.  Alternatively, maybe we
+        //     could return Spectrum([0, Inf], [1.0, 1.0])
+        if (this.length === 0)
+            throw new Error('no filters on stack to compute transmission');
+
+        if (this._transmission === null) {
+            // Spectrum data outside the range will be zero, so no
+            // point on computing those.  Find the minimum wavelength
+            // range we actually need.
+            let init = -Infinity;
+            let end = Infinity;
+            for (let x of this._stack) {
+                const wavelength = x.filter.transmission.wavelength;
+                const x_init = wavelength[0];
+                const x_end = wavelength[wavelength.length -1];
+                if (x_init > init)
+                    init = x_init;
+                if (x_end < end)
+                    end = x_end;
+            }
+
+            const wavelength = new Array(end-init+1);
+            // wavelength steps of 1nm :/
+            for (let i = 0; i < wavelength.length; i++)
+                wavelength[i] = init+i;
+
+            const data = new Array(wavelength.length).fill(1.0);
+            this._transmission = new Spectrum(wavelength, data);
+        }
+
+        const transmission = this._transmission;
+        const wavelength = transmission.wavelength;
+        // Update the transmission with any pending filters
+        for (; this._stack_i < this.length; this._stack_i++) {
+            const mode = this._stack[this._stack_i].mode;
+            const filter = this._stack[this._stack_i].filter;
+
+            const pname = mode === 't' ? 'transmission' : 'reflection';
+            if (mode !== 't' && mode !== 'r')
+                throw new Error(`invalid mode '${ mode }'`);
+
+            const filter_data = filter[pname].interpolate(wavelength);
+            transmission.data = transmission.multiplyBy(filter_data);
+        }
+
+        return this._transmission;
+    }
+
+    set
+    transmission(val) {
+        throw new Error('transmission is a read-only property');
+    }
+
+    // Transmission spectrum that 'source' will have in this Path.
+    transmissionOf(source) {
+        const transmission = this.transmission;
+        // The source may have spectrum data outside the range of this
+        // Path transmission.  Outside the data we have, we assume
+        // transmission of zero, so clip it if required.
+        const clipped_source = new Spectrum(
+            transmission.wavelength,
+            source.interpolate(transmission.wavelength),
+        );
+        clipped_source.data = clipped_source.multiplyBy(transmission.data);
+        return clipped_source;
+    }
+
+    // Efficiency of this
+    efficiencyFor(source) {
+        if (! this._efficiency_cache.has(source)) {
+            // Force computation of transmission if required.
+            const transmission = this.transmission;
+
+            // The source may have spectrum data outside the range of
+            // our transmission.  So clip it of required, otherwise
+            // the areas will not make sense.
+            const clipped_source = new Spectrum(
+                transmission.wavelength,
+                source.interpolate(transmission.wavelength),
+            );
+            const efficiency = transmission.area / clipped_source.area;
+
+            this._efficiency_cache.set(source, efficiency);
+        }
+        return this._efficiency_cache.get(source);
+    }
+
     describe() {
-        return this._filters.map(x => ({filter: x.filter.uid, mode: x.mode}));
+        return this._stack.map(x => ({filter: x.filter.uid, mode: x.mode}));
     }
 
     empty() {
-        this._filters = [];
+        this._stack = [];
+
+        this._transmission = null;
+        this._stack_i = 0;
+        this._efficiency_cache = new WeakMap;
+
         this.trigger('change');
     }
 
     map(callback) {
-        return this._filters.map(callback);
+        return this._stack.map(callback);
     }
 
     push() {
-        const count = this._filters.push(...arguments);
+        const count = this._stack.push(...arguments);
+        this._efficiency_cache = new WeakMap;
         this.trigger('change');
         return count;
     }
 
     [Symbol.iterator]() {
-        return this._filters[Symbol.iterator]();
+        return this._stack[Symbol.iterator]();
     }
 }
-
-
-//Prototype sets object for staroing exciation and emission sets.
-function FilterSet(){
-    //transmission is the total transmission efficiency of the
-    //set of filters
-    //spectrum is the resulting spectrum after the filter stack is applied
-    this.transmission = null;
-    this.spectrum = null;
-}
-
-FilterSet.prototype = new Array();
-
-FilterSet.prototype.doEfficiencyCalc = function () {
-    var initArea = SPECTRA[this[0].filter].area();
-    var calcSpectra  =SPECTRA[this[0].filter].copy();
-    this.slice(1).forEach(function(element){
-        var refl = ["r","R"].indexOf(element.mode) > -1;
-        if (refl) {
-            var mult = SPECTRA[element.filter].interpolate()[1].map((v) => {return Math.max(0, 1-v);});
-            calcSpectra.multiplyBy(mult);
-        } else {
-            calcSpectra.multiplyBy(SPECTRA[element.filter]);
-        }
-    });
-    this.transmission=calcSpectra.area()/initArea;
-    this.spectrum=calcSpectra;
-};
-
-
-FilterSet.prototype.efficiency = function( ){
-
-    // Fetch all data with concurrent calls.
-    var defer = [];
-    for (var f of this) {
-        //RemoveFilter leaves an undfined entry so skip these
-        if(f) {
-            if(f.filter) {
-                defer.push(SPECTRA[f.filter].fetch());
-            }
-        }
-    }
-    // When all the data is ready, do the calculation.
-    $.when.apply(null, defer).then( () => this.doEfficiencyCalc() );
-};
-
-// calculate the excitation, emission and brightness of a config.
-function calcEffAndBright(exset,emset) {
-    //populate the tramsssion and spectrum elements of the filter set
-    //in emset first element must be a dye
-    //in exset first element must be a light source
-    var e_eff,t_eff,bright;
-    //Excitation efficiency
-    if (exset[0] && exset[0].filter) {
-        exset.efficiency();
-        e_eff = exset.transmission;
-        SPECTRA["excitation"] = exset.spectrum.copy();
-        //test if we have a dye selected, and it has an excitation spectra
-        //if so multiply excitation spectra by this.
-        if(emset[0]){
-            if(emset[0].filter && SPECTRA[emset[0].filter + EXSUFFIX]) {
-                exset.spectrum.multiplyBy(SPECTRA[emset[0].filter + EXSUFFIX]);
-                e_eff = e_eff * (exset.spectrum.area()/SPECTRA["excitation"].area());
-            }
-            else {
-                e_eff = 0
-            }
-        }
-    }
-    //calculate emission efficiency and spectra.
-    if (emset[0] && emset[0].filter) {
-        emset.efficiency();
-        t_eff = emset.transmission;
-        SPECTRA["transmitted"]=emset.spectrum;
-    } else {
-        SPECTRA["transmitted"]=null;
-    }
-    //calculate relative brightness compared to alexa-448 at 100% excitation.
-    // mulitple by 10 to give resasonable range of values.
-    if (emset.length > 0) {
-        var dye = emset[0].filter;
-        if (dye && e_eff && SPECTRA[dye].qyield && SPECTRA[dye].extcoeff && t_eff) {
-        bright = ((e_eff*SPECTRA[dye].qyield * SPECTRA[dye].extcoeff * t_eff)/
-                  ALEXABRIGHT) * 10.0;
-        }
-    }
-    return ({e_eff,t_eff,bright});
-}
-
-
-//Function to try all possible dyes and optimise which is "best"
-function optimiseDyes() {
-    //First load all the dyes prior to calling the dye optimisation code.
-    var dyes=[];
-    $( "#dyes .selectable").each(function() {dyes.push($(this).data().key);});
-
-    // Fetch all dyes with concurrent calls.
-    var defer = [];
-    for (var dye of dyes) {
-        defer.push(SPECTRA[dye].fetch());
-    }
-    // When all the data is ready call the optimise dyes
-    $.when.apply(null, defer).then(function(){processAllDyes(dyes);});
-}
-
 
 
 // Like an Setup object but with Data instances (Dye, Excitation, and
@@ -800,6 +841,38 @@ class Setup extends Model
         this.em_path.on('change', this.trigger.bind(this, 'change'));
     }
 
+    // Scaled excitation
+    get
+    ex_transmission() {
+        if (this.excitation === null)
+            return null;
+        else if (this.ex_path.length === 0)
+            return this.excitation.intensity;
+        else
+            return this.ex_path.transmissionOf(this.excitation.intensity);
+    }
+
+    set
+    ex_transmission(val) {
+        throw new Error('Setup.ex_transmission is a read-only property');
+    }
+
+    // Scaled dye emission
+    get
+    em_transmission() {
+        if (this.dye === null)
+            return null;
+        else if (this.em_path.length === 0)
+            return this.dye.emission;
+        else
+            return this.em_path.transmissionOf(this.dye.emission);
+    }
+
+    set
+    em_transmission(val) {
+        throw new Error('Setup.em_transmission is a read-only property');
+    }
+
     // Describe this instance, i.e., replace the Filter, Dye, and
     // Excitation objects with their names.
     describe() {
@@ -822,20 +895,46 @@ class Setup extends Model
         this.trigger('change');
     }
 
+    // Spectrum of the dye emission that will reach the detector.
+    get
     transmission() {
-        // TODO
+    }
+
+    set
+    transmission(val) {
+        throw new Error('transmission is a read-only property');
     }
 
     ex_efficiency() {
-        // TODO
+        return this.ex_path.efficiency(this.excitation);
     }
 
     em_efficiency() {
-        // TODO
+        throw new Error('neede to get spectra of fye after excitation');
     }
 
+    // Relative brightness compared to Alexa-448 at 100% excitation.
+    //
+    // This will be computed for a Path object.  The transmission of a
+    // Path object is a Spectrum instance ;)
+    //
+    //     brightness = dye.brightnessIn(filterset.transmission);
+    //
+    // Args:
+    //     spectrum(Spectrum)
     brightness() {
-        // TODO
+        if (this.dye === null || this.excitation === null)
+            throw new Error('no dye or excitation to compute brightness');
+
+        if (typeof (this.dye.q_yield) !== 'number'
+            || typeof (this.dye.ex_coeff) !== 'number')
+            throw new Error('no ex_coeff and q_yield values available');
+
+        // multiply by 10 to give reasonable range of values.
+        const bright = 10 * ((this.ex_efficiency() * this.dye.q_yield
+                              * this.dye.ex_coeff * this.em_efficiency())
+                             / Dye.Alexa488_brightness);
+        return bright;
     }
 }
 
@@ -1174,19 +1273,26 @@ class SetupPlot extends View
         this._dataset_cache = new WeakMap;
     }
 
-    asChartjsDataset(spectrum, label) {
+    // Convert Spectrum instance into a dataset model for Chartjs.
+    //
+    // Args:
+    //     spectrum (Spectrum):
+    //     options (Object): this will be added to the dataset object
+    //         created from 'spectrum'.  It can also be used to
+    //         override other options.  It is mainly used to set the
+    //         label used.  It can also be used to change the colour.
+    asChartjsDataset(spectrum, options) {
         if (! this._dataset_cache.has(spectrum)) {
             const points = new Array(spectrum.wavelength.length);
             for (let i = 0; i < points.length; i++)
                 points[i] = {x: spectrum.wavelength[i], y: spectrum.data[i]};
             // Convert a wavelength to HSL-alpha string.
-            const peak_wl = spectrum.peakWavelength();
+            const peak_wl = spectrum.peak_wavelength;
             const hue = Math.max(0.0, Math.min(300, 650-peak_wl)) * 0.96;
 
             const bg_colour = `hsla(${ hue }, 100%, 50%, 0.2)`;
             const fg_colour = `hsla(${ hue }, 100%, 50%, 1)`;
             const chartjs_dataset = {
-                label: label,
                 data: points,
                 backgroundColor: bg_colour,
                 borderColor: fg_colour,
@@ -1194,30 +1300,49 @@ class SetupPlot extends View
             };
             this._dataset_cache.set(spectrum, chartjs_dataset);
         }
-        return this._dataset_cache.get(spectrum);
+        const dataset = this._dataset_cache.get(spectrum);
+        return Object.assign({}, dataset, options);
     }
 
     render() {
         const datasets = [];
 
+        // We don't display the spectrum of the excitation source, we
+        // display the spectrum of the excitation source that is
+        // transmitted.
         if (this.setup.excitation !== null) {
-            const excitation = this.setup.excitation;
-            datasets.push(this.asChartjsDataset(excitation.intensity,
-                                                excitation.uid));
+            const options = {
+                label: this.setup.excitation.uid,
+            };
+            const transmission = this.setup.ex_transmission;
+            datasets.push(this.asChartjsDataset(transmission, options));
         }
 
         if (this.setup.dye !== null) {
             const dye = this.setup.dye;
             datasets.push(this.asChartjsDataset(dye.excitation,
-                                                dye.uid + '(ex)'));
+                                                {label: dye.uid + '(ex)'}));
             datasets.push(this.asChartjsDataset(dye.emission,
-                                                dye.uid + '(em)'));
+                                                {label: dye.uid + '(em)'}));
         }
 
         for (let x of [...this.setup.ex_path, ...this.setup.em_path]) {
             const mode = x.mode === 't' ? 'transmission' : 'reflection';
-            const uid = `${ x.filter.uid } (${ x.mode })`;
-            datasets.push(this.asChartjsDataset(x.filter[mode], uid));
+            const options = {
+                label: `${ x.filter.uid } (${ x.mode })`
+            };
+            datasets.push(this.asChartjsDataset(x.filter[mode], options));
+        }
+
+        // Only show transmitted spectrum if there are filters on the
+        // emission path.
+        if (this.setup.dye !== null && this.setup.em_path.length !== 0) {
+            const options = {
+                label: this.setup.dye.uid + '(transmitted)',
+                // TODO: make this less transparent
+            };
+            const transmission = this.setup.em_transmission;
+            datasets.push(this.asChartjsDataset(transmission, options));
         }
 
         this.plot.data.datasets = datasets;
