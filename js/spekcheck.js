@@ -88,46 +88,23 @@ class Model
 // properties, each of them a Spectrum instance.
 //
 // Args:
-//     wavelength (Array<float>):
-//     data (Array<float>):
+//     wavelength (Array<float>): in nanometers.
+//     data (Array<float>): values in the [0 1] range.
+//
+// We want this class to provide immutable objects which is why the
+// methods do not modify the data.  This allow SetupPlot to keep a
+// cache of each Spectrum instance converted to Chartjs dataset.
 class Spectrum extends Model
 {
     constructor(wavelength, data) {
         super();
         this.wavelength = wavelength.slice(0); // Array of floats
         this.data = data.slice(0); // Array of floats
-
-        //
-        // Data corrections:
-        //
-
-        // Rescale to [0 1] if it looks like data is on percent.  If
-        // the data is in percentage but all values are below 10%, it
-        // will not be rescaled.  This should not happen because
-        // values in a spectrum are all relative to their maximum
-        // value.  Except we also handle the sensitivity of cameras
-        // detectors as Spectrum.  Here's to hope that we never have
-        // to handle a detector with a maximum sensitivity below 10%.
-        if (this.data.some(x => x > 10.0))
-            for (let i = 0; i < this.data.length; i++)
-                this.data[i] /= 100.0;
-
-        // Clip values to [0 1]
-        for (let i = 0; i < this.data.length; i++) {
-            if (this.data[i] < 0.0)
-                this.data[i] = 0.0;
-            if (this.data[i] > 1.0)
-                this.data[i] = 1.0;
-        }
     }
 
     clone() {
-        // Do not pass wavelength and data arrays to the constructor
-        // to avoid the data corrections loop.
-        const clone = new Spectrum([], []);
-        clone.wavelength = this.wavelength.slice(0);
-        clone.data = this.data.slice(0);
-        return clone;
+        // The constructor does the cloning of the arrays.
+        return new Spectrum(this.wavelength, this.data);
     }
 
     // Length of the wavelength and data arrays.
@@ -162,7 +139,8 @@ class Spectrum extends Model
         const v = this.data;
         const area = 0.0;
         // We don't handle values below zero because spectrum data
-        // should be clipped to [0,1] in the constructor.
+        // should be clipped to [0,1].  This should be done by
+        // Data.parseCSV.
         for (let i = 1; i < this.length; i++)
             area += 0.5 * (v[i] + v[i-1])*(w[i] - w[i-1]);
         return area;
@@ -191,7 +169,7 @@ class Spectrum extends Model
     //         should interpolate data.  Must be in increasing order.
     //
     // Returns:
-    //     Array with interpolated values.  For wavelengths, outside
+    //     Array with interpolated values.  For wavelengths outside
     //     this Spectrum range (extrapolation), data will be zero.
     interpolate(points) {
         const new_data = new Array(points.length);
@@ -210,9 +188,8 @@ class Spectrum extends Model
                 break;
             }
 
-            while (points[i] > this.wavelength[this_i]) {
+            while (points[i] > this.wavelength[this_i])
                 this_i++;
-            }
 
             // Most data we have uses the same wavelength values (1nm
             // steps of wavelength) so we often get away without
@@ -236,7 +213,7 @@ class Spectrum extends Model
     //
     // Args:
     //     other (Spectrum|Array|Number): if 'other' is an Array, then
-    //         it should have the same length as this.
+    //         it must have the same length as this instance.
     //
     // Returns:
     //     A new Array with this spectrum data multiplied by another.
@@ -372,8 +349,31 @@ class Data extends Model
                 spectra[i].push(vals[1+i]);
         }
 
-        for (let i = 0; i < n_spectra; i++)
-            attrs[spectra_names[i]] = new Spectrum(wavelengths, spectra[i]);
+        // Create the Spectrum objects and correct data first.
+        for (let i = 0; i < n_spectra; i++) {
+            const data = spectra[i];
+            // Rescale to [0 1] if it looks like data is on percent.
+            // Data looks like it's in percentage if it has values
+            // above 10.  This means that if data is in percentage and
+            // all values are below 10%, it will not be rescaled.
+            // This should not happen because values in a spectrum are
+            // all relative to their maximum value.  Except we also
+            // handle the sensitivity of cameras detectors as
+            // Spectrum.  Here's to hope that we never have to handle
+            // a detector with a maximum sensitivity below 10%.
+            if (data.some(x => x > 10.0))
+                for (let i = 0; i < data.length; i++)
+                    data[i] /= 100.0;
+
+            // Clip values to [0 1]
+            for (let i = 0; i < data.length; i++) {
+                if (data[i] < 0.0)
+                    data[i] = 0.0;
+                else if (data[i] > 1.0)
+                    data[i] = 1.0;
+            }
+            attrs[spectra_names[i]] = new Spectrum(wavelengths, data);
+        }
 
         return attrs;
     }
@@ -560,6 +560,7 @@ class Path extends Model // also kind of an Array
         this._efficiency_cache = new WeakMap;
     }
 
+    // Number of filters in the path.
     get
     length() {
         return this._stack.length;
@@ -593,9 +594,11 @@ class Path extends Model // also kind of an Array
         if (this.length === 0)
             throw new Error('no filters on stack to compute transmission');
 
+        // Create a new Spectrum object, appropriate to the filters we
+        // have in the stack.
         if (this._transmission === null) {
             // Spectrum data outside the range will be zero, so no
-            // point on computing those.  Find the minimum wavelength
+            // point on computing those.  Find the smallest wavelength
             // range we actually need.
             let init = -Infinity;
             let end = Infinity;
@@ -609,8 +612,8 @@ class Path extends Model // also kind of an Array
                     end = x_end;
             }
 
+            // XXX: hardcoded wavelength steps of 1nm :/
             const wavelength = new Array(end-init+1);
-            // wavelength steps of 1nm :/
             for (let i = 0; i < wavelength.length; i++)
                 wavelength[i] = init+i;
 
@@ -618,9 +621,9 @@ class Path extends Model // also kind of an Array
             this._transmission = new Spectrum(wavelength, data);
         }
 
+        // Update the transmission spectrum with any pending filters.
         const transmission = this._transmission;
         const wavelength = transmission.wavelength;
-        // Update the transmission with any pending filters
         for (; this._stack_i < this.length; this._stack_i++) {
             const mode = this._stack[this._stack_i].mode;
             const filter = this._stack[this._stack_i].filter;
