@@ -542,21 +542,34 @@ Filter.prototype.properties = Data.prototype.properties.concat([
 ]);
 
 
-// Represents one of the two paths (excitation and emission) on a
-// Setup.
-class Path extends Model // also kind of an Array
+// Meant to represents one of the two paths (excitation and emission)
+// on a Setup.
+class FilterSet extends Model // also kind of an Array
 {
     constructor(stack=[]) {
         super();
         this._stack = stack; // Array of {filter: Filter, mode: 'r'|'t'}
+        this._resetCache();
+    }
 
+    // We can cache a lot of computations but this class is highly
+    // mutable, so reset all cached computations.
+    _resetCache() {
         this._transmission = null; // Spectrum or null
 
-        // Index of the next filter that needs to be used to update
-        // the transmission spectrum.
+        // When a new filter is added to the filterset, we can add it
+        // to the previously computed transmission instead of
+        // computing the whole thing again.
+        //
+        // This is the index of the next filter that needs to be used
+        // to update the transmission spectrum.
         this._stack_i = 0;
 
-        // Cache of efficiency computations for other Spectrum.
+        // Maps Spectrum instances to their transmission Spectrum in
+        // this FilterSet.
+        this._transmitted_cache = new WeakMap;
+        // Maps Spectrum instances to their transmission efficiency in
+        // this FilterSet.
         this._efficiency_cache = new WeakMap;
     }
 
@@ -574,7 +587,7 @@ class Path extends Model // also kind of an Array
     validate() {
         for (let x of this._stack) {
             if (! (x.filter instanceof Filter))
-                return "all elements of Path must have a 'Filter'";
+                return "all elements of FilterSet must have a 'Filter'";
             if (! x.filter.isValid())
                 return x.filter.validation_error;
             if (x.mode !== 'r' || x.mode !== 't')
@@ -585,11 +598,12 @@ class Path extends Model // also kind of an Array
     // Transmission spectrum of the whole filter stack
     get
     transmission() {
-        // XXX: what to do about this?  In practice, this should mean
-        //     that we have complete transmission in all wavelengths.
-        //     However, the assumption in Spectrum is that data is
-        //     zero whenever we have no information.  So we error to
-        //     make note of the odd request.  Alternatively, maybe we
+        // XXX: what to when the stack is empty?  In practice, this
+        //     should mean that we have complete transmission in all
+        //     wavelengths.  However, the assumption in have in
+        //     Spectrum and throughout SpekCheck is that data is zero
+        //     whenever we have no information.  So we error to make
+        //     note of this odd request.  Alternatively, maybe we
         //     could return Spectrum([0, Inf], [1.0, 1.0])
         if (this.length === 0)
             throw new Error('no filters on stack to compute transmission');
@@ -622,18 +636,23 @@ class Path extends Model // also kind of an Array
         }
 
         // Update the transmission spectrum with any pending filters.
-        const transmission = this._transmission;
-        const wavelength = transmission.wavelength;
-        for (; this._stack_i < this.length; this._stack_i++) {
-            const mode = this._stack[this._stack_i].mode;
-            const filter = this._stack[this._stack_i].filter;
+        if (this._stack_i !== this.length -1) {
+            const transmission = this._transmission;
+            const wavelength = transmission.wavelength;
+            for (; this._stack_i < this.length; this._stack_i++) {
+                const mode = this._stack[this._stack_i].mode;
+                const filter = this._stack[this._stack_i].filter;
 
-            const pname = mode === 't' ? 'transmission' : 'reflection';
-            if (mode !== 't' && mode !== 'r')
-                throw new Error(`invalid mode '${ mode }'`);
+                const pname = mode === 't' ? 'transmission' : 'reflection';
+                if (mode !== 't' && mode !== 'r')
+                    throw new Error(`invalid mode '${ mode }'`);
 
-            const filter_data = filter[pname].interpolate(wavelength);
-            transmission.data = transmission.multiplyBy(filter_data);
+                const filter_data = filter[pname].interpolate(wavelength);
+                transmission.data = transmission.multiplyBy(filter_data);
+            }
+            // We should not be modifying Spectrum instances like we
+            // just did, so replace it with a clone.
+            this._transmission = transmission.clone();
         }
 
         return this._transmission;
@@ -644,35 +663,29 @@ class Path extends Model // also kind of an Array
         throw new Error('transmission is a read-only property');
     }
 
-    // Transmission spectrum that 'source' will have in this Path.
+    // Transmission spectrum that 'source' will have in this FilterSet.
     transmissionOf(source) {
-        const transmission = this.transmission;
-        // The source may have spectrum data outside the range of this
-        // Path transmission.  Outside the data we have, we assume
-        // transmission of zero, so clip it if required.
-        const clipped_source = new Spectrum(
-            transmission.wavelength,
-            source.interpolate(transmission.wavelength),
-        );
-        clipped_source.data = clipped_source.multiplyBy(transmission.data);
-        return clipped_source;
+        console.log(source);
+        if (! this._transmitted_cache.has(source)) {
+            const transmission = this.transmission;
+            // Outside the wavelength range, transmission is zero.
+            // Use the source wavelength as range for transmitted
+            // which we hope will be smaller than FilterSet.
+            const transmitted = new Spectrum(
+                source.wavelength,
+                source.multiplyBy(transmission)
+            );
+            this._transmitted_cache.set(source, transmitted);
+        }
+        return this._transmitted_cache.get(source);
     }
 
     // Efficiency of this
-    efficiencyFor(source) {
+    efficiencyOf(source) {
         if (! this._efficiency_cache.has(source)) {
-            // Force computation of transmission if required.
             const transmission = this.transmission;
-
-            // The source may have spectrum data outside the range of
-            // our transmission.  So clip it of required, otherwise
-            // the areas will not make sense.
-            const clipped_source = new Spectrum(
-                transmission.wavelength,
-                source.interpolate(transmission.wavelength),
-            );
-            const efficiency = transmission.area / clipped_source.area;
-
+            const transmitted = this.transmissionOf(source);
+            const efficiency = transmitted.area / transmission.area;
             this._efficiency_cache.set(source, efficiency);
         }
         return this._efficiency_cache.get(source);
@@ -684,11 +697,7 @@ class Path extends Model // also kind of an Array
 
     empty() {
         this._stack = [];
-
-        this._transmission = null;
-        this._stack_i = 0;
-        this._efficiency_cache = new WeakMap;
-
+        this._resetCache();
         this.trigger('change');
     }
 
@@ -698,6 +707,7 @@ class Path extends Model // also kind of an Array
 
     push() {
         const count = this._stack.push(...arguments);
+        this._transmitted_cache = new WeakMap;
         this._efficiency_cache = new WeakMap;
         this.trigger('change');
         return count;
@@ -709,9 +719,9 @@ class Path extends Model // also kind of an Array
 }
 
 
-// Like an Setup object but with Data instances (Dye, Excitation, and
-// Filter) replaced with their names/uids, and Path replaced with an
-// Array.  This let us to have a representation of them without
+// Like a Setup object but with Data instances (Dye, Excitation, and
+// Filter) replaced with their names/uids, and FilterSet replaced with
+// an Array.  This lets us to have a representation of them without
 // parsing all the filters, excitation, and dyes files.  Also much
 // easier to save them.
 //
@@ -820,8 +830,8 @@ class Setup extends Model
             // because we may have the same filter multiple times.
             // 'filter' value is a Filter object. 'mode' value is a
             // char with value of 'r' or 't'.
-            ex_path: new Path,
-            em_path: new Path,
+            ex_path: new FilterSet,
+            em_path: new FilterSet,
         };
         for (let p_name of Object.keys(defaults)) {
             const attr_name = `_${ p_name }`;
@@ -918,8 +928,8 @@ class Setup extends Model
 
     // Relative brightness compared to Alexa-448 at 100% excitation.
     //
-    // This will be computed for a Path object.  The transmission of a
-    // Path object is a Spectrum instance ;)
+    // This will be computed for a FilterSet object.  The transmission of a
+    // FilterSet object is a Spectrum instance ;)
     //
     //     brightness = dye.brightnessIn(filterset.transmission);
     //
@@ -1145,7 +1155,7 @@ class ListItemView extends CollectionView
     }
 }
 
-class PathView extends View
+class FilterSetView extends View
 {
     constructor($el, path) {
         super($el);
@@ -1216,7 +1226,7 @@ class PathBuilder extends View
             const $el_path = $($el.find('#' + path)[0]);
             this[path] = {
                 '$el': $el_path,
-                'view': new PathView($el_path, this.setup[path]),
+                'view': new FilterSetView($el_path, this.setup[path]),
             };
         }
     }
