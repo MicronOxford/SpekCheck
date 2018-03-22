@@ -1323,6 +1323,7 @@ class SetupPlot extends View
                 backgroundColor: bg_colour,
                 borderColor: fg_colour,
                 pointRadius: 0,
+                borderWidth: 0.25,
             };
             this._dataset_cache.set(spectrum, chartjs_dataset);
         }
