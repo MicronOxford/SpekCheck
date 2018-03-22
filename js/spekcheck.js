@@ -756,11 +756,13 @@ class SetupDescription extends Model
         }
     }
 
+    // Parse the CSVish column defining a filter.
+    //
+    // Args:
+    //     field (String): the filter definition, whose format is
+    //     'filter_name mode' where mode is 'R|T'
     static
     parseFilterField(field) {
-        // Args:
-        //     field (String): the filter definition, whose format is
-        //     'filter_name mode' where mode is 'R|T'
         const split = field.lastIndexOf(' ');
         if (split === -1)
             throw new Error(`invalid filter definition '${ field }'`);
@@ -773,15 +775,24 @@ class SetupDescription extends Model
         return {'filter': uid, 'mode': mode};
     }
 
+    // Construct from a single CSVish line.
+    //
+    // Format is like:
+    //
+    //     dye uid, excitation uid, [em path filters] :: [ex path filters]
+    //
+    // Why do we support this?  A json format would be simpler, more
+    // flexible, and would document itself.
+    //
+    // Args:
+    //     line (String): the actual SetupDescription,
+    //         i.e., the whole line on the 'sets' file minus the
+    //         first column (which has the Setup uid).
+    //
+    // Returns:
+    //     A SetupDescription instance.
     static
     constructFromText(text) {
-        // Args:
-        //     line (String): the actual SetupDescription,
-        //         i.e., the whole line on the 'sets' file minus the
-        //         first column (which has the Setup uid).
-        //
-        // Returns:
-        //     An SetupDescription instance.
         const fields = text.split(',').map(x => x.trim());
 
         const dye = fields[0] || null;
@@ -865,11 +876,6 @@ class Setup extends Model
             return this.ex_path.transmissionOf(this.excitation.intensity);
     }
 
-    set
-    ex_transmission(val) {
-        throw new Error('Setup.ex_transmission is a read-only property');
-    }
-
     // Scaled dye emission
     get
     em_transmission() {
@@ -882,8 +888,33 @@ class Setup extends Model
     }
 
     set
+    ex_transmission(val) {
+        throw new Error('Setup.ex_transmission is a read-only property');
+    }
+
+    set
     em_transmission(val) {
         throw new Error('Setup.em_transmission is a read-only property');
+    }
+
+    get
+    ex_efficiency() {
+        return this.ex_path.efficiency(this.excitation.intensity);
+    }
+
+    set
+    ex_efficiency(val) {
+        throw new Error('Setup.ex_efficiency is a read-only property');
+    }
+
+    get
+    em_efficiency() {
+        return this.em_path.efficiency(this.dye.emission);
+    }
+
+    set
+    em_efficiency(val) {
+        throw new Error('Setup.em_efficiency is a read-only property');
     }
 
     // Describe this instance, i.e., replace the Filter, Dye, and
@@ -906,24 +937,6 @@ class Setup extends Model
         this.ex_path.empty();
         this.em_path.empty();
         this.trigger('change');
-    }
-
-    // Spectrum of the dye emission that will reach the detector.
-    get
-    transmission() {
-    }
-
-    set
-    transmission(val) {
-        throw new Error('transmission is a read-only property');
-    }
-
-    ex_efficiency() {
-        return this.ex_path.efficiency(this.excitation);
-    }
-
-    em_efficiency() {
-        throw new Error('neede to get spectra of fye after excitation');
     }
 
     // Relative brightness compared to Alexa-448 at 100% excitation.
