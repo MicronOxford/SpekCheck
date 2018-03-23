@@ -19,11 +19,6 @@
 'use strict';
 
 
-
-// How many top dyes to return
-var NUMTOPDYES = 3;
-var TEXTLENGTH = 15;
-
 //extract url queiers.
 function getParameterByName(name, url) {
     if (!url) url = window.location.href;
@@ -682,8 +677,11 @@ class FilterSet extends Model // also kind of an Array
     // Efficiency of this
     efficiencyOf(source) {
         if (! this._efficiency_cache.has(source)) {
-            const transmission = this.transmissionOf(source);
-            const efficiency = transmission.area / source.area;
+            let efficiency = 1.0;
+            if (this.length !== 0) {
+                const transmission = this.transmissionOf(source);
+                efficiency = transmission.area / source.area;
+            }
             this._efficiency_cache.set(source, efficiency);
         }
         return this._efficiency_cache.get(source);
@@ -697,6 +695,29 @@ class FilterSet extends Model // also kind of an Array
         this._stack = [];
         this._resetCache();
         this.trigger('change');
+    }
+
+    clone() {
+        return new FilterSet(this._stack.slice(0));
+    }
+
+    // Whether this instance describes the same FilterSet as other.
+    //
+    // Args:
+    //     other(FilterSet)
+    isEqual(other) {
+        if (other instanceof Setup)
+            other = other.describe();
+
+        if (this.length !== other.length)
+            return false;
+
+        for (let p of ['filter', 'mode'])
+            for (let i = 0; i < this.length; i++)
+                if (this._stack[i][p] !== other._stack[i][p])
+                    return false;
+
+        return true;
     }
 
     map(callback) {
@@ -752,6 +773,23 @@ class SetupDescription extends Model
                     return `mode of '${ x.filter }' must be r or t`;
             }
         }
+    }
+
+    // Whether this instance describes the same Setup as other.
+    //
+    // Args:
+    //     other(Setup|SetupDescription)
+    isEqual(other) {
+        if (other instanceof Setup)
+            other = other.describe();
+
+        if (this.dye !== other.dye
+            || this.excitation !== other.excitation
+            || (! this.ex_path.isEqual(other.ex_path))
+            || (! this.em_path.isEqual(other.em_path)))
+            return false;
+
+        return true;
     }
 
     // Parse the CSVish column defining a filter.
@@ -947,6 +985,7 @@ class Setup extends Model
     // Args:
     //     spectrum(Spectrum)
     brightness() {
+        return 10.0;
         if (this.dye === null || this.excitation === null)
             throw new Error('no dye or excitation to compute brightness');
 
@@ -959,6 +998,13 @@ class Setup extends Model
                               * this.dye.ex_coeff * this.em_efficiency())
                              / Dye.Alexa488_brightness);
         return bright;
+    }
+
+    clone() {
+        const clone = new Setup();
+        for (let p of ['dye', 'excitation', 'ex_path', 'em_path'])
+            clone[p] = this[p];
+        return clone;
     }
 }
 
@@ -1400,7 +1446,6 @@ class SetupPlot extends View
             // that users care the most so don't make it transparent
             // like the others, and make the border thicker and dark.
             if (this.setup.em_path.length !== 0) {
-                console.log('asas');
                 const transmission = this.setup.em_transmission;
                 const hue = SetupPlot.wavelengthToHue(transmission.peak_wavelength);
                 const options = {
@@ -1421,24 +1466,19 @@ class SetupPlot extends View
                 fontSize: 24,
             };
 
-            if (this.setup.dye !== null) {
-                console.log('mmm');
-                const info = []; // text that will appear on the title.
-                if (this.setup.em_path.length !== 0)
-                    info.push('em=' + this.setup.em_efficiency.toFixed(3));
-                if (this.setup.ex_path.length !== 0)
-                    info.push('ex=' + this.setup.ex_efficiency.toFixed(3));
-                // if (this.setup.brightness() !== null)
+            if ((this.setup.ex_path !== 0 || this.setup.em_path !== 0)
+                && this.setup.dye !== null) {
+                const info = [ // text that will appear on the title.
+                    'ex=' + this.setup.ex_efficiency.toFixed(3),
+                    'em=' + this.setup.em_efficiency.toFixed(3),
+                ];
                 //     info.push('brightness=' + this.setup.brightness());
 
-                if (info.length !== 0) {
-                    title.display = true;
-                    title.text = (this.setup.dye.uid + ' efficiency: '
-                                  + info.join(', '));
-                }
+                title.display = true;
+                title.text = (this.setup.dye.uid + ' efficiency: '
+                              + info.join(', '));
             }
-
-            this.plot.options.title = title;
+        this.plot.options.title = title;
         }
 
         // Reverse the datasets.  First elements appear on top of the
@@ -1459,54 +1499,6 @@ class SetupPlot extends View
     }
 }
 
-
-
-//go through all dyes to calc efficencies/brightness
-function processAllDyes(dyes){
-    var efficiency=[];
-    var excitation;
-    //save current dye so we can restore it at the end.
-    var savedDye = EMSET[0].filter;
-    //loop through all dyes and use each in turn
-    for (var dye of dyes) {
-        EMSET[0].filter = dye;
-        //calculate efficency and push results.
-        efficiency.push([dye,calcEffAndBright(EXSET,EMSET)]);
-    }
-    //sort loist for best excitation
-    var bestEx = efficiency.sort(function(a,b){
-        if (a[1].e_eff === undefined) {return (1);}
-        if (b[1].e_eff === undefined) {return (-1);}
-        return (b[1].e_eff-a[1].e_eff);}).slice(0,3);
-    //sort list for best emmission
-    var bestEm = efficiency.sort(function(a,b){
-        if (a[1].t_eff === undefined) {return (1);}
-        if (b[1].t_eff === undefined) {return (-1);}
-        return (b[1].t_eff-a[1].t_eff);}).slice(0,3);
-    //sort list for best brightness
-    var bestBright = efficiency.sort(function(a,b){
-        if (a[1].bright === undefined) {return (1);}
-        if (b[1].bright === undefined) {return (-1);}
-        return (b[1].bright-a[1].bright);}).slice(0,3);
-    //construct output dialog string.
-    var bestExString = "Best Excitation:\t ";
-    var bestEmString = "\nBest Emission:\t ";
-    var bestBrightString = "\nBrightest:\t ";
-
-    //add NUMOPTDYES to each "best" string.
-    for (var i=0; i < NUMTOPDYES; i++) {
-        bestExString = (bestExString + bestEx[i][0]+" - "+
-                        (bestEx[i][1].e_eff*100).toFixed(1)+"% ; ");
-        bestEmString = (bestEmString + bestEm[i][0]+" - "+
-                        (bestEm[i][1].t_eff*100).toFixed(1)+"% ; ");
-        bestBrightString = (bestBrightString + bestBright[i][0]+" - "+
-                            (bestBright[i][1].bright).toFixed(2)+" ; ");
-    }
-    //display alert with optimised lists.
-    alert(bestExString + bestEmString + bestBrightString);
-    //Restore saved dye.
-    EMSET[0].filter = savedDye;
-}
 
 //Use url parameter to preload filter sets search
 function preloadFilterSetsSearch() {
@@ -1644,7 +1636,92 @@ class SaveSetupDialog extends View
     }
 }
 
-let debug1;
+
+class TestDyesDialog
+{
+    constructor(el, dyes, setup) {
+        this.dyes = dyes;
+        this.setup = setup;
+
+        // Get the template for the rows and the individual table cells.
+        const table = el.querySelector('table#test-dyes-results');
+        this._tbody = table.querySelector('tbody');
+        this._template = table.querySelector('template').content;
+        this._th = this._template.querySelector('th');
+        this._td = this._template.querySelectorAll('td');
+
+        // An array of Object with the dye testing results, which will
+        // then be used to render the table body.
+        this._results = [];
+
+        // Bootstrap uses jquery trigger() so we can't use
+        // addEventListener(), we need to use jQuery's on()
+        // https://stackoverflow.com/a/24212373
+        const $el = $(el);
+        $el.on('show.bs.modal', this.onShow.bind(this));
+        $el.on('hidden.bs.modal', this.onHidden.bind(this));
+
+        const thead_cells = table.querySelector('thead').querySelectorAll('th');
+        thead_cells[1].onclick = this.renderTBody.bind(this, 'ex_eff');
+        thead_cells[2].onclick = this.renderTBody.bind(this, 'em_eff');
+        thead_cells[3].onclick = this.renderTBody.bind(this, 'bright');
+    }
+
+    onShow() {
+        this._updateResults().then(this.renderTBody.bind(this, 'em_eff'));
+    }
+
+    onHidden() {
+        this._tbody.textContent = '';
+    }
+
+    _updateResults() {
+        // dye name to a two element array, the first the actusl
+        // results while the second are the nodes to be inserted on
+        // the table.  This is so we can later resort the table
+        // without recomputing the nodes.
+        this._results = [];
+
+        // Prepare a clone of the live setup then test the different
+        // dyes on it.
+        const setup = this.setup.clone();
+        const promises = [];
+        for (let uid of this.dyes.keys()) {
+            promises.push(
+                this.dyes.get(uid).then((function(dye) {
+                    setup.dye = dye;
+                    const result = {
+                        'ex_eff': setup.ex_efficiency,
+                        'em_eff': setup.em_efficiency,
+                        'bright': setup.brightness(),
+                    };
+
+                    this._th.textContent = dye.uid;
+                    this._td[0].textContent = result.ex_eff.toFixed(2);
+                    this._td[1].textContent = result.em_eff.toFixed(2);
+                    this._td[2].textContent = result.bright.toFixed(2);
+                    result.node = document.importNode(this._template, true);
+
+                    this._results.push(result);
+                }).bind(this))
+            );
+        }
+        return Promise.all(promises);
+    }
+
+    // Args:
+    //     order(String): property name used to order the results
+    //         table.  Must be a property on the 'results' Object.
+    renderTBody(order) {
+        this._tbody.textContent = ''; // remove all rows first
+
+        this._results.sort((a, b) => a[order] < b[order]);
+        for (let result of this._results)
+            this._tbody.appendChild(result.node.cloneNode(true));
+    }
+}
+
+
 // The SpekCheck App / Controller
 //
 // Args:
@@ -1660,7 +1737,6 @@ class SpekCheck
             if (! (collections[dtype] instanceof Collection))
                 throw new Error(`no Collection for type '${ dtype }'`);
 
-        debug1 = this;
         // Changes are done to this instance of Setup which then
         // triggers the SetupPlot to update its display.
         this.live_setup = new Setup;
@@ -1714,6 +1790,12 @@ class SpekCheck
             filter: this.collection.filter,
             excitation: this.collection.excitation,
         });
+
+        this.test_dyes_dialog = new TestDyesDialog(
+            this.$el[0].querySelector('#test-dyes-dialog'),
+            this.collection.dye,
+            this.live_setup
+        );
 
         // If someone imports a Dye or Excitation, change to it.
         for (let dtype of ['dye', 'excitation'])
