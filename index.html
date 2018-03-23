@@ -266,8 +266,21 @@
       </div>
     </div>
 
-    <canvas id="setup-plot">
-    </canvas>
+    <!--
+        Detecting when the canvas size changes can not be done
+        directly from the CANVAS element. Chart.js uses its parent
+        container to update the canvas render and display
+        sizes. However, this method requires the container to be
+        relatively positioned and dedicated to the chart canvas
+        only. Responsiveness can then be achieved by setting relative
+        values for the container size.
+
+        http://www.chartjs.org/docs/latest/general/responsive.html#important-note
+    -->
+    <div class="spekcheck-chart-container">
+      <canvas id="setup-plot">
+      </canvas>
+    </div>
   </div>
 </body>
 </html>

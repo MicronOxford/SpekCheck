@@ -27,6 +27,20 @@
 }
 
 /*
+  We need to specify a height value,. to the parent of the canvas
+  element, so it knows how to be responsive.
+
+  http://www.chartjs.org/docs/latest/general/responsive.html#important-note
+*/
+.spekcheck-chart-container
+{
+    margin: auto;
+    height: 80vh;
+    width: 90vw;
+}
+
+
+/*
   We shouldn't need this...
 */
 .container {
