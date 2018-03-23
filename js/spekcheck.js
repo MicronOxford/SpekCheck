@@ -137,7 +137,7 @@ class Spectrum extends Model
     area() {
         const w = this.wavelength;
         const v = this.data;
-        const area = 0.0;
+        let area = 0.0;
         // We don't handle values below zero because spectrum data
         // should be clipped to [0,1].  This should be done by
         // Data.parseCSV.
@@ -665,7 +665,6 @@ class FilterSet extends Model // also kind of an Array
 
     // Transmission spectrum that 'source' will have in this FilterSet.
     transmissionOf(source) {
-        console.log(source);
         if (! this._transmitted_cache.has(source)) {
             const transmission = this.transmission;
             // Outside the wavelength range, transmission is zero.
@@ -899,7 +898,7 @@ class Setup extends Model
 
     get
     ex_efficiency() {
-        return this.ex_path.efficiency(this.excitation.intensity);
+        return this.ex_path.efficiencyOf(this.excitation.intensity);
     }
 
     set
@@ -909,7 +908,8 @@ class Setup extends Model
 
     get
     em_efficiency() {
-        return this.em_path.efficiency(this.dye.emission);
+        // FIXME: this is not giving the right values.
+        return this.em_path.efficiencyOf(this.dye.emission);
     }
 
     set
@@ -980,7 +980,7 @@ class Collection extends Model // also kind of a Map
 
     set
     size(val) {
-        return this._map.size = val;
+        throw new Error('Collection.size is a read-only property');
     }
 
     clear() {
@@ -1058,7 +1058,7 @@ class DataCollection extends Collection
     get(key) {
         // Also check if the key actually exists first, because get
         // returns undefined if not, and so we couldn't distinguish
-        // between an invalid key and not yet read value.
+        // between an invalid key and a not yet read value.
         if (this.has(key) && super.get(key) === undefined) {
             const fpath = this.datadir + key + '.csv';
             const value = $.ajax({
@@ -1084,8 +1084,8 @@ class DataCollection extends Collection
 }
 
 
-// Parses the kinda CSV that defines an Optical Setup, and returns a
-// Collection of them.
+// Parses the kinda CSV file with Optical Setup definitions, and
+// returns a Collection of them.
 function setupCollectionFromKindaCSV(text) {
     const setups = [];
     for (let line of text.split('\n')) {
@@ -1104,6 +1104,13 @@ function setupCollectionFromKindaCSV(text) {
 }
 
 
+// Base class for our views.
+//
+// Provides some pass-through methods to the jQuery element it
+// controls.
+//
+// Args:
+//     $el: jQuery instance with one element
 class View
 {
     constructor($el) {
@@ -1117,6 +1124,19 @@ class View
     val() {
         return this.$el.val(...arguments);
     }
+
+    $(selector) {
+        return $(this.$el.find(selector));
+    }
+
+    render() {
+        return this.$el.html(this.toHTML());
+    }
+
+    // Subclasses should overload this method which is called by render.
+    toHTML() {
+        throw new Error('toHTML method not implemented in View subclass');
+    }
 }
 
 class CollectionView extends View
@@ -1128,10 +1148,15 @@ class CollectionView extends View
              this.collection.on(change, this.render, this);
     }
 
-    render() {
+    toHTML() {
+        const uids = Array.from(this.collection.keys());
+        const html = uids.map(uid => this.itemHTML(uid));
+        return html;
     }
 
-    append(name) {
+    // Subclasses should overload this.
+    itemHTML(uid) {
+        return uid;
     }
 }
 
@@ -1140,48 +1165,58 @@ class CollectionView extends View
 // Excitation.
 class SelectView extends CollectionView
 {
-    render() {
-        const uids = [''].concat(Array.from(this.collection.keys()));
-        const html = uids.map(uid => this.option_html(uid));
-        this.$el.html(html);
+    constructor($el, collection) {
+        super($el, collection);
+        this._blank = this.itemHTML('');
     }
 
+    toHTML() {
+        // Prepend an empty string to the list of uids to be used as
+        // selecting none.
+        const options_html = super.toHTML();
+        return [this._blank].concat(options_html);
+    }
+
+    // Append a new item to the View.  We append and we really do not
+    // want to be sorting them.  This happens when a user imports a
+    // new dye or saves a new setup, and we want them at the end so
+    // it's easy to find them and distinguish from the default
+    // options.
     append(uid, model) {
-        this.$el.append(this.option_html(uid));
+        this.$el.append(this.itemHTML(uid));
     }
 
-    option_html(uid) {
+    itemHTML(uid) {
         return `<option value="${ uid }">${ uid }</option>\n`;
     }
 }
 
-// Used for list-group, the ones used by the PathBuilder
+
+// Displays the elements in a Collection as list-group-item.  To view
+// and not select.  Used to show the list of Filters available in the
+// FilterSetBuilder GUI.
 class ListItemView extends CollectionView
 {
-    render() {
-        const uids = Array.from(this.collection.keys());
-        this.$el.html(uids.map(uid => this.li_html(uid)));
-    }
-
-    li_html(uid) {
+    itemHTML(uid) {
         return `<li class="list-group-item">${ uid }</li>\n`;
     }
 }
 
+
+// Displays a FilterSet, one of the two paths which compose a Setup.
 class FilterSetView extends View
 {
-    constructor($el, path) {
+    constructor($el, filterset) {
         super($el);
-        this.path = path;
-        this.path.on('change', this.render, this);
+        this.filterset = filterset;
+        this.filterset.on('change', this.render, this);
     }
 
-    render() {
-        const html = this.path.map(f => this.li_html(f.filter.uid, f.mode));
-        this.$el.html(html);
+    toHTML() {
+        return this.filterset.map(f => this.itemHTML(f.filter.uid, f.mode));
     }
 
-    li_html(uid, mode) {
+    itemHTML(uid, mode) {
         const html = `
 <li class="list-group-item">
   ${ uid }
@@ -1204,50 +1239,38 @@ class FilterSetView extends View
 }
 
 
-// Displays the GUI to modify the light paths.  This a bit more
-// complex that just a drop down menu, it also includes the list-group
-// for the emission and excitation paths.
+// Controls the customisation of the FilterSet.
 //
-// There must be three ul elements inside $el with ids:
+// There must be three ul elements inside $el with the following ids:
 //    #filters
 //    #ex-path
 //    #em-path
 //
 // Args:
 //     $el: jquery for the builder div
-//     filters (DataCollection<Filter>)
-//     setup (Setup)
-class PathBuilder extends View
+//     filters (DataCollection<Filter>):
+//     setup (Setup):
+class PathBuilder
 {
     constructor($el, filters, setup) {
-        super($el);
+        this.$el = $el;
+        this.filters = filters;
         this.setup = setup;
 
-        this.filters = {
-            collection: filters,
-            $el: $($el.find('#filters-view')[0]),
+        const $filters = $(this.$el.find('#filters-view'));
+        const $ex_path = $(this.$el.find('#ex-path'));
+        const $em_path = $(this.$el.find('#em-path'));
+        $($el.find())
+        this.views = {
+            filters: new ListItemView($filters, this.filters),
+            ex_path: new FilterSetView($ex_path, this.setup.ex_path),
+            em_path: new FilterSetView($em_path, this.setup.em_path),
         };
-
-        this.filters.view = new ListItemView(this.filters.$el,
-                                             this.filters.collection);
-        this.filters.view.li_html = function(uid) {
-            return `<li class="list-group-item">${ uid }</li>`;
-        }
-        this.filters.view.render();
-
-        for (let path of ['ex_path', 'em_path']) {
-            const $el_path = $($el.find('#' + path)[0]);
-            this[path] = {
-                '$el': $el_path,
-                'view': new FilterSetView($el_path, this.setup[path]),
-            };
-        }
     }
 
     render() {
-        const uids = Array.from(this.collection.keys());
-        const html = uids.map(uid => this.option_html(uid));
-        this.$el.html(html);
+        for (let v of Object.values(this.views))
+            v.render();
     }
 }
 
@@ -1313,16 +1336,15 @@ class SetupPlot extends View
             for (let i = 0; i < points.length; i++)
                 points[i] = {x: spectrum.wavelength[i], y: spectrum.data[i]};
             // Convert a wavelength to HSL-alpha string.
-            const peak_wl = spectrum.peak_wavelength;
-            const hue = Math.max(0.0, Math.min(300, 650-peak_wl)) * 0.96;
+            const hue = SetupPlot.wavelengthToHue(spectrum.peak_wavelength);
 
             const bg_colour = `hsla(${ hue }, 100%, 50%, 0.2)`;
-            const fg_colour = `hsla(${ hue }, 100%, 50%, 1)`;
+            const line_colour = `hsla(${ hue }, 100%, 50%, 1)`;
             const chartjs_dataset = {
                 data: points,
                 backgroundColor: bg_colour,
-                borderColor: fg_colour,
-                pointRadius: 0,
+                borderColor: line_colour,
+                pointRadius: 0.0, // show the line only, not the datapoints
                 borderWidth: 0.25,
             };
             this._dataset_cache.set(spectrum, chartjs_dataset);
@@ -1334,23 +1356,15 @@ class SetupPlot extends View
     render() {
         const datasets = [];
 
-        // We don't display the spectrum of the excitation source, we
-        // display the spectrum of the excitation source that is
-        // transmitted.
         if (this.setup.excitation !== null) {
             const options = {
                 label: this.setup.excitation.uid,
             };
+            // We don't display the spectrum of the excitation source,
+            // we display the spectrum of the excitation source that
+            // is transmitted.
             const transmission = this.setup.ex_transmission;
             datasets.push(this.asChartjsDataset(transmission, options));
-        }
-
-        if (this.setup.dye !== null) {
-            const dye = this.setup.dye;
-            datasets.push(this.asChartjsDataset(dye.excitation,
-                                                {label: dye.uid + '(ex)'}));
-            datasets.push(this.asChartjsDataset(dye.emission,
-                                                {label: dye.uid + '(em)'}));
         }
 
         for (let x of [...this.setup.ex_path, ...this.setup.em_path]) {
@@ -1361,15 +1375,55 @@ class SetupPlot extends View
             datasets.push(this.asChartjsDataset(x.filter[mode], options));
         }
 
-        // Only show transmitted spectrum if there are filters on the
-        // emission path.
-        if (this.setup.dye !== null && this.setup.em_path.length !== 0) {
-            const options = {
-                label: this.setup.dye.uid + '(transmitted)',
-                // TODO: make this less transparent
+        if (this.setup.dye !== null) {
+            const dye = this.setup.dye;
+            datasets.push(this.asChartjsDataset(dye.excitation,
+                                                {label: dye.uid + '(ex)'}));
+            datasets.push(this.asChartjsDataset(dye.emission,
+                                                {label: dye.uid + '(em)'}));
+
+            // If there are filters on the emission path, also show
+            // the transmitted spectrum of the dye.  This is the thing
+            // that users care the most so don't make it transparent
+            // like the others.
+            if (this.setup.em_path.length !== 0) {
+                console.log('asas');
+                const transmission = this.setup.em_transmission;
+                const hue = SetupPlot.wavelengthToHue(transmission.peak_wavelength);
+                const options = {
+                    label: this.setup.dye.uid + '(transmitted)',
+                    backgroundColor: `hsla(${ hue }, 100%, 50%, 1.0)`,
+                };
+                datasets.push(this.asChartjsDataset(transmission, options));
+            }
+        }
+
+        // We use the title to place the efficiency values.
+        {
+            const title = {
+                display: false,
+                text: '',
+                fontSize: 24,
             };
-            const transmission = this.setup.em_transmission;
-            datasets.push(this.asChartjsDataset(transmission, options));
+
+            if (this.setup.dye !== null) {
+                console.log('mmm');
+                const info = []; // text that will appear on the title.
+                if (this.setup.em_path.length !== 0)
+                    info.push('em=' + this.setup.em_efficiency.toFixed(2));
+                if (this.setup.ex_path.length !== 0)
+                    info.push('ex=' + this.setup.ex_efficiency.toFixed(2));
+                // if (this.setup.brightness() !== null)
+                //     info.push('brightness=' + this.setup.brightness());
+
+                if (info.length !== 0) {
+                    title.display = true;
+                    title.text = (this.setup.dye.uid + ' efficiency: '
+                                  + info.join(', '));
+                }
+            }
+
+            this.plot.options.title = title;
         }
 
         this.plot.data.datasets = datasets;
@@ -1380,162 +1434,13 @@ class SetupPlot extends View
         return this.$el[0].toDataURL(format);
     }
 
-    static dashes() {
-        // LineDash styles to use on spectrum lines of filters only.
-        return [[8,4], [16,4], [4,8,4], [4,8,8]];
+    static
+    wavelengthToHue(wavelength) {
+        return Math.max(0.0, Math.min(300.0, 650.0 - wavelength)) * 0.96;
     }
 }
 
 
-
-function drawPlot(dye, excitation, filters, filterModes, exFilters, exFilterModes) {
-    // Calculate excitation emission efficiency, brightness and spectra.
-    var effBright = calcEffAndBright(EXSET,EMSET);
-    var e_eff = effBright.e_eff ;
-    var t_eff = effBright.t_eff ;
-    var bright = effBright.bright ;
-
-    var skeys = []; // all active keys (filters + dye)
-    dye = $("#dyes .selected").data("key");
-    if (dye) {
-        skeys.push(dye);
-        if (SPECTRA[dye + EXSUFFIX]) {
-            skeys.push(dye + EXSUFFIX);
-        }
-    }
-    if (excitation) {
-        if (exFilters.length >= 1) {
-            skeys.push("excitation");
-        } else {
-            skeys.push(excitation);
-        }
-    }
-
-    skeys.push.apply(skeys, filters);
-
-    var traces = CHART.data.datasets.map( item => item.label );
-    var toRemove = traces.filter(item => skeys.indexOf(item) === -1);
-    var toAdd = skeys.filter(item => traces.indexOf(item) === -1 );
-
-    // Remove traces that are no longer needed.
-    for (var key of toRemove) {
-        if (key == "transmitted") { continue; }
-        CHART.data.datasets.splice(
-            CHART.data.datasets.indexOf(
-                CHART.data.datasets.filter(item => item.label == key)[0]), 1);
-    }
-
-    // Add new traces.
-    for (var key of toAdd) {
-        var bg;
-        var fg;
-        var borderDash;
-        var data = SPECTRA[key].points();
-        var hue = wavelengthToHue(SPECTRA[key].peakwl());
-        switch (key) {
-            case excitation:
-                bg = `hsla(${hue}, 100%, 50%, 1)`;
-                fg = `hsla(${hue}, 100%, 50%, 1)`;
-                var addToChart = x => CHART.data.datasets.splice(1, 0, x);
-                break;
-            case "excitation":
- //               bg = `hsla(${hue}, 100%, 50%, 0.5)`;
-//            fg = `rgba(0,0,0, 0.5)`;
-            //fg = `hsla(${hue}, 100%, 50%, 1)`;
-                var addToChart = x => CHART.data.datasets.splice(1, 0, x);
-                break;
-            case dye:
-                bg = `hsla(${hue}, 100%, 50%, 0.2)`;
-                fg = `hsla(${hue}, 100%, 50%, 1)`;
-                key=key+"_em"
-            //`rgba(0, 0, 255, 0.5)`;
-                var addToChart = x => CHART.data.datasets.splice(1, 0, x);
-                break;
-            case dye + EXSUFFIX:
-                bg = `hsla(${hue}, 100%, 50%, 0.2)`;
-                fg = `hsla(${hue}, 100%, 50%, 1)`;
-//                fg = `rgba(255, 0, 0, 0.5)`;
-                var addToChart = x => CHART.data.datasets.splice(1, 0, x);
-                break;
-            default:
-                bg = `hsla(${hue}, 100%, 50%, 0.1)`;
-                fg = `hsla(${hue}, 100%, 50%, 0.5)`;
-                borderDash = DASHES.next().value;
-                var addToChart = x => CHART.data.datasets.push(x);
-        }
-
-        addToChart({
-                label: key,
-                data: data,
-                backgroundColor: bg,
-                pointRadius: 0,
-                borderDash: borderDash,
-                borderColor: fg,
-        });
-    }
-
-    // // Update the excitation trace.
-    if (excitation) {
-        if (exFilters.length >= 1) {
-            var extTrace = CHART.data.datasets.filter( item => item.label == "excitation")[0];
-            var hue = wavelengthToHue(SPECTRA["excitation"].peakwl());
-            extTrace.data = SPECTRA["excitation"].points();
-            extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-            extTrace.borderColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-            //`hsla(${hue}, 100%, 50%, 0.8)`;
-        } else {
-            var extTrace = CHART.data.datasets.filter( item => item.label == excitation)[0];
-            var hue = wavelengthToHue(SPECTRA[excitation].peakwl());
-            extTrace.data = SPECTRA[excitation].points();
-            extTrace.borderdColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-            extTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-            //`hsla(${hue}, 100%, 50%, 0.8)`;
-//            extTrace.backgroundColor = `rgba(.5, .5, .5, 0.8)`;
-        }
-    }
-
-
-    // Fill traces according to transmission/reflection
-    for (var i=0; i < CHART.data.datasets.length; i++) {
-        var idx = filters.indexOf(CHART.data.datasets[i].label);
-        if (idx === -1) { continue; }
-        if (["r","R"].indexOf(filterModes[idx]) > -1) {
-            CHART.data.datasets[i].fill = "end";
-        } else {
-            CHART.data.datasets[i].fill = "start";
-        }
-    }
-
-    // Update the transmission trace.
-    var transTrace = CHART.data.datasets.filter( item => item.label == "transmitted")[0];
-    if(SPECTRA["transmitted"]) {
-        var hue = wavelengthToHue(SPECTRA["transmitted"].peakwl());
-        transTrace.data = SPECTRA["transmitted"].points();
-        transTrace.backgroundColor = `hsla(${hue}, 100%, 50%, 0.8)`;
-    } else {
-        //if there is no transmitted trace then null the data
-        CHART.data.datasets.filter( item => item.label == "transmitted")[0].data=null
-    }
-
-    if (t_eff != null && e_eff != null && bright != null) {
-       CHART.options.title = {display: true,
-                               text: EMSET[0].filter +" efficiency: ex=" + (100*e_eff).toFixed(1) + "%, em=" + (100*t_eff).toFixed(1) + "%" + ", brightness=" + bright.toFixed(2),
-                               fontSize: 24};
-    } else if (t_eff != null && e_eff != null) {
-        CHART.options.title = {display: true,
-                               text: EMSET[0].filter +" efficiency: ex=" + (100*e_eff).toFixed(1) + "%, em=" + (100*t_eff).toFixed(1) + "%",
-                               fontSize: 24};
-    } else if (t_eff != null) {
-        CHART.options.title = {display: true,
-                               text: EMSET[0].filter +" efficiency:  em=" + (100*t_eff).toFixed(1) + "%",
-                               fontSize: 24};
-    } else {
-        CHART.options.title = {display: false,
-                               text: ""};
-    }
-
-    CHART.update();
-}
 
 //go through all dyes to calc efficencies/brightness
 function processAllDyes(dyes){
@@ -1765,6 +1670,7 @@ class SpekCheck
             this.collection.filter,
             this.live_setup,
         );
+        this.path_builder.render();
 
         // Setup description includes a Dye, the logic being that the
         // setup is often designed for it.  However, a user can also
@@ -1876,6 +1782,7 @@ class SpekCheck
         ev.target.href = this.plot.downloadLink('image/png');
     }
 }
+
 
 // Configuration to use whole data from SpekCheck site.
 //
