@@ -1365,7 +1365,22 @@ class SetupPlot extends View
             datasets.push(this.asChartjsDataset(transmission, options));
         }
 
-        for (let x of [...this.setup.ex_path, ...this.setup.em_path]) {
+        // Filters in the excitation path appear hidden by default
+        // since they are not that important.  The user mainly cares
+        // about how the emission signal gets through, not how much
+        // excitation gets to the dye since often there's always more
+        // laser power.  Also, showing the dichroic twice effectively
+        // fills the whole plot.
+        for (let x of this.setup.ex_path) {
+            const mode = x.mode === 't' ? 'transmission' : 'reflection';
+            const options = {
+                label: `${ x.filter.uid } (${ x.mode })`,
+                hidden: true,
+            };
+            datasets.push(this.asChartjsDataset(x.filter[mode], options));
+        }
+
+        for (let x of this.setup.em_path) {
             const mode = x.mode === 't' ? 'transmission' : 'reflection';
             const options = {
                 label: `${ x.filter.uid } (${ x.mode })`
@@ -1629,6 +1644,7 @@ class SaveSetupDialog extends View
     }
 }
 
+let debug1;
 // The SpekCheck App / Controller
 //
 // Args:
@@ -1644,6 +1660,7 @@ class SpekCheck
             if (! (collections[dtype] instanceof Collection))
                 throw new Error(`no Collection for type '${ dtype }'`);
 
+        debug1 = this;
         // Changes are done to this instance of Setup which then
         // triggers the SetupPlot to update its display.
         this.live_setup = new Setup;
