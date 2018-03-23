@@ -682,9 +682,8 @@ class FilterSet extends Model // also kind of an Array
     // Efficiency of this
     efficiencyOf(source) {
         if (! this._efficiency_cache.has(source)) {
-            const transmission = this.transmission;
-            const transmitted = this.transmissionOf(source);
-            const efficiency = transmitted.area / transmission.area;
+            const transmission = this.transmissionOf(source);
+            const efficiency = transmission.area / source.area;
             this._efficiency_cache.set(source, efficiency);
         }
         return this._efficiency_cache.get(source);
@@ -908,7 +907,6 @@ class Setup extends Model
 
     get
     em_efficiency() {
-        // FIXME: this is not giving the right values.
         return this.em_path.efficiencyOf(this.dye.emission);
     }
 
@@ -1412,9 +1410,9 @@ class SetupPlot extends View
                 console.log('mmm');
                 const info = []; // text that will appear on the title.
                 if (this.setup.em_path.length !== 0)
-                    info.push('em=' + this.setup.em_efficiency.toFixed(2));
+                    info.push('em=' + this.setup.em_efficiency.toFixed(3));
                 if (this.setup.ex_path.length !== 0)
-                    info.push('ex=' + this.setup.ex_efficiency.toFixed(2));
+                    info.push('ex=' + this.setup.ex_efficiency.toFixed(3));
                 // if (this.setup.brightness() !== null)
                 //     info.push('brightness=' + this.setup.brightness());
 
