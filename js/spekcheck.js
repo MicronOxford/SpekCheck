@@ -1385,7 +1385,7 @@ class SetupPlot extends View
             // If there are filters on the emission path, also show
             // the transmitted spectrum of the dye.  This is the thing
             // that users care the most so don't make it transparent
-            // like the others.
+            // like the others, and make the border thicker and dark.
             if (this.setup.em_path.length !== 0) {
                 console.log('asas');
                 const transmission = this.setup.em_transmission;
@@ -1393,6 +1393,8 @@ class SetupPlot extends View
                 const options = {
                     label: this.setup.dye.uid + '(transmitted)',
                     backgroundColor: `hsla(${ hue }, 100%, 50%, 1.0)`,
+                    borderColor: 'rgba(0, 0, 0, 0.5)',
+                    borderWidth: 2.0,
                 };
                 datasets.push(this.asChartjsDataset(transmission, options));
             }
@@ -1426,7 +1428,11 @@ class SetupPlot extends View
             this.plot.options.title = title;
         }
 
-        this.plot.data.datasets = datasets;
+        // Reverse the datasets.  First elements appear on top of the
+        // plot but we got this far expecting the other way around.
+        // This is specially noticeable on the transmitted spectra
+        // which will look kinda washed out if not plotted on top.
+        this.plot.data.datasets = datasets.reverse();
         this.plot.update();
     }
 
