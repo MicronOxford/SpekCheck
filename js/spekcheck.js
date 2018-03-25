@@ -1475,13 +1475,15 @@ class SetupPlot extends View
                 fontSize: 24,
             };
 
-            if ((this.setup.ex_path !== 0 || this.setup.em_path !== 0)
-                && this.setup.dye !== null) {
-                const info = [ // text that will appear on the title.
-                    'ex=' + this.setup.ex_efficiency.toFixed(3),
-                    'em=' + this.setup.em_efficiency.toFixed(3),
-                    'brightness=' + this.setup.brightness.toFixed(2),
-                ];
+            if (this.setup.dye !== null) {
+                const info = [] // text that will appear on the title.
+                if (this.setup.excitation !== null)
+                    info.push('ex=' + this.setup.ex_efficiency.toFixed(3));
+
+                info.push('em=' + this.setup.em_efficiency.toFixed(3));
+
+                if (this.setup.excitation !== null)
+                    info.push('brightness=' + this.setup.brightness.toFixed(2));
 
                 title.display = true;
                 title.text = (this.setup.dye.uid + ' efficiency: '
