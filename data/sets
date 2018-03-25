@@ -1,38 +1,38 @@
 ## Name, preferred Dye, preferred Excitation, filter mode, filter mode ...
 
 ## Diamond CryoSIM
-CryoSIM Red, , 561-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-600-37 T
-CryoSIM mVenus, , 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-544-24 T
-CryoSIM 515, , 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-520-35 T
-CryoSIM DAPI, , 405-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-452-45 T
-CryoSIM Red2, , 561-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-605-70 T
-CryoSIM Green, , 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-525-50 T
-CryoSIM Far Red, , 647-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-655-lp T
+CryoSIM Red, , 561-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-600-37 T :: ZT405-488-561-647-22.5deg T
+CryoSIM mVenus, , 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-544-24 T :: ZT405-488-561-647-22.5deg T
+CryoSIM 515, , 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-520-35 T :: ZT405-488-561-647-22.5deg T
+CryoSIM DAPI, , 405-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-452-45 T :: ZT405-488-561-647-22.5deg T
+CryoSIM Red2, , 561-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-605-70 T :: ZT405-488-561-647-22.5deg T
+CryoSIM green, , 488-laser, ZT405-488-561-647-22.5deg R,  T560lpxr R, EM-525-50 T :: ZT405-488-561-647-22.5deg T
+CryoSIM FarRed, , 647-laser, ZT405-488-561-647-22.5deg R,  T560lpxr T, EM-655-lp T :: ZT405-488-561-647-22.5deg T
 
 ## OMXv3 Live
-OMXv3 Live YFP, ,514-laser, R-0056 T, EM-550-49 T
-OMXv3 Live RFP, ,592-laser, R-0056 R, R-0048 T, R-0053 R, EM-642-80-m T
-OMXv3 Live CFP, ,405-laser, R-0056 R, R-0048 T, R-0053 T, EM-482-35 T
+OMXv3 Live YFP, ,514-laser, R-0056 T, EM-550-49 T :: R-0056 R, R-0048 R
+OMXv3 Live RFP, ,592-laser, R-0056 R, R-0048 T, R-0053 R, EM-642-80-m T :: R-0056 R, R-0048 R
+OMXv3 Live CFP, ,405-laser, R-0056 R, R-0048 T, R-0053 T, EM-482-35 T :: R-0056 R, R-0048 R
 
 ## OMXv3 standard
-OMXv3 Standard GFP, ,488-laser, R-0063 T, R-0054 R, EM-525-50 T
-OMXv3 Standard Cy5, ,647-laser, R-0063 T, R-0054 T, EM-684-40 T
-OMXv3 Standard DAPI, ,405-laser,R-0063 R, R-0039 T, R-0058 R, EM-442-46 T
-OMXv3 Standard RFP, ,592-laser, R-0063 R, R-0039 T, R-0058 T, EM-615-24 T
+OMXv3 Standard GFP, ,488-laser, R-0063 T, R-0054 R, EM-525-50 T :: R-0063 R, R-0039 R
+OMXv3 Standard Cy5, ,647-laser, R-0063 T, R-0054 T, EM-684-40 T :: R-0063 R, R-0039 R
+OMXv3 Standard DAPI, ,405-laser,R-0063 R, R-0039 T, R-0058 R, EM-442-46 T :: R-0063 R, R-0039 R
+OMXv3 Standard RFP, ,592-laser, R-0063 R, R-0039 T, R-0058 T, EM-615-24 T :: R-0063 R, R-0039 R
 
 ## OMXv2 Live
-OMXv2 Live GFP, ,488-laser, R-0056 T, EM-525-50 T
-OMXv2 Live CFP, ,405-laser, R-0056 R, R-0048 T, R-0052 T, EM-455-50 T
-OMXv2 Live RFP, ,592-laser , R-0056 R, R-0048 T, R-0052 R, EM-629-53 T
+OMXv2 Live GFP, ,488-laser, R-0056 T, EM-525-50 T :: R-0056 R, R-0048 R
+OMXv2 Live CFP, ,405-laser, R-0056 R, R-0048 T, R-0052 T, EM-455-50 T :: R-0056 R, R-0048 R
+OMXv2 Live RFP, ,592-laser , R-0056 R, R-0048 T, R-0052 R, EM-629-53 T :: R-0056 R, R-0048 R
 
 ## OMX V2 Sedat
-OMXv2 Sedat FITC, ,488-laser, R-0022 R, EM-510-10 T
-OMXv2 Sedat DAPI, ,405-laser, R-0022 T, R-0020 R, R-0024 T, EM-445-45 T
-OMXv2 Sedat Rhod, ,592-laser, R-0022 T, R-0020 R, R-0024 R, EM-593-40 T
+OMXv2 Sedat FITC, ,488-laser, R-0022 R, EM-510-10 T :: R-0022 R, R-0020 R
+OMXv2 Sedat DAPI, ,405-laser, R-0022 T, R-0020 R, R-0024 T, EM-445-45 T :: R-0022 R, R-0020 R
+OMXv2 Sedat Rhod, ,592-laser, R-0022 T, R-0020 R, R-0024 R, EM-593-40 T :: R-0022 R, R-0020 R
 
 ## OMXV3 Red green set
-OMXv3 GR Red, ,592-laser , ZT488_592 T, T597dcsp R, EM-605-lp T
-OMXv3 GR Green, ,488-laser , ZT488_592 R, EM-540-80x T
+OMXv3 GR Red, ,592-laser , ZT488_592 T, T597dcsp R, EM-605-lp T :: ZT488_592 T, T597dcsp T
+OMXv3 GR Green, ,488-laser , ZT488_592 R, EM-540-80x T :: ZT488_592 T, T597dcsp T
 
 ## DeepSIM
 DeepSIM Green, GFP,488-laser , ZT405-488-561-647-22.5deg R, zt561rdc-xr R, EM-525-50 T
