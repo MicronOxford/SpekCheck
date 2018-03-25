@@ -661,14 +661,18 @@ class FilterSet extends Model // also kind of an Array
     // Transmission spectrum that 'source' will have in this FilterSet.
     transmissionOf(source) {
         if (! this._transmitted_cache.has(source)) {
-            const transmission = this.transmission;
-            // Outside the wavelength range, transmission is zero.
-            // Use the source wavelength as range for transmitted
-            // which we hope will be smaller than FilterSet.
-            const transmitted = new Spectrum(
-                source.wavelength,
-                source.multiplyBy(transmission)
-            );
+            let transmitted;
+            if (this.length === 0)
+                transmitted = source.clone();
+            else
+                // Outside the wavelength range, transmission is zero.
+                // Use the source wavelength as range for transmitted
+                // which we hope will be smaller than FilterSet.
+                transmitted = new Spectrum(
+                    source.wavelength,
+                    source.multiplyBy(this.transmission)
+                );
+
             this._transmitted_cache.set(source, transmitted);
         }
         return this._transmitted_cache.get(source);
@@ -933,9 +937,18 @@ class Setup extends Model
         throw new Error('Setup.em_transmission is a read-only property');
     }
 
+    // Efficiency of the dye excitation, not of the excitation path.
     get
     ex_efficiency() {
-        return this.ex_path.efficiencyOf(this.excitation.intensity);
+        const source = this.excitation.intensity;
+        const dye_ex = this.dye.excitation;
+
+        const ex_path_eff = this.ex_path.efficiencyOf(source);
+
+        const dye_ex_in_path = this.ex_path.transmissionOf(source).clone();
+        dye_ex_in_path.data = dye_ex_in_path.multiplyBy(dye_ex);
+
+        return ex_path_eff * (dye_ex_in_path.area / source.area);
     }
 
     set
@@ -976,28 +989,24 @@ class Setup extends Model
     }
 
     // Relative brightness compared to Alexa-448 at 100% excitation.
-    //
-    // This will be computed for a FilterSet object.  The transmission of a
-    // FilterSet object is a Spectrum instance ;)
-    //
-    //     brightness = dye.brightnessIn(filterset.transmission);
-    //
-    // Args:
-    //     spectrum(Spectrum)
+    get
     brightness() {
-        return 10.0;
         if (this.dye === null || this.excitation === null)
             throw new Error('no dye or excitation to compute brightness');
 
-        if (typeof (this.dye.q_yield) !== 'number'
-            || typeof (this.dye.ex_coeff) !== 'number')
-            throw new Error('no ex_coeff and q_yield values available');
+        if (this.dye.q_yield === null || this.dye.ex_coeff === null)
+            return NaN;
 
-        // multiply by 10 to give reasonable range of values.
-        const bright = 10 * ((this.ex_efficiency() * this.dye.q_yield
-                              * this.dye.ex_coeff * this.em_efficiency())
-                             / Dye.Alexa488_brightness);
-        return bright;
+        const bright = ((this.ex_efficiency * this.dye.q_yield
+                         * this.dye.ex_coeff * this.em_efficiency)
+                        / Dye.Alexa488_brightness);
+        // multiply by 10 to give reasonable range of values?
+        return bright * 10;
+    }
+
+    set
+    brightness(val) {
+        throw new Error('Setup.brightness is a read-only property');
     }
 
     clone() {
@@ -1471,14 +1480,15 @@ class SetupPlot extends View
                 const info = [ // text that will appear on the title.
                     'ex=' + this.setup.ex_efficiency.toFixed(3),
                     'em=' + this.setup.em_efficiency.toFixed(3),
+                    'brightness=' + this.setup.brightness.toFixed(2),
                 ];
-                //     info.push('brightness=' + this.setup.brightness());
 
                 title.display = true;
                 title.text = (this.setup.dye.uid + ' efficiency: '
                               + info.join(', '));
             }
-        this.plot.options.title = title;
+
+            this.plot.options.title = title;
         }
 
         // Reverse the datasets.  First elements appear on top of the
@@ -1691,9 +1701,10 @@ class TestDyesDialog
                 this.dyes.get(uid).then((function(dye) {
                     setup.dye = dye;
                     const result = {
+                        'uid': uid,
                         'ex_eff': setup.ex_efficiency,
                         'em_eff': setup.em_efficiency,
-                        'bright': setup.brightness(),
+                        'bright': setup.brightness,
                     };
 
                     this._th.textContent = dye.uid;
@@ -1715,7 +1726,28 @@ class TestDyesDialog
     renderTBody(order) {
         this._tbody.textContent = ''; // remove all rows first
 
-        this._results.sort((a, b) => a[order] < b[order]);
+        // Beware of NaN values if we are sorting by brightness
+        // because some dyes will be missing quantum yield and
+        // extinction coefficient values.
+        this._results.sort(function(a, b) {
+            let cmp = b[order] - a[order];
+            if (isNaN(cmp)) {
+                if (isNaN(a[order]) && isNaN(b[order]))
+                    cmp = 0.0;
+                else if (isNaN(a[order]))
+                    cmp = Infinity;
+                else // isNaN(b[order])
+                    cmp = -Infinity;
+            }
+
+            // For the sake of sorting stability, take a look at the
+            // uids when the values are the same.
+            if (cmp === 0.0)
+                cmp = a.uid.localeCompare(b.uid);
+
+            return cmp;
+        });
+
         for (let result of this._results)
             this._tbody.appendChild(result.node.cloneNode(true));
     }
