@@ -1244,37 +1244,64 @@ class ListItemView extends CollectionView
 
 
 // Displays a FilterSet, one of the two paths which compose a Setup.
-class FilterSetView extends View
+class FilterSetView
 {
-    constructor($el, filterset) {
-        super($el);
-        this.filterset = filterset;
-        this.filterset.on('change', this.render, this);
+    constructor($el, filterset, template) {
+        this.$el = $el;
+        this._el = $el[0];
+        this._filterset = filterset;
+        this._template = template;
+
+        this._filterset.on('change', this.render, this);
     }
 
-    toHTML() {
-        return this.filterset.map(f => this.itemHTML(f.filter.uid, f.mode));
+    render() {
+        this._el.textContent = '';
+        for (let i = 0; i < this._filterset.length; i++)
+            this._el.appendChild(this.itemNode(i));
+        return this._el;
     }
 
-    itemHTML(uid, mode) {
-        const html = `
-<li class="list-group-item">
-  ${ uid }
-  <div class="float-right">
-    <div class="btn-group btn-group-toggle" data-toggle="buttons">
-      <label class="btn btn-sm ${ mode === 't' ? 'btn-primary active' : 'btn-secondary' }">
-        <input type="radio" ${ mode === 't' ? 'checked' : '' }>T
-      </label>
-      <label class="btn btn-sm ${ mode === 'r' ? 'btn-primary active' : 'btn-secondary' }">
-        <input type="radio" ${ mode === 'r' ? 'checked' : '' }>R
-      </label>
-    </div>
-    <button type="button" class="close" aria-label="Close">
-      <span aria-hidden="true">&times;</span>
-    </button>
-  </div>
-</li>`
-        return html;
+    // A Node for a filter in the filterset.
+    //
+    // Args:
+    //     i(Integer): index into the filterset.  We need the index
+    //         because we need unique names
+    itemNode(i) {
+        const uid = this._filterset._stack[i].filter.uid;
+        const mode = this._filterset._stack[i].mode;
+
+        const node = document.importNode(this._template, true);
+        node.querySelector('span#filter-name').textContent = uid;
+
+        // We have two labels, one for each radio button of
+        // transmission and reflection.  Set one as the active, and
+        // listen for a change on the other.
+        const labels = node.querySelectorAll('label');
+
+        // Bootstrap will change the 'active' class after user click.
+        // However, we are also changing the style from btn-secondary
+        // to btn-primary to have a slider look.
+        const checked_i = mode === 't' ? 0 : 1;
+        labels[checked_i].querySelector('input').checked = true;
+        labels[checked_i].classList.remove('btn-secondary');
+        labels[checked_i].classList.add('btn-primary', 'active');
+
+        // Listen for changes on the unselected mode.
+        const unchecked_i = checked_i === 0 ? 1 : 0;
+        labels[unchecked_i].addEventListener(
+            'click',
+            this.toggleFilterMode.bind(this, i)
+        );
+
+        return node;
+    }
+
+    toggleFilterMode(i) {
+        // TODO: we need indexing and changing mode on the FilterSet class.
+        const new_mode = this._filterset._stack[i].mode === 't' ? 'r' : 't';
+        this._filterset._stack[i].mode = new_mode;
+        this._filterset.trigger('change');
     }
 }
 
@@ -1297,14 +1324,16 @@ class PathBuilder
         this.filters = filters;
         this.setup = setup;
 
+        const el = this.$el[0];
+        const template = el.querySelector('template').content;
+
         const $filters = $(this.$el.find('#filters-view'));
         const $ex_path = $(this.$el.find('#ex-path'));
         const $em_path = $(this.$el.find('#em-path'));
-        $($el.find())
         this.views = {
             filters: new ListItemView($filters, this.filters),
-            ex_path: new FilterSetView($ex_path, this.setup.ex_path),
-            em_path: new FilterSetView($em_path, this.setup.em_path),
+            ex_path: new FilterSetView($ex_path, this.setup.ex_path, template),
+            em_path: new FilterSetView($em_path, this.setup.em_path, template),
         };
     }
 

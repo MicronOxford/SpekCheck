@@ -307,6 +307,26 @@
           </div>
         </div>
       </div>
+
+      <!-- Template for filters on the path. -->
+      <template>
+        <li class="list-group-item">
+          <span id="filter-name"></span>
+          <div class="float-right">
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+              <label class="btn btn-sm btn-secondary">
+                <input type="radio" id="transmission"/>T
+              </label>
+              <label class="btn btn-sm btn-secondary">
+                <input type="radio" id="reflection"/>R
+              </label>
+            </div>
+            <button type="button" class="close" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        </li>
+      </template>
     </div>
 
     <!--
