@@ -1396,17 +1396,6 @@ class SetupPlot extends View
     render() {
         const datasets = [];
 
-        if (this.setup.excitation !== null) {
-            const options = {
-                label: this.setup.excitation.uid,
-            };
-            // We don't display the spectrum of the excitation source,
-            // we display the spectrum of the excitation source that
-            // is transmitted.
-            const transmission = this.setup.ex_transmission;
-            datasets.push(this.asChartjsDataset(transmission, options));
-        }
-
         // Filters in the excitation path appear hidden by default
         // since they are not that important.  The user mainly cares
         // about how the emission signal gets through, not how much
@@ -1428,6 +1417,25 @@ class SetupPlot extends View
                 label: `${ x.filter.uid } (${ x.mode })`
             };
             datasets.push(this.asChartjsDataset(x.filter[mode], options));
+        }
+
+        if (this.setup.excitation !== null) {
+            // Excitation, together with Dye, is the thing that
+            // matters the most to the user, so don't make it
+            // transparent like the filters.
+            const intensity = this.setup.excitation.intensity;
+            const hue = SetupPlot.wavelengthToHue(intensity.peak_wavelength);
+            const options = {
+                label: this.setup.excitation.uid,
+                backgroundColor: `hsla(${ hue }, 100%, 50%, 1)`,
+                borderColor: `hsla(${ hue }, 100%, 50%, 1)`,
+                borderWidth: 2.0,
+            };
+            // We don't display the spectrum of the excitation source,
+            // we display the spectrum of the excitation source that
+            // gets transmitted.
+            const transmission = this.setup.ex_transmission;
+            datasets.push(this.asChartjsDataset(transmission, options));
         }
 
         if (this.setup.dye !== null) {
