@@ -1301,6 +1301,7 @@ class FilterSetView
         // TODO: we need indexing and changing mode on the FilterSet class.
         const new_mode = this._filterset._stack[i].mode === 't' ? 'r' : 't';
         this._filterset._stack[i].mode = new_mode;
+        this._filterset._resetCache();
         this._filterset.trigger('change');
     }
 }
