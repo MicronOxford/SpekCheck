@@ -31,44 +31,44 @@ import scipy.misc
 
 def wavelength2rgb(nm, gamma=0.8):
     if nm.ndim == 1:
-        nm = nm.reshape(1, nm.size)
+        nm = nm.reshape((1, nm.size))
     elif nm.ndim > 2:
         raise RuntimeError('NM has more than 2 dimensions')
-    rgb = numpy.zeros([3] + list(nm.shape))
+    rgb = numpy.zeros(list(nm.shape) + [3])
 
     ## Because rgb starts filled zeros, there's no need to assign some
     ## values.  They are commented out below to make it explicit that
     ## they were not forgotten.
 
     mask = (nm >= 380) & (nm < 440)
-    rgb[0, mask] = - (nm[mask] - 440) / 60.0
-    # rgb[1, mask] = 0.0
-    rgb[2, mask] = 1.0
+    rgb[mask, 0] = - (nm[mask] - 440) / 60.0
+    # rgb[mask, 1] = 0.0
+    rgb[mask, 2] = 1.0
 
     mask = (nm >= 440) & (nm < 490)
-    # rgb[0, mask] = 0.0
-    rgb[1, mask] = (nm[mask] - 440) / 50.0
-    rgb[2, mask] = 1.0
+    # rgb[mask, 0] = 0.0
+    rgb[mask, 1] = (nm[mask] - 440) / 50.0
+    rgb[mask, 2] = 1.0
 
     mask = (nm >= 490) & (nm < 510)
-    # rgb[0, mask] = 0.0
-    rgb[1, mask] = 1.0
-    rgb[2, mask] = -(nm[mask] - 510) / 20.0
+    # rgb[mask, 0] = 0.0
+    rgb[mask, 1] = 1.0
+    rgb[mask, 2] = -(nm[mask] - 510) / 20.0
 
     mask = (nm >= 510) & (nm < 580)
-    rgb[0, mask] = (nm[mask] - 510) / 70.0
-    rgb[1, mask] = 1.0
-    # rgb[2, mask] = 0.0
+    rgb[mask, 0] = (nm[mask] - 510) / 70.0
+    rgb[mask, 1] = 1.0
+    # rgb[mask, 2] = 0.0
 
     mask = (nm >= 580) & (nm < 645)
-    rgb[0, mask] = 1.0
-    rgb[1, mask] = -(nm[mask] - 645) / 65.0
-    # rgb[2, mask] = 0.0
+    rgb[mask, 0] = 1.0
+    rgb[mask, 1] = -(nm[mask] - 645) / 65.0
+    # rgb[mask, 2] = 0.0
 
     mask = (nm >= 645) & (nm < 780)
-    rgb[0, mask] = 1.0
-    # rgb[1, mask] = 0.0
-    # rgb[2, mask] = 0.0
+    rgb[mask, 0] = 1.0
+    # rgb[mask, 1] = 0.0
+    # rgb[mask, 2] = 0.0
 
     ## let intensity fall off near the vision limits
     factor = numpy.ones(nm.shape)
@@ -76,6 +76,8 @@ def wavelength2rgb(nm, gamma=0.8):
     factor[mask] = 0.3 + 0.7 * (nm[mask] - 380) / 40.0
     mask = (nm > 700) & (nm <= 780)
     factor[mask] = 0.3 + 0.7 * (780 - nm[mask]) / 80.0
+
+    factor = factor.reshape(list(factor.shape) + [1])
 
     rgb *= factor
     rgb **= gamma
