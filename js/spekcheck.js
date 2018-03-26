@@ -19,19 +19,6 @@
 'use strict';
 
 
-//extract url queiers.
-function getParameterByName(name, url) {
-    if (!url) url = window.location.href;
-    name = name.replace(/[\[\]]/g, "\\$&");
-    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-        results = regex.exec(url);
-    if (!results) return null;
-    if (!results[2]) return "";
-    return decodeURIComponent(results[2].replace(/\+/g, " "));
-}
-
-
-
 // Base class to provide model validation and event callbacks.
 //
 // For validation, subclasses should overload the 'validate' method.
@@ -1512,19 +1499,6 @@ class SetupPlot extends View
 }
 
 
-//Use url parameter to preload filter sets search
-function preloadFilterSetsSearch() {
-    var searchFilterSets = getParameterByName("searchFilterSets");
-    if(searchFilterSets) {
-        //load filterset search field with the value from the URL.
-        $("#searchSets")[0].value = searchFilterSets ;
-        var event = new Event("keyup",{});
-        $("#searchSets")[0].dispatchEvent(event);
-    }
-}
-
-
-
 class ImportDialog extends View
 {
     constructor($el, options) {
@@ -1834,6 +1808,22 @@ class SpekCheck
         // If someone imports a Dye or Excitation, change to it.
         for (let dtype of ['dye', 'excitation'])
             this.collection[dtype].on('add', this.changeData.bind(this, dtype));
+
+        // Configure initial display based on the URL hash
+        this.route(location.hash);
+    }
+
+    route(hash) {
+        hash = decodeURIComponent(hash);
+        for (let cname of ['setup', 'dye', 'excitation']) {
+            const dir = `#${ cname }/`;
+            if (hash.startsWith(dir)) {
+                const uid = hash.slice(dir.length);
+                if (this.collection[cname].has(uid))
+                    this.view[cname].$el.val(uid).change();
+                break;
+            }
+        }
     }
 
     // Modify live_setup according to a new SetupDescription.
@@ -1843,9 +1833,9 @@ class SpekCheck
     //     setup (SetupDescription): may be null if user selects the
     //       empty setup on the SelectView.
     changeSetup(uid) {
-        if (uid === null) {
-            return this.live_setup.empty();
-        }
+        if (uid === null)
+            return Promise.resolve(this.live_setup.empty());
+
         const setup = this.collection.setup.get(uid);
         const promises = [];
 
@@ -1894,9 +1884,11 @@ class SpekCheck
         const val = ev.target.value;
         const uid = val === '' ? null : val;
 
-        if (dtype === 'setup')
+        if (dtype === 'setup') {
+            const hash = '#setup/' + encodeURIComponent(uid);
+            location.replace(location.origin + location.pathname + hash);
             return this.changeSetup(uid);
-        else {
+        } else {
             // Remember when a user selects a dye manually to prevent
             // changing it as part of changing setup.  Forget about
             // it, when a user unselects a dye.
