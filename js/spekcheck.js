@@ -618,7 +618,7 @@ class FilterSet extends Model // also kind of an Array
         }
 
         // Update the transmission spectrum with any pending filters.
-        if (this._stack_i !== this.length -1) {
+        if (this._stack_i < this.length) {
             const transmission = this._transmission;
             const wavelength = transmission.wavelength;
             for (; this._stack_i < this.length; this._stack_i++) {
