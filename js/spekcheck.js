@@ -1294,6 +1294,9 @@ class FilterSetView
             this.toggleFilterMode.bind(this, i)
         );
 
+        const close = node.querySelector('button.close');
+        close.addEventListener('click', this.removeFilter.bind(this, i));
+
         return node;
     }
 
@@ -1301,6 +1304,15 @@ class FilterSetView
         // TODO: we need indexing and changing mode on the FilterSet class.
         const new_mode = this._filterset._stack[i].mode === 't' ? 'r' : 't';
         this._filterset._stack[i].mode = new_mode;
+        this._filterset._resetCache();
+        this._filterset.trigger('change');
+    }
+
+    removeFilter(i) {
+        // TODO: we really need methods to do this on the FilterSet class.
+        const old_stack = this._filterset._stack;
+        this._filterset._stack = Array.concat(old_stack.slice(0, i),
+                                              old_stack.slice(i+1));
         this._filterset._resetCache();
         this._filterset.trigger('change');
     }
