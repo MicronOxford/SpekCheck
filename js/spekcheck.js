@@ -795,7 +795,7 @@ class SetupDescription extends Model
                 return `${ path_name } must be an Array`;
 
             for (let x of path) {
-                if (typeof(this[name]) !== 'string' && ! (x instanceof String))
+                if (typeof(x.filter) !== 'string' && ! (x.filter instanceof String))
                     return `values of ${ path_name } must have 'filter'`;
                 if (x.mode !== 'r' && x.mode !== 't')
                     return `mode of '${ x.filter }' must be r or t`;
