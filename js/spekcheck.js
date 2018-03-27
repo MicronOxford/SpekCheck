@@ -526,7 +526,7 @@ Filter.prototype.properties = Data.prototype.properties.concat([
 
 // Meant to represents one of the two paths (excitation and emission)
 // on a Setup.
-class FilterSet extends Model // also kind of an Array
+class FilterStack extends Model // also kind of an Array
 {
     constructor(stack=[]) {
         super();
@@ -534,12 +534,10 @@ class FilterSet extends Model // also kind of an Array
         this._resetCache();
     }
 
-    // We can cache a lot of computations but this class is highly
-    // mutable, so reset all cached computations.
-    _resetCache() {
+    _resetTransmission() {
         this._transmission = null; // Spectrum or null
 
-        // When a new filter is added to the filterset, we can add it
+        // When a new filter is added to the filterstack, we can add it
         // to the previously computed transmission instead of
         // computing the whole thing again.
         //
@@ -547,11 +545,16 @@ class FilterSet extends Model // also kind of an Array
         // to update the transmission spectrum.
         this._stack_i = 0;
 
+        // If we reset the transmission, this is implicit.
+        this._resetCache();
+    }
+
+    _resetCache() {
         // Maps Spectrum instances to their transmission Spectrum in
-        // this FilterSet.
+        // this FilterStack.
         this._transmitted_cache = new WeakMap;
         // Maps Spectrum instances to their transmission efficiency in
-        // this FilterSet.
+        // this FilterStack.
         this._efficiency_cache = new WeakMap;
     }
 
@@ -569,7 +572,7 @@ class FilterSet extends Model // also kind of an Array
     validate() {
         for (let x of this._stack) {
             if (! (x.filter instanceof Filter))
-                return "all elements of FilterSet must have a 'Filter'";
+                return "all elements of FilterStack must have a 'Filter'";
             if (! x.filter.isValid())
                 return x.filter.validation_error;
             if (x.mode !== 'r' || x.mode !== 't')
@@ -645,7 +648,7 @@ class FilterSet extends Model // also kind of an Array
         throw new Error('transmission is a read-only property');
     }
 
-    // Transmission spectrum that 'source' will have in this FilterSet.
+    // Transmission spectrum that 'source' will have in this FilterStack.
     transmissionOf(source) {
         if (! this._transmitted_cache.has(source)) {
             let transmitted;
@@ -654,7 +657,7 @@ class FilterSet extends Model // also kind of an Array
             else
                 // Outside the wavelength range, transmission is zero.
                 // Use the source wavelength as range for transmitted
-                // which we hope will be smaller than FilterSet.
+                // which we hope will be smaller than FilterStack.
                 transmitted = new Spectrum(
                     source.wavelength,
                     source.multiplyBy(this.transmission)
@@ -684,18 +687,53 @@ class FilterSet extends Model // also kind of an Array
 
     empty() {
         this._stack = [];
-        this._resetCache();
+        this._resetTransmission();
         this.trigger('change');
     }
 
-    clone() {
-        return new FilterSet(this._stack.slice(0));
+    getElem(i) {
+        return this._stack[i];
     }
 
-    // Whether this instance describes the same FilterSet as other.
+    toggleElemMode(i) {
+        const old_mode = this._stack[i].mode;
+        this._stack[i].mode = old_mode === 'r' ? 't' : 'r';
+        this._resetTransmission();
+        this.trigger('change');
+        return old_mode;
+    }
+
+    setElemMode(i, mode) {
+        const old_mode = this._stack[i].mode;
+        if (old_mode !== mode) {
+            this._stack[i].mode = mode;
+            this._stack_i = i;
+            this._resetCache();
+            this.trigger('change');
+        }
+        return old_mode;
+    }
+
+    removeElem(i) {
+        const removed = this._stack[i];
+        if (removed !== undefined) {
+            const old_stack = this._stack;
+            this._stack = Array.concat(old_stack.slice(0, i),
+                                       old_stack.slice(i+1));
+            this._resetTransmission();
+            this.trigger('change');
+        }
+        return removed;
+    }
+
+    clone() {
+        return new FilterStack(this._stack.slice(0));
+    }
+
+    // Whether this instance describes the same FilterStack as other.
     //
     // Args:
-    //     other(FilterSet)
+    //     other(FilterStack)
     isEqual(other) {
         if (other instanceof Setup)
             other = other.describe();
@@ -717,8 +755,7 @@ class FilterSet extends Model // also kind of an Array
 
     push() {
         const count = this._stack.push(...arguments);
-        this._transmitted_cache = new WeakMap;
-        this._efficiency_cache = new WeakMap;
+        this._resetCache();
         this.trigger('change');
         return count;
     }
@@ -730,7 +767,7 @@ class FilterSet extends Model // also kind of an Array
 
 
 // Like a Setup object but with Data instances (Dye, Excitation, and
-// Filter) replaced with their names/uids, and FilterSet replaced with
+// Filter) replaced with their names/uids, and FilterStack replaced with
 // an Array.  This lets us to have a representation of them without
 // parsing all the filters, excitation, and dyes files.  Also much
 // easier to save them.
@@ -868,8 +905,8 @@ class Setup extends Model
             // because we may have the same filter multiple times.
             // 'filter' value is a Filter object. 'mode' value is a
             // char with value of 'r' or 't'.
-            ex_path: new FilterSet,
-            em_path: new FilterSet,
+            ex_path: new FilterStack,
+            em_path: new FilterStack,
         };
         for (let p_name of Object.keys(defaults)) {
             const attr_name = `_${ p_name }`;
@@ -1234,7 +1271,7 @@ class SelectView extends CollectionView
 
 // Displays the elements in a Collection as list-group-item.  To view
 // and not select.  Used to show the list of Filters available in the
-// FilterSetBuilder GUI.
+// FilterStackBuilder GUI.
 class ListItemView extends CollectionView
 {
     itemHTML(uid) {
@@ -1243,33 +1280,33 @@ class ListItemView extends CollectionView
 }
 
 
-// Displays a FilterSet, one of the two paths which compose a Setup.
-class FilterSetView
+// Displays a FilterStack, one of the two paths which compose a Setup.
+class FilterStackView
 {
-    constructor($el, filterset, template) {
+    constructor($el, filterstack, template) {
         this.$el = $el;
         this._el = $el[0];
-        this._filterset = filterset;
+        this._filterstack = filterstack;
         this._template = template;
 
-        this._filterset.on('change', this.render, this);
+        this._filterstack.on('change', this.render, this);
     }
 
     render() {
         this._el.textContent = '';
-        for (let i = 0; i < this._filterset.length; i++)
+        for (let i = 0; i < this._filterstack.length; i++)
             this._el.appendChild(this.itemNode(i));
         return this._el;
     }
 
-    // A Node for a filter in the filterset.
+    // A Node for a filter in the filterstack.
     //
     // Args:
-    //     i(Integer): index into the filterset.  We need the index
+    //     i(Integer): index into the filterstack.  We need the index
     //         because we need unique names
     itemNode(i) {
-        const uid = this._filterset._stack[i].filter.uid;
-        const mode = this._filterset._stack[i].mode;
+        const uid = this._filterstack._stack[i].filter.uid;
+        const mode = this._filterstack._stack[i].mode;
 
         const node = document.importNode(this._template, true);
         node.querySelector('span#filter-name').textContent = uid;
@@ -1301,25 +1338,16 @@ class FilterSetView
     }
 
     toggleFilterMode(i) {
-        // TODO: we need indexing and changing mode on the FilterSet class.
-        const new_mode = this._filterset._stack[i].mode === 't' ? 'r' : 't';
-        this._filterset._stack[i].mode = new_mode;
-        this._filterset._resetCache();
-        this._filterset.trigger('change');
+        this._filterstack.toggleElemMode(i);
     }
 
     removeFilter(i) {
-        // TODO: we really need methods to do this on the FilterSet class.
-        const old_stack = this._filterset._stack;
-        this._filterset._stack = Array.concat(old_stack.slice(0, i),
-                                              old_stack.slice(i+1));
-        this._filterset._resetCache();
-        this._filterset.trigger('change');
+        this._filterstack.removeElem(i);
     }
 }
 
 
-// Controls the customisation of the FilterSet.
+// Controls the customisation of the FilterStack.
 //
 // There must be three ul elements inside $el with the following ids:
 //    #filters
@@ -1345,8 +1373,8 @@ class PathBuilder
         const $em_path = $(this.$el.find('#em-path'));
         this.views = {
             filters: new ListItemView($filters, this.filters),
-            ex_path: new FilterSetView($ex_path, this.setup.ex_path, template),
-            em_path: new FilterSetView($em_path, this.setup.em_path, template),
+            ex_path: new FilterStackView($ex_path, this.setup.ex_path, template),
+            em_path: new FilterStackView($em_path, this.setup.em_path, template),
         };
     }
 
