@@ -967,12 +967,10 @@ class Setup extends Model
         const source = this.excitation.intensity;
         const dye_ex = this.dye.excitation;
 
-        const ex_path_eff = this.ex_path.efficiencyOf(source);
-
         const dye_ex_in_path = this.ex_path.transmissionOf(source).clone();
         dye_ex_in_path.data = dye_ex_in_path.multiplyBy(dye_ex);
 
-        return ex_path_eff * (dye_ex_in_path.area / source.area);
+        return dye_ex_in_path.area / source.area;
     }
 
     set
