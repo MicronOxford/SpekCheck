@@ -2021,7 +2021,7 @@ const spekcheck_db = {
         reader: Filter.constructFromText.bind(Filter),
     },
     setup: {
-        filepath: 'data/sets',
+        filepath: 'data/sets.txt',
         reader: setupCollectionFromKindaCSV,
     },
 };
