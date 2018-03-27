@@ -685,9 +685,18 @@ class FilterStack extends Model // also kind of an Array
         return this._stack.map(x => ({filter: x.filter.uid, mode: x.mode}));
     }
 
-    empty() {
+    // Like empty, but doesn't trigger a change event.  To be used by
+    // Setup so that it can empty both stacks and then trigger a
+    // change itself.
+    // TODO: instead, Setup should handle the change event and stop it
+    //   from being propagated..
+    _empty() {
         this._stack = [];
         this._resetTransmission();
+    }
+
+    empty() {
+        this._empty();
         this.trigger('change');
     }
 
@@ -1003,10 +1012,10 @@ class Setup extends Model
     }
 
     empty() {
-        this.dye = null;
-        this.excitation = null;
-        this.ex_path.empty();
-        this.em_path.empty();
+        this._dye = null;
+        this._excitation = null;
+        this.ex_path._empty();
+        this.em_path._empty();
         this.trigger('change');
     }
 
