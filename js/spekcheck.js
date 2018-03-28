@@ -2073,3 +2073,20 @@ function read_collections(db)
         (reason) => {new Error('failed to read collection: ' + reason)},
     );
 }
+
+function main(el=document.querySelector('#spekcheck'),
+              url='templates/spekcheck.html',
+              db=spekcheck_db)
+{
+    // Insert the spekcheck html before everything else.
+    const injected = $.ajax({
+        'url': url,
+        'dataType': 'html',
+    }).then((data) => el.innerHTML = data);
+
+    read_collections(spekcheck_db).then(function(collections) {
+        injected.then(
+            () => new SpekCheck($(el), collections));
+    });
+    return 0;
+}
