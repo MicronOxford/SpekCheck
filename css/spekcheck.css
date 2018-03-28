@@ -27,6 +27,17 @@
 }
 
 /*
+  Style cursor for drag and drop the filters.  Because the li also
+  have buttons on them (to switch mode between reflection and
+  transmission), we use the more general 'pointer' instead of the
+  grab/grabbing cursors.
+*/
+#path-builder li:hover
+{
+    cursor: pointer;
+}
+
+/*
   We need to specify a height value,. to the parent of the canvas
   element, so it knows how to be responsive.
 

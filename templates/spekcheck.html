@@ -231,41 +231,42 @@
 <!-- Advanced controls to modify the filter paths. -->
 <div class="collapse container" id="path-builder">
   <div class="row">
-    <div class="col-sm">
+    <div class="col-sm" id="filters-view">
       <div class="card">
         <div class="card-header">
           Filters
         </div>
-        <ul class="list-group list-group-flush spekcheck-filtersview"
-            id="filters-view">
+        <ul class="list-group list-group-flush spekcheck-filtersview">
         </ul>
       </div>
     </div>
-    <div class="col-sm">
+    <div class="col-sm" id="ex-path">
       <div class="card">
         <div class="card-header">
           Excitation Path
         </div>
-        <ul class="list-group list-group-flush spekcheck-filtersview"
-            id="ex-path">
+        <ul class="list-group list-group-flush spekcheck-filtersview">
         </ul>
       </div>
     </div>
-    <div class="col-sm">
+    <div class="col-sm" id="em-path">
       <div class="card">
         <div class="card-header">
           Emission Path
         </div>
-        <ul class="list-group list-group-flush spekcheck-filtersview"
-            id="em-path">
+        <ul class="list-group list-group-flush spekcheck-filtersview">
         </ul>
       </div>
     </div>
   </div>
 
+  <template id="collection-filters">
+    <li class="list-group-item" draggable="true"></li>
+  </template>
+
   <!-- Template for filters on the path. -->
-  <template>
-    <li class="list-group-item">
+  <template id="path-filters">
+    <li class="list-group-item" draggable="true">
       <span id="filter-name"></span>
       <div class="float-right">
         <div class="btn-group btn-group-toggle" data-toggle="buttons">

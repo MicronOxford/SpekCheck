@@ -1279,10 +1279,40 @@ class SelectView extends CollectionView
 // Displays the elements in a Collection as list-group-item.  To view
 // and not select.  Used to show the list of Filters available in the
 // FilterStackBuilder GUI.
-class ListItemView extends CollectionView
+//
+// TODO: special case for now, but we should be redoing the parent
+//   classes to use nodes with the template
+class CollectionViewB
 {
-    itemHTML(uid) {
-        return `<li class="list-group-item">${ uid }</li>\n`;
+    constructor(el, collection, template) {
+        this._el = el;
+        this._collection = collection;
+        this._template = template;
+
+        // TODO: the collection class should have a change event for
+        // all that and the event object should then specify which of
+        // this changes types actually happened.
+        for (let change of ['clear', 'delete', 'change', 'add'])
+            this._collection.on(change, this.render, this);
+    }
+
+    render() {
+        this._el.textContent = '';
+        for (let uid of this._collection.keys())
+            this._el.appendChild(this.itemNode(uid));
+        return this._el;
+    }
+
+    itemNode(uid) {
+        const node = document.importNode(this._template, true);
+        node.textContent = uid;
+        node.ondragstart = this.handleDragStart;
+        return node;
+    }
+
+    handleDragStart(ev) {
+        ev.dataTransfer.setData('text', ev.target.textContent);
+        ev.dataTransfer.effectAllowed = 'copy';
     }
 }
 
@@ -1290,9 +1320,8 @@ class ListItemView extends CollectionView
 // Displays a FilterStack, one of the two paths which compose a Setup.
 class FilterStackView
 {
-    constructor($el, filterstack, template) {
-        this.$el = $el;
-        this._el = $el[0];
+    constructor(el, filterstack, template) {
+        this._el = el;
         this._filterstack = filterstack;
         this._template = template;
 
@@ -1341,6 +1370,8 @@ class FilterStackView
         const close = node.querySelector('button.close');
         close.addEventListener('click', this.removeFilter.bind(this, i));
 
+        node.ondragstart = this.handleDragStart;
+
         return node;
     }
 
@@ -1350,6 +1381,11 @@ class FilterStackView
 
     removeFilter(i) {
         this._filterstack.removeElem(i);
+    }
+
+    handleDragStart(ev) {
+        ev.dataTransfer.setData('text', ev.target.textContent);
+        ev.dataTransfer.dropEffect = 'move';
     }
 }
 
@@ -1367,27 +1403,64 @@ class FilterStackView
 //     setup (Setup):
 class PathBuilder
 {
-    constructor($el, filters, setup) {
-        this.$el = $el;
+    constructor(el, filters, setup) {
+        this.el = el;
         this.filters = filters;
         this.setup = setup;
 
-        const el = this.$el[0];
-        const template = el.querySelector('template').content;
-
-        const $filters = $(this.$el.find('#filters-view'));
-        const $ex_path = $(this.$el.find('#ex-path'));
-        const $em_path = $(this.$el.find('#em-path'));
-        this.views = {
-            filters: new ListItemView($filters, this.filters),
-            ex_path: new FilterStackView($ex_path, this.setup.ex_path, template),
-            em_path: new FilterStackView($em_path, this.setup.em_path, template),
+        const cols = {
+            'filters': el.querySelector('#filters-view'),
+            'ex_path': el.querySelector('#ex-path'),
+            'em_path': el.querySelector('#em-path'),
         };
+
+        const in_collection_template = this._li_template('collection-filters');
+        const in_path_template = this._li_template('path-filters');
+        this.views = {
+            'filters': new CollectionViewB(cols.filters.querySelector('ul'),
+                                           filters, in_collection_template),
+            'ex_path': new FilterStackView(cols.ex_path.querySelector('ul'),
+                                           setup.ex_path, in_path_template),
+            'em_path': new FilterStackView(cols.em_path.querySelector('ul'),
+                                           setup.em_path, in_path_template),
+        };
+
+        // The ondragover action is for the div with the column, not
+        // for the list.  Otherwise we can't drop if the list is
+        // empty.
+        cols.ex_path.ondragover = this.handleDragOver.bind(this);
+        cols.em_path.ondragover = this.handleDragOver.bind(this);
+
+        cols.ex_path.ondrop = this.handleDrop.bind(this, 'ex_path');
+        cols.em_path.ondrop = this.handleDrop.bind(this, 'em_path');
+    }
+
+    _li_template(id) {
+        const template_node = this.el.querySelector(`template#${ id }`);
+        return template_node.content.querySelector('li');
     }
 
     render() {
         for (let v of Object.values(this.views))
             v.render();
+    }
+
+    handleDragOver(ev) {
+        const uid = ev.dataTransfer.getData('text');
+        if (! this.filters.has(uid))
+            return;
+
+        ev.preventDefault();
+        ev.dataTransfer.dropEffect = 'copy';
+    }
+
+    handleDrop(path_name, ev) {
+        ev.preventDefault();
+        const uid = ev.dataTransfer.getData('text');
+        const setup = this.setup;
+        this.filters.get(uid).then(
+            f => setup[path_name].push({'filter': f, 'mode': 't'})
+        );
     }
 }
 
@@ -1826,6 +1899,7 @@ class SpekCheck
 {
     constructor($el, collections) {
         this.$el = $el;
+        this.el = $el[0];
         this.collection = collections;
         for (let dtype of ['setup', 'dye', 'excitation', 'filter'])
             if (! (collections[dtype] instanceof Collection))
@@ -1857,7 +1931,7 @@ class SpekCheck
         }
 
         this.path_builder = new PathBuilder(
-            this.$el.find('#path-builder'),
+            this.el.querySelector('#path-builder'),
             this.collection.filter,
             this.live_setup,
         );
@@ -2074,6 +2148,19 @@ function read_collections(db)
     );
 }
 
+
+// Initialise SpekCheck program.
+//
+// Args:
+//     el (Element): the element where the SpekCheck program will be
+//         created.
+//     url (String): URL for a HTML file which will be inserted into
+//         'el' before starting the program.
+//     db (Object): controls the collections to be used.
+//
+// This allows other sites to insert SpekCheck in any div they want,
+// while still controlling the collections and without having to
+// duplicate the whole HTML.
 function main(el=document.querySelector('#spekcheck'),
               url='templates/spekcheck.html',
               db=spekcheck_db)
