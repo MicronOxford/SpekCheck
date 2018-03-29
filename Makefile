@@ -11,25 +11,30 @@ PORT ?= 8000
 help:
 	@echo "Targets:"
 	@echo "    serve [PORT=8000]    serve site at http://localhost:8000"
-	@echo "    update-index         update the data index files"
+	@echo "    update-data          update the data json files"
 
 FILES = \
   images/visible-spectrum.png
 
-DTYPES = \
-  dyes \
-  excitation \
-  filters
+DATA_COLLECTIONS = \
+  data/dyes.json \
+  data/excitation.json \
+  data/filters.json
 
-DATA_INDEX_FILES = \
-  $(foreach dtype, $(DTYPES), \
-            data/$(dtype)/index.html)
+## This makes the files dependent on the directory which is mehh.
+## Weird things happen because of it.
+%.json: %
+	$(PYTHON) -c \
+	    "import os, json; \
+	     files = filter(lambda x: x.endswith('.csv'), os.listdir('$^')); \
+	     print(json.dumps(map(lambda x: x[:-4], sorted(files)), \
+	                      separators=(',',': '), indent=2));" \
+	    > $@
+
+update-data: $(DATA_COLLECTIONS)
 
 images/visible-spectrum.png: src/create-spectrum.py
 	$(PYTHON) $^ $@
-
-update-index: $(DATA_INDEX_FILES)
-	src/update-index-files.sh
 
 serve: $(FILES)
 	$(PYTHON) -m SimpleHTTPServer $(PORT)

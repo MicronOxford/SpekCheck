@@ -10,13 +10,13 @@
   "647-laser",
   "Halogen-lamp",
   "Hg-arc-lamp",
+  "Metal-Halide-lamp",
+  "Xe-arc-lamp",
   "lumencor-CFP",
   "lumencor-Cy5",
   "lumencor-DAPI",
   "lumencor-FITC",
-  "lumencor-mCherry",
   "lumencor-TRITC",
   "lumencor-YFP",
-  "Metal-Halide-lamp",
-  "Xe-arc-lamp"
+  "lumencor-mCherry"
 ]

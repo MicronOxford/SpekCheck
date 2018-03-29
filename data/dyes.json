@@ -23,14 +23,14 @@
   "GFP",
   "Ir-complexes",
   "JF-549",
-  "lysotracker-red",
-  "mCherry",
-  "Mitotracker-red",
   "Mitotracker-red-FM",
-  "mKate2",
-  "mRFP",
-  "mScarlet",
+  "Mitotracker-red",
   "Quasar-570",
   "SYBER-green",
-  "YFP"
+  "YFP",
+  "lysotracker-red",
+  "mCherry",
+  "mKate2",
+  "mRFP",
+  "mScarlet"
 ]
