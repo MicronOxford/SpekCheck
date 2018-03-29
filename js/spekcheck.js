@@ -1410,6 +1410,9 @@ class SetupPlot extends View
                 datasets: [],
             },
             options: {
+                title: {
+                    fontSize: 24,
+                },
                 responsive: true,
                 maintainAspectRatio: false,
                 showLines: true,
@@ -1539,32 +1542,14 @@ class SetupPlot extends View
             }
         }
 
-        // We use the title to place the efficiency values.
-        {
-            const title = {
-                display: false,
-                text: '',
-                fontSize: 24,
-            };
-
-            const eff2str = (eff) => (eff*100).toFixed(1) + '%';
-            if (this.setup.dye !== null) {
-                const info = [] // text that will appear on the title.
-                if (this.setup.excitation !== null)
-                    info.push('ex=' + eff2str(this.setup.ex_efficiency));
-
-                info.push('em=' + eff2str(this.setup.em_efficiency));
-
-                if (this.setup.excitation !== null)
-                    info.push('brightness=' + this.setup.brightness.toFixed(2));
-
-                title.display = true;
-                title.text = (this.setup.dye.uid + ' efficiency: '
-                              + info.join(', '));
-            }
-
-            this.plot.options.title = title;
-        }
+        // We use the title to place the efficiency values, so there's
+        // no title if there's no dye.
+        if (this.setup.dye === null)
+            Object.assign(this.plot.options.title,
+                          {display: false, text: ''});
+        else
+            Object.assign(this.plot.options.title,
+                          this.formatTitle());
 
         // Reverse the datasets.  First elements appear on top of the
         // plot but we got this far expecting the other way around.
@@ -1572,6 +1557,29 @@ class SetupPlot extends View
         // which will look kinda washed out if not plotted on top.
         this.plot.data.datasets = datasets.reverse();
         this.plot.update();
+    }
+
+    // Object to configure Chartjs title option.
+    formatTitle() {
+        const eff2str = (eff) => (eff*100).toFixed(1) + '%';
+
+        // The things that will appear on the title.
+        const info = [];
+
+        if (this.setup.excitation !== null)
+            info.push('ex=' + eff2str(this.setup.ex_efficiency));
+
+        info.push('em=' + eff2str(this.setup.em_efficiency));
+
+        if (this.setup.excitation !== null)
+            info.push('brightness=' + this.setup.brightness.toFixed(2));
+
+        const title = {
+            display: true,
+            text: `${ this.setup.dye.uid } efficiency: ${ info.join(', ') }`,
+        };
+
+        return title;
     }
 
     downloadLink(format='image/png') {
