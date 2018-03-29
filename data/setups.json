@@ -1,0 +1,1360 @@
+[
+  [
+    "CryoSIM Red",
+    {
+      "dye": null,
+      "excitation": "561-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "r"
+        },
+        {
+          "filter": "T560lpxr",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-600-37",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "CryoSIM mVenus",
+    {
+      "dye": null,
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "r"
+        },
+        {
+          "filter": "T560lpxr",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-544-24",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "CryoSIM 515",
+    {
+      "dye": null,
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "r"
+        },
+        {
+          "filter": "T560lpxr",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-520-35",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "CryoSIM DAPI",
+    {
+      "dye": null,
+      "excitation": "405-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "r"
+        },
+        {
+          "filter": "T560lpxr",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-452-45",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "CryoSIM Red2",
+    {
+      "dye": null,
+      "excitation": "561-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "r"
+        },
+        {
+          "filter": "T560lpxr",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-605-70",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "CryoSIM green",
+    {
+      "dye": null,
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "r"
+        },
+        {
+          "filter": "T560lpxr",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-525-50",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "CryoSIM FarRed",
+    {
+      "dye": null,
+      "excitation": "647-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "r"
+        },
+        {
+          "filter": "T560lpxr",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-655-lp",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv3 Live YFP",
+    {
+      "dye": null,
+      "excitation": "514-laser",
+      "ex_path": [
+        {
+          "filter": "R-0056",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0048",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0056",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-550-49",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv3 Live RFP",
+    {
+      "dye": null,
+      "excitation": "592-laser",
+      "ex_path": [
+        {
+          "filter": "R-0056",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0048",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0056",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0048",
+          "mode": "r"
+        },
+        {
+          "filter": "R-0053",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-642-80-m",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv3 Live CFP",
+    {
+      "dye": null,
+      "excitation": "405-laser",
+      "ex_path": [
+        {
+          "filter": "R-0056",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0048",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0056",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0048",
+          "mode": "r"
+        },
+        {
+          "filter": "R-0053",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-482-35",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv3 Standard GFP",
+    {
+      "dye": null,
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "R-0063",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0039",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0063",
+          "mode": "r"
+        },
+        {
+          "filter": "R-0054",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-525-50",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv3 Standard Cy5",
+    {
+      "dye": null,
+      "excitation": "647-laser",
+      "ex_path": [
+        {
+          "filter": "R-0063",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0039",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0063",
+          "mode": "r"
+        },
+        {
+          "filter": "R-0054",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-684-40",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv3 Standard DAPI",
+    {
+      "dye": null,
+      "excitation": "405-laser",
+      "ex_path": [
+        {
+          "filter": "R-0063",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0039",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0063",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0039",
+          "mode": "r"
+        },
+        {
+          "filter": "R-0058",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-442-46",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv3 Standard RFP",
+    {
+      "dye": null,
+      "excitation": "592-laser",
+      "ex_path": [
+        {
+          "filter": "R-0063",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0039",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0063",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0039",
+          "mode": "r"
+        },
+        {
+          "filter": "R-0058",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-615-24",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv2 Live GFP",
+    {
+      "dye": null,
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "R-0056",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0048",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0056",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-525-50",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv2 Live CFP",
+    {
+      "dye": null,
+      "excitation": "405-laser",
+      "ex_path": [
+        {
+          "filter": "R-0056",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0048",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0056",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0048",
+          "mode": "r"
+        },
+        {
+          "filter": "R-0052",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-455-50",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv2 Live RFP",
+    {
+      "dye": null,
+      "excitation": "592-laser",
+      "ex_path": [
+        {
+          "filter": "R-0056",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0048",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0056",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0048",
+          "mode": "r"
+        },
+        {
+          "filter": "R-0052",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-629-53",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv2 Sedat FITC",
+    {
+      "dye": null,
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "R-0022",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0020",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0022",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-510-10",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv2 Sedat DAPI",
+    {
+      "dye": null,
+      "excitation": "405-laser",
+      "ex_path": [
+        {
+          "filter": "R-0022",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0020",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0022",
+          "mode": "r"
+        },
+        {
+          "filter": "R-0020",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0024",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-445-45",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv2 Sedat Rhod",
+    {
+      "dye": null,
+      "excitation": "592-laser",
+      "ex_path": [
+        {
+          "filter": "R-0022",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0020",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "R-0022",
+          "mode": "r"
+        },
+        {
+          "filter": "R-0020",
+          "mode": "t"
+        },
+        {
+          "filter": "R-0024",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-593-40",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv3 GR Red",
+    {
+      "dye": null,
+      "excitation": "592-laser",
+      "ex_path": [
+        {
+          "filter": "ZT488_592",
+          "mode": "t"
+        },
+        {
+          "filter": "T597dcsp",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT488_592",
+          "mode": "t"
+        },
+        {
+          "filter": "T597dcsp",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-605-lp",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "OMXv3 GR Green",
+    {
+      "dye": null,
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "ZT488_592",
+          "mode": "t"
+        },
+        {
+          "filter": "T597dcsp",
+          "mode": "t"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT488_592",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-540-80x",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DeepSIM Green",
+    {
+      "dye": "GFP",
+      "excitation": "488-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "r"
+        },
+        {
+          "filter": "zt561rdc-xr",
+          "mode": "r"
+        },
+        {
+          "filter": "EM-525-50",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DeepSIM Red",
+    {
+      "dye": "mCherry",
+      "excitation": "561-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647-22.5deg",
+          "mode": "r"
+        },
+        {
+          "filter": "zt561rdc-xr",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-600-50m",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DV Elite Quad DAPI",
+    {
+      "dye": "DAPI",
+      "excitation": "lumencor-DAPI",
+      "ex_path": [
+        {
+          "filter": "DV-SSI-Quad",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "DV-SSI-Quad",
+          "mode": "t"
+        },
+        {
+          "filter": "DV-EM-DAPI",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DV Elite Quad GFP",
+    {
+      "dye": "GFP",
+      "excitation": "lumencor-FITC",
+      "ex_path": [
+        {
+          "filter": "DV-SSI-Quad",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "DV-SSI-Quad",
+          "mode": "t"
+        },
+        {
+          "filter": "DV-EM-FITC",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DV Elite Quad TRITC",
+    {
+      "dye": "Alexa-568",
+      "excitation": "lumencor-TRITC",
+      "ex_path": [
+        {
+          "filter": "DV-SSI-Quad",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "DV-SSI-Quad",
+          "mode": "t"
+        },
+        {
+          "filter": "DV-EM-tritc",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DV Elite Quad Cy5",
+    {
+      "dye": "Cy5",
+      "excitation": "lumencor-Cy5",
+      "ex_path": [
+        {
+          "filter": "DV-SSI-Quad",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "DV-SSI-Quad",
+          "mode": "t"
+        },
+        {
+          "filter": "DV-EM-Cy5",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DV Elite QUADmC DAPI",
+    {
+      "dye": "DAPI",
+      "excitation": "lumencor-DAPI",
+      "ex_path": [
+        {
+          "filter": "DV-SSI-Quad-mCh",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "DV-SSI-Quad-mCh",
+          "mode": "t"
+        },
+        {
+          "filter": "DV-EM-DAPI",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DV Elite QUADmC GFP",
+    {
+      "dye": "GFP",
+      "excitation": "lumencor-FITC",
+      "ex_path": [
+        {
+          "filter": "DV-SSI-Quad-mCh",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "DV-SSI-Quad-mCh",
+          "mode": "t"
+        },
+        {
+          "filter": "DV-EM-FITC",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DV Elite QUADmC mCherry",
+    {
+      "dye": "mCherry",
+      "excitation": "lumencor-mCherry",
+      "ex_path": [
+        {
+          "filter": "DV-SSI-Quad-mCh",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "DV-SSI-Quad-mCh",
+          "mode": "t"
+        },
+        {
+          "filter": "DV-EM-mCherry",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DV Elite QUADmC Cy5",
+    {
+      "dye": "Cy5",
+      "excitation": "lumencor-Cy5",
+      "ex_path": [
+        {
+          "filter": "DV-SSI-Quad-mCh",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "DV-SSI-Quad-mCh",
+          "mode": "t"
+        },
+        {
+          "filter": "DV-EM-Cy5",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DV Elite CYmC mCherry",
+    {
+      "dye": "mCherry",
+      "excitation": "lumencor-mCherry",
+      "ex_path": [
+        {
+          "filter": "DV-SSI-C-YFP-mCh",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "DV-SSI-C-YFP-mCh",
+          "mode": "t"
+        },
+        {
+          "filter": "DV-EM-mCherry",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DV Elite CYmC-CFP",
+    {
+      "dye": "CFP",
+      "excitation": "lumencor-CFP",
+      "ex_path": [
+        {
+          "filter": "DV-SSI-C-YFP-mCh",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "DV-SSI-C-YFP-mCh",
+          "mode": "t"
+        },
+        {
+          "filter": "DV-EM-CFP",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "DV Elite CYmC-YFP",
+    {
+      "dye": "YFP",
+      "excitation": "lumencor-YFP",
+      "ex_path": [
+        {
+          "filter": "DV-SSI-C-YFP-mCh",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "DV-SSI-C-YFP-mCh",
+          "mode": "t"
+        },
+        {
+          "filter": "DV-EM-YFP",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "NanoImager Ch1",
+    {
+      "dye": "Alexa-546",
+      "excitation": "532-laser",
+      "ex_path": [
+        {
+          "filter": "NI-EX-dichroic",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "NI-EX-dichroic",
+          "mode": "t"
+        },
+        {
+          "filter": "NI-EM-splitter",
+          "mode": "r"
+        },
+        {
+          "filter": "NI-ch1f1",
+          "mode": "t"
+        },
+        {
+          "filter": "NI-ch1f2",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "NanoImager Ch2",
+    {
+      "dye": "Alexa-647",
+      "excitation": "647-laser",
+      "ex_path": [
+        {
+          "filter": "NI-EX-dichroic",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "NI-EX-dichroic",
+          "mode": "t"
+        },
+        {
+          "filter": "NI-EM-splitter",
+          "mode": "t"
+        },
+        {
+          "filter": "NI-ch2f1",
+          "mode": "t"
+        },
+        {
+          "filter": "NI-ch2f2",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Z880-DAPI-A88 DAPI",
+    {
+      "dye": "DAPI",
+      "excitation": "405-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "BP420-480_BP495-550",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Z880-DAPI-A488 A488",
+    {
+      "dye": "Alexa-488",
+      "excitation": "488-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "BP420-480_BP495-550",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Z880-DAPI-wGFP DAPI",
+    {
+      "dye": "DAPI",
+      "excitation": "405-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "BP420-480_BP495-620",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Z880-DAPI-wGFP GFP",
+    {
+      "dye": "GFP",
+      "excitation": "488-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "BP420-480_BP495-620",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Z880-CFP-YFP CFP",
+    {
+      "dye": "CFP",
+      "excitation": "458-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "BP465-505_LP525",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Z880-CFP-YFP YFP",
+    {
+      "dye": "YFP",
+      "excitation": "514-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "BP465-505_LP525",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Z880-GFP-RFP GFP",
+    {
+      "dye": "GFP",
+      "excitation": "488-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "BP495-550_LP570",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Z880-GFP-RFP RFP",
+    {
+      "dye": "mCherry",
+      "excitation": "561-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "BP495-550_LP570",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Z880-red-farred red",
+    {
+      "dye": "Alexa-568",
+      "excitation": "561-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "BP570-620_LP645",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Z880-red-farred farred",
+    {
+      "dye": "Alexa-647",
+      "excitation": "633-laser",
+      "ex_path": [],
+      "em_path": [
+        {
+          "filter": "BP570-620_LP645",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "PALM-TIRF 3band DAPI",
+    {
+      "dye": "DAPI",
+      "excitation": "405-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "ZET405-488-561m",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-450-50m",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "PALM-TIRF 3band GFP",
+    {
+      "dye": "GFP",
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "ZET405-488-561m",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-525-50",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "PALM-TIRF 3band RFP",
+    {
+      "dye": "mCherry",
+      "excitation": "561-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "ZET405-488-561m",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-600-50m",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "PALM-TIRF 4band DAPI",
+    {
+      "dye": "DAPI",
+      "excitation": "405-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561-647rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "ZET405-488-561-647m",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-450-50m",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "PALM-TIRF 4band GFP",
+    {
+      "dye": "GFP",
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561-647rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "ZET405-488-561-647m",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-525-50",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "PALM-TIRF 4band RFP",
+    {
+      "dye": "mCherry",
+      "excitation": "561-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561-647rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "ZET405-488-561-647m",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-600-50m",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "PALM-TIRF 4band farred",
+    {
+      "dye": "Cy5",
+      "excitation": "647-laser",
+      "ex_path": [
+        {
+          "filter": "ZT405-488-561-647rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT405-488-561-647rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "ZET405-488-561-647m",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-655-lp",
+          "mode": "t"
+        }
+      ]
+    }
+  ]
+]

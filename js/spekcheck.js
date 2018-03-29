@@ -774,7 +774,6 @@ class FilterStack extends Model // also kind of an Array
     }
 }
 
-
 // Like a Setup object but with Data instances (Dye, Excitation, and
 // Filter) replaced with their names/uids, and FilterStack replaced with
 // an Array.  This lets us to have a representation of them without
@@ -829,64 +828,19 @@ class SetupDescription extends Model
         return true;
     }
 
-    // Parse the CSVish column defining a filter.
-    //
-    // Args:
-    //     field (String): the filter definition, whose format is
-    //     'filter_name mode' where mode is 'R|T'
-    static
-    parseFilterField(field) {
-        const split = field.lastIndexOf(' ');
-        if (split === -1)
-            throw new Error(`invalid filter definition '${ field }'`);
+    toJSON(key) {
+        // TODO: I can't really make sense of JSON.stringify
+        //     documentation.  When called on the object being
+        //     serialised, then 'key' will be an empty string.  I
+        //     don't quite understand the other cases...
 
-        const uid = field.slice(0, split);
-        const mode = field.slice(split+1).toLowerCase();
-        if (mode !== 't' && mode !== 'r')
-            throw new Error(`invalid filter mode '${ mode }'`);
-
-        return {'filter': uid, 'mode': mode};
-    }
-
-    // Construct from a single CSVish line.
-    //
-    // Format is like:
-    //
-    //     dye uid, excitation uid, [em path filters] :: [ex path filters]
-    //
-    // Why do we support this?  A json format would be simpler, more
-    // flexible, and would document itself.
-    //
-    // Args:
-    //     line (String): the actual SetupDescription,
-    //         i.e., the whole line on the 'sets' file minus the
-    //         first column (which has the Setup uid).
-    //
-    // Returns:
-    //     A SetupDescription instance.
-    static
-    constructFromText(text) {
-        const fields = text.split(',').map(x => x.trim());
-
-        const dye = fields[0] || null;
-        const excitation = fields[1] || null;
-
-        const ex_path = [];
-        const em_path = [];
-        let path = em_path; // push into em_path until we see '::'
-        for (let filt of fields.slice(2)) {
-            const c_idx = filt.indexOf('::');
-            if (c_idx !== -1) {
-                let field = filt.slice(0, c_idx).trim();
-                path.push(this.parseFilterField(field));
-                path = ex_path; // Start filling ex_path now
-                field = filt.slice(c_idx+2).trim();
-                path.push(this.parseFilterField(field));
-            }
-            else
-                path.push(this.parseFilterField(filt))
-        }
-        return new SetupDescription(dye, excitation, ex_path, em_path);
+        const obj = {
+            dye: this.dye,
+            excitation: this.excitation,
+            ex_path: this.ex_path,
+            em_path: this.em_path,
+        };
+        return obj;
     }
 }
 
@@ -1165,26 +1119,6 @@ class DataCollection extends Collection
     [Symbol.iterator]() {
         throw new Error('not a useful method for lazy loading');
     }
-}
-
-
-// Parses the kinda CSV file with Optical Setup definitions, and
-// returns a Collection of them.
-function setupCollectionFromKindaCSV(text) {
-    const setups = [];
-    for (let line of text.split('\n')) {
-        line = line.trim();
-        if (line.startsWith('#') || line.length === 0)
-            continue; // skip comments and empty lines
-        const split_index = line.indexOf(',');
-        if (split_index === -1)
-            throw new Error(`invalid setup line '${ line }'`);
-        const uid = line.slice(0, split_index);
-        const setup_line = line.slice(split_index+1);
-        const setup = SetupDescription.constructFromText(setup_line);
-        setups.push([uid, setup]);
-    }
-    return new Collection(setups);
 }
 
 
@@ -2095,8 +2029,7 @@ const spekcheck_db = {
         reader: Filter.constructFromText.bind(Filter),
     },
     setup: {
-        filepath: 'data/sets.txt',
-        reader: setupCollectionFromKindaCSV,
+        filepath: 'data/setups.json',
     },
 };
 
@@ -2114,13 +2047,13 @@ function read_collections(db)
     const collections = {};
     const promises = [];  // promises that the individual collections are ready
 
-    // Collection of SetupDescription is special.
+    // Collection of SetupDescription is simpler.
     promises.push($.ajax({
         url: db.setup.filepath,
-        dataType: 'text',
+        dataType: 'json',
     }).then(
         function(data) {
-            collections.setup = db.setup.reader(data);
+            collections.setup = new Collection(data);
         },
     ));
 
