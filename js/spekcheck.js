@@ -1301,6 +1301,10 @@ class FilterStackView
             this.toggleFilterMode.bind(this, i)
         );
 
+        // We drag and drop filters from the filter collection into
+        // the filter stack to add them.  We could drag filters out to
+        // remove them.  While that would be nice, seems like it's
+        // actually not that intuitive so we have a button.
         const close = node.querySelector('button.close');
         close.addEventListener('click', this.removeFilter.bind(this, i));
 
