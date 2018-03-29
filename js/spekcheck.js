@@ -1480,20 +1480,13 @@ class SetupPlot extends View
     render() {
         const datasets = [];
 
-        // Filters in the excitation path appear hidden by default
-        // since they are not that important.  The user mainly cares
-        // about how the emission signal gets through, not how much
-        // excitation gets to the dye since often there's always more
-        // laser power.  Also, showing the dichroic twice effectively
-        // fills the whole plot.
-        for (let x of this.setup.ex_path) {
-            const mode = x.mode === 't' ? 'transmission' : 'reflection';
-            const options = {
-                label: `${ x.filter.uid } (${ x.mode })`,
-                hidden: true,
-            };
-            datasets.push(this.asChartjsDataset(x.filter[mode], options));
-        }
+        // We don't draw filters from the excitation path.  We don't
+        // even have then hidden by default (which we could do by
+        // passing {'hidden': true} in the dataset options.  This is
+        // by design.  On the other hand, the spectrum of the
+        // excitation spectrum will already appear scaled, so the
+        // spectrum of the excitation will appear modelled in the
+        // modified spectrum of the source.
 
         for (let x of this.setup.em_path) {
             const mode = x.mode === 't' ? 'transmission' : 'reflection';
