@@ -7,19 +7,6 @@
   over an image of the visible spectrum.
 */
 
-.spekcheck-logo
-{
-    color: white;
-    background-image:url('../images/visible-spectrum.png');
-    background-repeat:round;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-size: 3em;
-    line-height: 0.5;
-    font-weight: bold;
-    vertical-align: bottom;
-}
-
 .spekcheck-filtersview
 {
     max-height: 200px;

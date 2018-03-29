@@ -8,13 +8,16 @@
 PYTHON ?= python
 PORT ?= 8000
 
+INKSCAPE ?= inkscape
+
 help:
 	@echo "Targets:"
 	@echo "    serve [PORT=8000]    serve site at http://localhost:8000"
 	@echo "    update-data          update the data json files"
 
 FILES = \
-  images/visible-spectrum.png
+  images/visible-spectrum.png \
+  images/spekcheck-logo.png
 
 DATA_COLLECTIONS = \
   data/dyes.json \
@@ -32,6 +35,9 @@ DATA_COLLECTIONS = \
 	    > $@
 
 update-data: $(DATA_COLLECTIONS)
+
+%.png: %.svg
+	$(INKSCAPE) --export-area-drawing --export-png=$@ $^
 
 images/visible-spectrum.png: src/create-spectrum.py
 	$(PYTHON) $^ $@
