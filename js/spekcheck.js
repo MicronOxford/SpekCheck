@@ -1914,9 +1914,9 @@ class SpekCheck
 
     route(hash) {
         hash = decodeURIComponent(hash);
-        for (let cname of ['setup', 'dye', 'excitation']) {
-            const dir = `#${ cname }/`;
+        for (let dir of ['#setup=', '#dye=', '#excitation=']) {
             if (hash.startsWith(dir)) {
+                const cname = dir.slice(1, -1);
                 const uid = hash.slice(dir.length);
                 if (this.collection[cname].has(uid))
                     this.view[cname].$el.val(uid).change();
@@ -1984,7 +1984,7 @@ class SpekCheck
         const uid = val === '' ? null : val;
 
         if (dtype === 'setup') {
-            const hash = '#setup/' + encodeURIComponent(uid);
+            const hash = '#setup=' + encodeURIComponent(uid);
             location.replace(location.origin + location.pathname + hash);
             return this.changeSetup(uid);
         } else {
