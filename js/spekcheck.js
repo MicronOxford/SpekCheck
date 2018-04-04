@@ -1984,8 +1984,7 @@ class SpekCheck
         const uid = val === '' ? null : val;
 
         if (dtype === 'setup') {
-            const hash = '#setup=' + encodeURIComponent(uid);
-            location.replace(location.origin + location.pathname + hash);
+            location.hash = '#setup=' + encodeURIComponent(uid);
             return this.changeSetup(uid);
         } else {
             // Remember when a user selects a dye manually to prevent
