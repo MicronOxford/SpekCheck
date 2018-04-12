@@ -1,7 +1,7 @@
 Type: detector
 Name: Dark adapted human eye
 ## Source https://web.archive.org/web/20071026115341/http://www.cvrl.org:80/database/data/lum/scvle.txt
-wavelength,transmission
+wavelength,qe
 380, 5.890e-004
 385, 1.108e-003
 390, 2.209e-003

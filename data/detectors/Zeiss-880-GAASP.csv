@@ -1,6 +1,6 @@
 Type: detector
 Name: QE of 880 GAASP detetcor
-wavelength,transmission
+wavelength,qe
 307.1705638,0.100864433
 322.4868881,0.13379085
 337.0738636,0.185921154
