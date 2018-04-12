@@ -62,7 +62,7 @@
     `.modal` within another fixed element.
 -->
 
-<!-- Dialog to import dyes, excitation sources, and filters -->
+<!-- Dialog to import detectors, dyes, excitation sources, and filters -->
 <div class="modal fade" id="import-file-dialog" tabindex="-1" role="dialog"
      aria-labelledby="import-file-title" aria-hidden="true">
   <div class="modal-dialog" role="document">
@@ -79,9 +79,10 @@
         <div class="modal-body">
           <div class="input-group mb-3">
             <select class="custom-select" id="file-type">
+              <option value="detector">Detector</option>
               <option value="dye">Dye</option>
-              <option value="filter">Filter</option>
               <option value="excitation">Excitation</option>
+              <option value="filter">Filter</option>
             </select>
             <div class="input-group-append">
               <label class="input-group-text" for="file-type">Type</label>
@@ -210,7 +211,7 @@
   </div>
 </div>
 
-<!-- Selector for setup, dye, and excitation source -->
+<!-- Selector for setup, dye, excitation source, and detector -->
 <div class="container row">
   <div class="col-sm input-group">
     <div class="input-group-prepend">
@@ -231,6 +232,13 @@
       <span class="input-group-text">Excitation</span>
     </div>
     <select class="custom-select" id="excitation-selector">
+    </select>
+  </div>
+  <div class="col-sm input-group">
+    <div class="input-group-prepend">
+      <span class="input-group-text">Detector</span>
+    </div>
+    <select class="custom-select" id="detector-selector">
     </select>
   </div>
 </div>

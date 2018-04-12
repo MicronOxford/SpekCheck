@@ -20,6 +20,7 @@ FILES = \
   images/spekcheck-logo.png
 
 DATA_COLLECTIONS = \
+  data/detectors.json \
   data/dyes.json \
   data/excitation.json \
   data/filters.json

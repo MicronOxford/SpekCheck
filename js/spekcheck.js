@@ -64,10 +64,10 @@ class Model
 
 // Class for Spectrum data and its basic computations.
 //
-// Not for Dye, Filter, or Excitation.  Those have properties that are
-// Spectrum instances, but they are not a Spectrum themselves.  For
-// example, the Dye class will have a emission and excitation
-// properties, each of them a Spectrum instance.
+// Not for Detector, Dye, Filter, or Excitation.  Those have
+// properties that are Spectrum instances, but they are not a Spectrum
+// themselves.  For example, the Dye class will have a emission and
+// excitation properties, each of them a Spectrum instance.
 //
 // Args:
 //     wavelength (Array<float>): in nanometers.
@@ -220,7 +220,7 @@ class Spectrum extends Model
 }
 
 
-// Base class for our Data: Dye, Excitation, and Filter classes.
+// Base class for our Data: Detector, Dye, Excitation, and Filter classes.
 //
 // It provides a nice default constructor and factory from file text.
 // It requires two static data members wich configure the constructor
@@ -475,6 +475,19 @@ class Excitation extends Data
 }
 Excitation.prototype.properties = Data.prototype.properties.concat([
     'intensity',
+]);
+
+class Detector extends Data
+{
+    validate() {
+        if (! (this.qe instanceof Spectrum))
+            return "'intensity' property is not a Spectrum object";
+        if (! this.qe.isValid())
+            return this.intensity.validation_error;
+    }
+}
+Detector.prototype.properties = Data.prototype.properties.concat([
+    'qe',
 ]);
 
 
@@ -774,8 +787,8 @@ class FilterStack extends Model // also kind of an Array
     }
 }
 
-// Like a Setup object but with Data instances (Dye, Excitation, and
-// Filter) replaced with their names/uids, and FilterStack replaced with
+// Like a Setup object but with Data instances (Detector, Dye, Excitation,
+// and Filter) replaced with their names/uids, and FilterStack replaced with
 // an Array.  This lets us to have a representation of them without
 // parsing all the filters, excitation, and dyes files.  Also much
 // easier to save them.
@@ -783,8 +796,9 @@ class FilterStack extends Model // also kind of an Array
 // See also the Setup class.
 class SetupDescription extends Model
 {
-    constructor(dye, excitation, ex_path, em_path) {
+    constructor(detector, dye, excitation, ex_path, em_path) {
         super();
+        this.detector = detector; // String or null
         this.dye = dye; // String or null
         this.excitation = excitation; // String or null
         this.ex_path = ex_path; // Array of {filter: String, mode: 'r'|'t'}
@@ -792,7 +806,7 @@ class SetupDescription extends Model
     }
 
     validate() {
-        for (let name of ['dye', 'excitation'])
+        for (let name of ['detector', 'dye', 'excitation'])
             if (typeof(this[name]) !== 'string' && ! (x instanceof String)
                 && this[name] !== null)
                 return `${ name } must be a String or null`;
@@ -819,7 +833,8 @@ class SetupDescription extends Model
         if (other instanceof Setup)
             other = other.describe();
 
-        if (this.dye !== other.dye
+        if (this.detector !== other.detector
+            || this.dye !== other.dye
             || this.excitation !== other.excitation
             || (! this.ex_path.isEqual(other.ex_path))
             || (! this.em_path.isEqual(other.em_path)))
@@ -835,6 +850,7 @@ class SetupDescription extends Model
         //     don't quite understand the other cases...
 
         const obj = {
+            detector: this.detector,
             dye: this.dye,
             excitation: this.excitation,
             ex_path: this.ex_path,
@@ -847,13 +863,14 @@ class SetupDescription extends Model
 
 // Handles the computation of the Setup efficiency, transmission, etc.
 //
-// It triggers change events for the dye, excitation, ex_path, and
-// em_path.  This is the model for what will eventually get displayed.
-// All user interactions get modelled into changes to an Setup
-// instance.
+// It triggers change events for the detector, dye, excitation,
+// ex_path, and em_path.  This is the model for what will eventually
+// get displayed.  All user interactions get modelled into changes to
+// an Setup instance.
 //
-// There is also an SetupDescription which does not have the
-// actual Dye, Excitation, and Filter objects.
+// There is also an SetupDescription which does not have the actual
+// Detector, Dye, Excitation, and Filter objects, instead it replaces
+// them with their uids.
 class Setup extends Model
 {
     constructor() {
@@ -861,6 +878,7 @@ class Setup extends Model
         // Adds a setter and getter for this properties, so it
         // triggers change events for all of them.
         const defaults = {
+            detector: null,
             dye: null,
             excitation: null,
             // The filters are an array of Objects with filter and
@@ -955,6 +973,7 @@ class Setup extends Model
     // Excitation objects with their names.
     describe() {
         const description = new SetupDescription(
+            this.detector ? this.detector.uid : null,
             this.dye ? this.dye.uid : null,
             this.excitation ? this.excitation.uid : null,
             this.ex_path.describe(),
@@ -966,6 +985,7 @@ class Setup extends Model
     }
 
     empty() {
+        this._detector = null;
         this._dye = null;
         this._excitation = null;
         this.ex_path._empty();
@@ -996,7 +1016,7 @@ class Setup extends Model
 
     clone() {
         const clone = new Setup();
-        for (let p of ['dye', 'excitation', 'ex_path', 'em_path'])
+        for (let p of ['detector', 'dye', 'excitation', 'ex_path', 'em_path'])
             clone[p] = this[p];
         return clone;
     }
@@ -1065,7 +1085,7 @@ class Collection extends Model // also kind of a Map
 }
 
 
-// Like Collection for Filter, Dyes, and Excitation.
+// Like Collection for Filter, Detectors, Dyes, and Excitation.
 //
 // The elements of this collection will all be promises of our Data
 // instances.  The reading of the data files is actually delayed until
@@ -1179,7 +1199,7 @@ class CollectionView extends View
 }
 
 // Displays a Collection as option lists in a select menu with an
-// empty entry at the top.  Used to select a Setup, a Dye, and
+// empty entry at the top.  Used to select a Setup, Detector, Dye, and
 // Excitation.
 class SelectView extends CollectionView
 {
@@ -1461,7 +1481,7 @@ class SetupPlot extends View
     //         created from 'spectrum'.  It can also be used to
     //         override other options.  It is mainly used to set the
     //         label used.  It can also be used to change the colour.
-    asChartjsDataset(spectrum, options) {
+    asChartjsDataset(spectrum, options = {}) {
         if (! this._dataset_cache.has(spectrum)) {
             const points = new Array(spectrum.wavelength.length);
             for (let i = 0; i < points.length; i++)
@@ -1494,6 +1514,14 @@ class SetupPlot extends View
         // excitation spectrum will already appear scaled, so the
         // spectrum of the excitation will appear modelled in the
         // modified spectrum of the source.
+
+        if (this.setup.detector !== null) {
+            const detector = this.setup.detector;
+            const options = {
+                label: detector.uid,
+            };
+            datasets.push(this.asChartjsDataset(detector.qe, options));
+        }
 
         for (let x of this.setup.em_path) {
             const mode = x.mode === 't' ? 'transmission' : 'reflection';
@@ -1840,7 +1868,7 @@ class SpekCheck
         this.$el = $el;
         this.el = $el[0];
         this.collection = collections;
-        for (let dtype of ['setup', 'dye', 'excitation', 'filter'])
+        for (let dtype of ['setup', 'detector', 'dye', 'excitation', 'filter'])
             if (! (collections[dtype] instanceof Collection))
                 throw new Error(`no Collection for type '${ dtype }'`);
 
@@ -1859,7 +1887,7 @@ class SpekCheck
         // Note that there's no SelectView for the filters.  Those are
         // not selectable, they're part of the path customisation GUI.
         this.view = {};
-        for (let dtype of ['dye', 'excitation', 'setup']) {
+        for (let dtype of ['detector', 'dye', 'excitation', 'setup']) {
             const view = new SelectView(
                 this.$el.find('#' + dtype + '-selector'),
                 this.collection[dtype],
@@ -1893,6 +1921,7 @@ class SpekCheck
                                                      this.live_setup);
 
         this.import_dialog = new ImportDialog($('#import-file-dialog'), {
+            detector: this.collection.detector,
             dye: this.collection.dye,
             filter: this.collection.filter,
             excitation: this.collection.excitation,
@@ -1904,8 +1933,8 @@ class SpekCheck
             this.live_setup
         );
 
-        // If someone imports a Dye or Excitation, change to it.
-        for (let dtype of ['dye', 'excitation'])
+        // If someone imports a Detector, Dye or Excitation, change to it.
+        for (let dtype of ['detector', 'dye', 'excitation'])
             this.collection[dtype].on('add', this.changeData.bind(this, dtype));
 
         // Configure initial display based on the URL hash
@@ -1914,7 +1943,7 @@ class SpekCheck
 
     route(hash) {
         hash = decodeURIComponent(hash);
-        for (let dir of ['#setup=', '#dye=', '#excitation=']) {
+        for (let dir of ['#setup=', '#dye=', '#excitation=', '#detector=']) {
             if (hash.startsWith(dir)) {
                 const cname = dir.slice(1, -1);
                 const uid = hash.slice(dir.length);
@@ -1942,6 +1971,7 @@ class SpekCheck
         if (! this.user_selected_dye)
             promises.push(this.changeData('dye', setup.dye));
 
+        promises.push(this.changeData('detector', setup.detector));
         promises.push(this.changeData('excitation', setup.excitation));
 
         for (let path_name of ['ex_path', 'em_path']) {
@@ -1970,19 +2000,21 @@ class SpekCheck
             const val = uid === null ? '' : uid;
             this.view[dtype].val(val);
         }).bind(this);
+        const log_failure = (function(reason) {
+            console.error(`failed to get '${ dtype }' data:\n${ reason }`);
+        });
 
         let get_data;
         if (uid === null)
             get_data = new Promise((r) => r(null));
         else
             get_data = this.collection[dtype].get(uid);
-        return get_data.then(change);
+        return get_data.then(change).catch(log_failure);
     }
 
     handleChangeEv(dtype, ev) {
         const val = ev.target.value;
         const uid = val === '' ? null : val;
-
         if (dtype === 'setup') {
             location.hash = '#setup=' + encodeURIComponent(uid);
             return this.changeSetup(uid);
@@ -2017,6 +2049,11 @@ class SpekCheck
 // database of data files.  Note the path which is relative to the
 // SpekCheck site.
 const spekcheck_db = {
+    detector: {
+        filepath: 'data/detectors.json',
+        datadir: 'data/detectors/',
+        reader: Detector.constructFromText.bind(Detector),
+    },
     dye: {
         filepath: 'data/dyes.json',
         datadir: 'data/dyes/',
@@ -2061,7 +2098,7 @@ function read_collections(db)
         },
     ));
 
-    for (let dtype of ['dye', 'excitation', 'filter']) {
+    for (let dtype of ['detector', 'dye', 'excitation', 'filter']) {
         promises.push($.ajax({
             url: db[dtype].filepath,
             dataType: 'json',
