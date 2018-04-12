@@ -67,7 +67,7 @@ class Model
 // Not for Detector, Dye, Filter, or Excitation.  Those have
 // properties that are Spectrum instances, but they are not a Spectrum
 // themselves.  For example, the Dye class will have a emission and
-// excitation properties, each of them a Spectrum instance.
+// absorption properties, each of them a Spectrum instance.
 //
 // Args:
 //     wavelength (Array<float>): in nanometers.
@@ -431,7 +431,7 @@ Data.prototype.properties = [
 class Dye extends Data
 {
     validate() {
-        for (let s_name of ['emission', 'excitation']) {
+        for (let s_name of ['emission', 'absorption']) {
             if (! (this[s_name] instanceof Spectrum))
                 return `${ s_name } property is not a Spectrum object`;
             if (! this[s_name].isValid())
@@ -456,7 +456,7 @@ Dye.prototype.header_map = new Map([
 Dye.prototype.properties = Data.prototype.properties.concat([
     'emission',
     'ex_coeff',
-    'excitation',
+    'absorption',
     'q_yield',
 ]);
 
@@ -946,7 +946,7 @@ class Setup extends Model
     get
     ex_efficiency() {
         const source = this.excitation.intensity;
-        const dye_ex = this.dye.excitation;
+        const dye_ex = this.dye.absorption;
 
         const dye_ex_in_path = this.ex_path.transmissionOf(source).clone();
         dye_ex_in_path.data = dye_ex_in_path.multiplyBy(dye_ex);
@@ -1552,8 +1552,8 @@ class SetupPlot extends View
 
         if (this.setup.dye !== null) {
             const dye = this.setup.dye;
-            datasets.push(this.asChartjsDataset(dye.excitation,
-                                                {label: dye.uid + '(ex)'}));
+            datasets.push(this.asChartjsDataset(dye.absorption,
+                                                {label: dye.uid + '(abs)'}));
             datasets.push(this.asChartjsDataset(dye.emission,
                                                 {label: dye.uid + '(em)'}));
 

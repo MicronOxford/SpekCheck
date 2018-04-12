@@ -2,7 +2,7 @@ Type: dye
 Name: Mitotracker red
 Extinction coefficient:
 Quantum Yield:
-wavelength,excitation,emission
+wavelength,absorption,emission
 300,0.1355363,0
 301,0.1384766,0
 302,0.1401568,0

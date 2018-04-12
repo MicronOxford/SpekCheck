@@ -2,7 +2,7 @@ Type: Dye
 Name: Atto590 from http://www.fluorophores.tugraz.at/substance/155
 Extinction coefficient: 120000
 Quantum Yield: 0.80
-wavelength,excitation,emission
+wavelength,absorption,emission
 251,0.3281,0
 252,0.3369,0
 253,0.3459,0

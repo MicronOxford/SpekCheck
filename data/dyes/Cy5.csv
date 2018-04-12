@@ -2,7 +2,7 @@ Type: Dye
 Name: Cy5
 Extinction coefficient: 250000
 Quantum Yield: 0.27
-wavelength,excitation,emission
+wavelength,absorption,emission
 540,0.046645001,0
 541,0.048730001,0
 542,0.050799999,0

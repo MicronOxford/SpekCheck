@@ -2,7 +2,7 @@ Type: Dye
 Name: lysotracker red
 Extinction coefficient: 
 Quantum Yield: 
-wavelength,excitation,emission
+wavelength,absorption,emission
 250,0.081935696,0
 251,0.0749695,0
 252,0.069529198,0

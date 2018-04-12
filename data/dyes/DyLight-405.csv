@@ -2,7 +2,7 @@ Type: dye
 Name: DyLight 405
 Extinction coefficient: 30000
 Quantum Yield: high?
-wavelength,excitation,emission
+wavelength,absorption,emission
 322,0.079999998,0
 323,0.079999998,0
 324,0.090000004,0

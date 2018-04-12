@@ -2,7 +2,7 @@ Type: FP
 Name: mRFP1
 Extinction coefficient: 44000
 Quantum Yield: 0.25
-wavelength,excitation,emission
+wavelength,absorption,emission
 492,0.072499998,0
 493,0.077600002,0
 494,0.083499998,0

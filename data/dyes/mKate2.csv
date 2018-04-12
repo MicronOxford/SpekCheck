@@ -2,7 +2,7 @@ Type: FP
 Name: mKate2
 Extinction coefficient: 62500
 Quantum Yield: 0.40
-wavelength,excitation,emission
+wavelength,absorption,emission
 442,0.01994,0
 443,0.020339999,0
 444,0.0208,0

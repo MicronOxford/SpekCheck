@@ -2,7 +2,7 @@ Type: dye
 Name: Atto-647N
 Extinction coefficient: 150000
 Quantum Yield: 0.65
-wavelength,excitation,emission
+wavelength,absorption,emission
 502,0.016000001,0
 503,0.017000001,0
 504,0.015,0

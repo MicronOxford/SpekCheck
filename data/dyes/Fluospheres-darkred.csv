@@ -2,7 +2,7 @@ Type: Beads
 Name: FluoSpheres dark red fluoresencet Microsphere - invitrogen.
 Extinction coefficient:
 Quantum Yield:
-wavelength,excitation,emission
+wavelength,absorption,emission
 300,0,0
 301,0,0
 302,0,0

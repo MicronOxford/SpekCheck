@@ -2,7 +2,7 @@ Type: Dye
 Name: Ir complexes from Carlos
 Extinction coefficient: 
 Quantum Yield: 
-wavelength,excitation,emission
+wavelength,absorption,emission
 300.000000,0.519810,0.000000
 301.000000,0.502010,0.000000
 302.000000,0.486740,0.000000
