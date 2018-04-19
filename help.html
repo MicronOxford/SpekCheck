@@ -29,9 +29,229 @@
   </header>
 
   <main role="main" class="container">
-    <h2 id="links">Links</h2>
+    <h2 id="links">Usage</h2>
 
-    <h2 id="files">Files</h2>
+    <h2 id="files">File Format</h2>
+
+    Microscope setups and new components can be
+
+    <h3 id="setups-file">Setups file</h3>
+
+    <p>
+      In SPEKcheck, a microscope setup is defined by a series of
+      components: an excitation source, a stack of filters on the
+      excitation path, a dye, another stack of filters on the emission
+      path, and a detector.
+    </p>
+
+    <p>
+      Setups are defined in JSON format.  All components must be
+      defined although their values may be <code>null</code> or, in
+      the case of emission and excitation paths, empty arrays.  The
+      names of each components must match the name used on the
+      collections and is case sensitive.  In the case of filters, they
+      must be paired with their <code>mode</code> which must have a
+      value of <code>"r"</code> or <code>"t"</code> for reflection or
+      transmission respectively.  The dichroic filters are part of
+      both excitation and emission paths.  As such, they should appear
+      in both in the description, with opposing modes.
+    </p>
+
+    <figure class="figure">
+      <figcaption class="figure-caption">
+        An example setup definition.
+      </figcaption>
+      <pre><code>
+{
+  "detector": "Detector Name",
+  "dye": "Dye Name",
+  "excitation": null,
+  "ex_path": [
+    {"filter": "Filter 1 Name", "mode": "t"}
+  ],
+  "em_path": [
+    {"filter": "Filter 1 Name", "mode", "r"},
+    {"filter": "Filter 2 Name", "mode", "t"}
+  ]
+}
+</pre></code>
+    </figure>
+
+    <p>
+      The file <code>data/setups.json</code> will define all the
+      setups available for selection.  This file must defined a JSON
+      Array which will be used to construct a
+      <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map"><code>Map</code></a>
+      object.  Each element in the Array must be a two-element array,
+      the first element a String with the setup name, and the second
+      element, a JSON object with the setup description.  Because a
+      Map is used, the order used to define each setup on this file
+      will be used on the SPEKcheck menus.  This allows to order and
+      group setups by any function other than alphabetical.
+    </p>
+
+    <figure class="figure">
+      <figcaption class="figure-caption">
+        A <code>data/setups.json</code> file example.
+      </figcaption>
+      <pre><code>
+[
+  [
+    "Setup 1 Name",
+    {
+      "detector": "Detector Name",
+      "dye": "Dye Name",
+      "excitation": null,
+      "ex_path": [
+        {"filter": "Dichroic Filter 1 Name", "mode": "t"}
+      ],
+      "em_path": [
+        {"filter": "Dichroic Filter 1 Name", "mode", "r"},
+        {"filter": "Filter 2 Name", "mode", "t"}
+      ]
+    }
+  ],
+  [
+    "Setup 2 Name",
+    {
+      "detector": "Maybe Another Detector Name",
+      "dye": null,
+      "excitation": "Excitation Source Name",
+      "ex_path": [
+        {"filter": "Filter 1 Name", "mode": "t"}
+      ],
+      "em_path": [
+        {"filter": "Filter 1 Name", "mode", "r"},
+        {"filter": "Filter 3 Name", "mode", "t"}
+      ]
+    }
+  ]
+]
+      </pre></code>
+    </figure>
+
+    <h3 id="components-files">Data Files (CSV with text header)</h3>
+
+    <p>
+      The file format for each component is a plain text file: a
+      multiline key/value header followed by the spectrum values in a
+      CSV format.
+    </p>
+
+    <div class="alert alert-danger" role="alert">
+      Why are Name and Type keys if they are actually ignored?  The
+      idea is that they are useful but we have comments so why not
+      have them in comments instead?  In that case, only Dyes require
+      an header.
+    </div>
+
+    <p>
+      The header of the file must include all of the keys.  The keys
+      are <code>Name</code> and <code>Type</code>.  In the case of
+      dyes, the keys are also <code>Extinction coefficient</code>
+      and <code>Quantum Yield</code>.  While the keys must exist,
+      their values are optional.  In addition, lines starting
+      with <code>#</code> are comments and so ignored.
+    </p>
+
+    <p>
+      The CSV section of the file declares the spectra data.  The
+      first line of the CSV names the columns and the first column
+      must always be <code>wavelength</code>.  The wavelength values
+      must be in nanometers.  The other columns have the spectra
+      values and must be in the [0 1] or [0 100] range.  The columns
+      names must be <code>absorption</code> and <code>emission</code>
+      for dyes, <code>intensity</code> for excitation
+      sources, <code>reflection</code> or <code>transmission</code>
+      for filters, and <code>qe</code> for detectors.
+    </p>
+
+    <div class="alert alert-danger" role="alert">
+      I don't like <code>qe</code> for column name.
+    </div>
+
+
+    <div class="card-deck mb-3">
+      <div class="card">
+        <div class="card-header">Example Dye file</div>
+        <div class="card-body">
+          <pre><code>Type: Dye
+Name: the name
+# This line is a comment and will be ignored
+# The 'Extinction coefficient' and 'Quantum Yield' lines are still
+# required, but their values can be empty if not known.
+Extinction coefficient:
+Quantum Yield:
+wavelength,absorption,emission
+250,0.494230986,0.000
+251,0.489300013,0.000
+252,0.489378005,0.000
+253,0.490633011,0.000
+...
+</code></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Example Filter file</div>
+        <div class="card-body">
+          <pre><code>Type: dichroic filter
+Name: this filter name
+## Instead of transmission, this file could instead have reflection too.
+wavelength,transmission
+450.088864,0.004743
+450.204180,0.005017
+450.319497,0.004637
+450.434813,0.004622
+450.550130,0.005573
+...
+</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-deck mb-3">
+      <div class="card">
+        <div class="card-header">Example Excitation file</div>
+        <div class="card-body">
+          <pre><code>Type: excitation source
+Name: 442-laser
+wavelength,intensity
+441,0
+442,1.0
+443,0
+</code></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Example Detector file</div>
+        <div class="card-body">
+          <pre><code>Type: detector
+Name: The Detector name
+## The source of the file is a useful thing to keep as a comment.
+wavelength,qe
+410, 0.0093
+420, 0.0175
+430, 0.0273
+...
+</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="installation">Installation</h2>
+
+    SPEKcheck is a web application and runs on a web browser such as
+    Firefox or Chrome.
+
+    <h3 id="local-installation">Local installation</h3>
+
+    <h3 id="server-installation">Installation on web server</h3>
+
+    SPEKcheck does not need anything special from a web server.
+    Simply extract all files and configure the web server to serve
+    that location.
   </main>
 
 </body>
