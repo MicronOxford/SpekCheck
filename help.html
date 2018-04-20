@@ -17,19 +17,135 @@
   <link rel="stylesheet" type="text/css" href="css/spekcheck.css">
 
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+          integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+          crossorigin="anonymous"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+          integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+          crossorigin="anonymous"></script>
+
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+          integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+          crossorigin="anonymous"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"
+          integrity="sha256-c0m8xzX5oOBawsnLVpHnU2ieISOvxi584aNElFl2W6M="
+          crossorigin="anonymous"></script>
+
+  <script src="js/spekcheck.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded',
+                              (event) => main(document.querySelector('#spekcheck-app')));
+  </script>
 </head>
 <body>
   <header>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <a class="navbar-brand" href="./">
-        <span class="spekcheck-logo">&#10004;</span><span style="font-weight:bold">SPEK</span>check
+        <img src="images/spekcheck-logo.png" width="30" height="29"
+             class="d-inline-block align-top" alt="">
+        <span style="font-weight:bold">SPEK</span>check
       </a>
       <span class="navbar-text">Documentation</span>
     </nav>
   </header>
 
   <main role="main" class="container">
-    <h2 id="links">Usage</h2>
+    <h2 id="usage">Usage</h2>
+
+    <h2 id="installation">Installation</h2>
+
+    <p>
+      SPEKcheck is a fully client-side web application.  It runs on a
+      web browser such as Firefox, either locally or served through a
+      web server.  In addition, it can be included as part of another
+      web page.
+    </p>
+
+    <h3 id="local-installation">Local installation</h3>
+
+    <ol>
+      <li><a href="https://github.com/MicronOxford/SpekCheck/releases">Download
+          latest version</a> of SPEKcheck</li>
+      <li>Extract all files from the archive wherever</li>
+      <li>Open the <code>index.html</code> file on a web browser such
+        as Firefox</li>
+    </ol>
+
+    <div class="alert alert-info" role="alert">
+      The Chrome and Safari web browsers do not load local files by
+      default and so, by default, SPEKcheck will require a web server.
+      To read on how to configure your browsers, and its implications,
+      see <a href="http://www.chrome-allow-file-access-from-file.com/">this
+      for Chrome</a> and <a>this for Safari</a>.  Alternatively,
+      run <code>python -m SimpleHTTPServer</code> which will start a
+      web server, and access SPEKcheck
+      at <a href="http://localhost:8000">http://localhost:8000</a>
+    </div>
+
+    <div class="alert alert-info" role="alert">
+      SPEKcheck does not run on Internet Explorer.
+    </div>
+
+    <h3 id="server-installation">Installation on web server</h3>
+
+    <p>
+      SPEKcheck runs fully client-side and can be served as static
+      site.  Simply extract all files into whatever location the web
+      server is configured to use.
+    </p>
+
+    <p>
+      If you are setting SPEKcheck on your own web server, you are
+      probably also looking to configure the available setups and
+      components.  All configuration is done by editing the files
+    </p>
+
+    <h3 id="inserted-into-page">Included on another webpage</h3>
+
+    <p>
+      The SPEKcheck application can be included as part of another
+      webpage.  The main use of case of this usage is to include
+      SPEKcheck on a page for a specific microscope.  For example, a
+      microscope facility which has a page for each of their
+      microscopes can include SPEKcheck with only the setup and
+      components associated with the system.
+    </p>
+
+    <p>
+      SPEKcheck is dependent on bootstrap, jQuery, and Chart.js and so
+      those need to be referenced.  SPEKcheck will inject itself into
+      any <code>div</code>
+    </p>
+
+    <div class="card">
+      <div class="card-header">Code to insert SPEKcheck as part of
+      another page</div>
+      <div class="card-body">
+        <pre><code>&lt;script&gt;
+  document.addEventListener('DOMContentLoaded',
+                            () => main(document.querySelector('#spekcheck')));
+&lt;/script&gt;
+</code></pre>
+      </div>
+    </div>
+
+
+    <div class="card">
+      <div class="card-header">
+        <button class="btn btn-link" type="button" data-toggle="collapse"
+                data-target="#spekcheck-inserted-example">
+          Click to Show/Hide SPEKcheck
+        </button>
+    </div>
+
+    <div id="spekcheck-inserted-example" class="collapse">
+      <div class="card-body" id="spekcheck-app">
+      </div>
+    </div>
+    </div>
 
     <h2 id="files">File Format</h2>
 
@@ -74,7 +190,7 @@
     {"filter": "Filter 2 Name", "mode", "t"}
   ]
 }
-</pre></code>
+</code></pre>
     </figure>
 
     <p>
@@ -127,7 +243,7 @@
     }
   ]
 ]
-      </pre></code>
+</code></pre>
     </figure>
 
     <h3 id="components-files">Data Files (CSV with text header)</h3>
@@ -240,19 +356,6 @@ wavelength,qe
       </div>
     </div>
 
-    <h2 id="installation">Installation</h2>
-
-    SPEKcheck is a web application and runs on a web browser such as
-    Firefox or Chrome.
-
-    <h3 id="local-installation">Local installation</h3>
-
-    <h3 id="server-installation">Installation on web server</h3>
-
-    SPEKcheck does not need anything special from a web server.
-    Simply extract all files and configure the web server to serve
-    that location.
   </main>
-
 </body>
 </html>
