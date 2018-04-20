@@ -29,12 +29,17 @@
   element, so it knows how to be responsive.
 
   http://www.chartjs.org/docs/latest/general/responsive.html#important-note
+
+  When changing this, we also need to account for when it's inserted
+  into another webpage so we can't use sizes relative to the viewport.
 */
 .spekcheck-chart-container
 {
+    display: inline-block;
+    position: relative;
     margin: auto;
     height: 80vh;
-    width: 90vw;
+    width: 100%;
 }
 
 
