@@ -55,6 +55,10 @@
   <main role="main" class="container">
     <h2 id="usage">Usage</h2>
 
+    <div class="alert alert-info" role="alert">
+      SPEKcheck does not run on Internet Explorer.
+    </div>
+
     <h2 id="installation">Installation</h2>
 
     <p>
@@ -76,31 +80,37 @@
 
     <div class="alert alert-info" role="alert">
       The Chrome and Safari web browsers do not load local files by
-      default and so, by default, SPEKcheck will require a web server.
-      To read on how to configure your browsers, and its implications,
+      default and so, by default, will require a web server to run
+      SPEKcheck.  To read on how to configure this browsers, and its
+      implications,
       see <a href="http://www.chrome-allow-file-access-from-file.com/">this
       for Chrome</a> and <a>this for Safari</a>.  Alternatively,
       run <code>python -m SimpleHTTPServer</code> which will start a
-      web server, and access SPEKcheck
+      web server, and then access SPEKcheck
       at <a href="http://localhost:8000">http://localhost:8000</a>
-    </div>
-
-    <div class="alert alert-info" role="alert">
-      SPEKcheck does not run on Internet Explorer.
     </div>
 
     <h3 id="server-installation">Installation on web server</h3>
 
     <p>
       SPEKcheck runs fully client-side and can be served as static
-      site.  Simply extract all files into whatever location the web
-      server is configured to use.
+      site.  To serve your own instance of SPEKcheck, simply extract
+      all files into whatever location the web server is configured to
+      use.
     </p>
 
     <p>
-      If you are setting SPEKcheck on your own web server, you are
-      probably also looking to configure the available setups and
-      components.  All configuration is done by editing the files
+      If you are setting a new instance of SPEKcheck on your own web
+      server, you are probably also looking to configure the available
+      setups and components.  All configuration is done by editing the
+      files in the <code>data</code> directory.  Data files for each
+      component should be place into the
+      directories <code>detectors</code>, <code>dyes</code>,
+      <code>excitation</code>, and <code>filters</code> and their
+      names, minus the <code>.csv</code> extension, listed on the
+      corresponding json file.  The <code>setups.json</code> file
+      describes the predefined setups (see
+      Section <a href="#file-formats">File Formats</a>).
     </p>
 
     <h3 id="inserted-into-page">Included on another webpage</h3>
