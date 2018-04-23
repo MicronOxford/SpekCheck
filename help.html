@@ -16,6 +16,17 @@
 
   <link rel="stylesheet" type="text/css" href="css/spekcheck.css">
 
+  <!--
+    We have example code block and text file contents as card-body in
+    a pre element.  The pre element adds a bottom margin that we want
+    to remove.
+  -->
+  <style>
+    .example-pre {
+      margin-bottom: 0rem;
+    }
+  </style>
+
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <script src="https://code.jquery.com/jquery-3.3.1.min.js"
           integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
@@ -130,17 +141,16 @@
       any <code>div</code>
     </p>
 
-    <div class="card">
-      <div class="card-header">Code to insert SPEKcheck as part of
-      another page</div>
-      <div class="card-body">
-        <pre><code>&lt;script&gt;
+    <figure class="card figure">
+      <figcaption class="card-header figure-caption">
+        Code to insert SPEKcheck as part of another page
+      </figcaption>
+      <pre class="card-body example-pre bg-light text-dark"><code>&lt;script&gt;
   document.addEventListener('DOMContentLoaded',
                             () => main(document.querySelector('#spekcheck')));
 &lt;/script&gt;
 </code></pre>
-      </div>
-    </div>
+    </figure>
 
 
     <div class="card">
@@ -183,12 +193,11 @@
       in both in the description, with opposing modes.
     </p>
 
-    <figure class="figure">
-      <figcaption class="figure-caption">
+    <figure class="card figure">
+      <figcaption class="card-header figure-caption">
         An example setup definition.
       </figcaption>
-      <pre><code>
-{
+      <pre class="card-body example-pre bg-light text-dark"><code>{
   "detector": "Detector Name",
   "dye": "Dye Name",
   "excitation": null,
@@ -216,11 +225,11 @@
       group setups by any function other than alphabetical.
     </p>
 
-    <figure class="figure">
-      <figcaption class="figure-caption">
+    <figure class="card figure">
+      <figcaption class="card-header figure-caption">
         A <code>data/setups.json</code> file example.
       </figcaption>
-      <pre><code>
+      <pre class="card-body example-pre bg-light text-dark"><code>
 [
   [
     "Setup 1 Name",
