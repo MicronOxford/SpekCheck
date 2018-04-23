@@ -1302,24 +1302,25 @@ class FilterStackView
         node.querySelector('span#filter-name').textContent = uid;
 
         // We have two labels, one for each radio button of
-        // transmission and reflection.  Set one as the active, and
-        // listen for a change on the other.
-        const labels = node.querySelectorAll('label');
-
-        // Bootstrap will change the 'active' class after user click.
-        // However, we are also changing the style from btn-secondary
-        // to btn-primary to have a slider look.
-        const checked_i = mode === 't' ? 0 : 1;
-        labels[checked_i].querySelector('input').checked = true;
-        labels[checked_i].classList.remove('btn-secondary');
-        labels[checked_i].classList.add('btn-primary', 'active');
-
-        // Listen for changes on the unselected mode.
-        const unchecked_i = checked_i === 0 ? 1 : 0;
-        labels[unchecked_i].addEventListener(
+        // transmission and reflection.  Because there's only two
+        // choices, we want to make them look like a switch slider.
+        // For that, we use bootstrap's btn-group-toggle class and
+        // listen for clicks on any of the buttons.  And not only do
+        // we change the 'active' class, we also switch between
+        // btn-primary and btn-secondary to have the blue/grey style.
+        const mode_switch = node.querySelector('#filter-mode-switch');
+        mode_switch.addEventListener(
             'click',
             this.toggleFilterMode.bind(this, i)
         );
+
+        // Button for transmission is first, reflection is second.
+        // Maybe this shouldn't be hardcoded...
+        const checked_i = mode === 't' ? 0 : 1;
+        const labels = mode_switch.querySelectorAll('label');
+        labels[checked_i].querySelector('input').checked = true;
+        labels[checked_i].classList.remove('btn-secondary');
+        labels[checked_i].classList.add('btn-primary', 'active');
 
         // We drag and drop filters from the filter collection into
         // the filter stack to add them.  We could drag filters out to
