@@ -66,6 +66,29 @@
   <main role="main" class="container">
     <h2 id="usage">Usage</h2>
 
+    <h3 id="values">Values</h3>
+
+    <dl>
+      <dt>Excitation Efficiency</dt>
+      <dd>
+      </dd>
+      <dt>Emission Efficiency</dt>
+      <dd>
+        Represents how much of the dye emission is actually captured
+        on the images.  It is the area of the transmission spectrum
+        divided by the area of the dye emission spectrum.
+      </dd>
+      <dt>Brightness</dt>
+      <dd>
+        This is a value relative to Alexa-488 times 10.  It takes into
+        account the dye excitation efficiency and quantum yield but is
+        sensitive to environment and so must be used with caution and
+        critical thinking.  For example, DAPI is not a very bright dye
+        but there's usually a high amount of DNA to bind to and its
+        fluorescence increases after it binds.
+      </dd>
+    </dl>
+
     <h3 id="links">Links</h3>
 
     <p>
@@ -75,6 +98,8 @@
       Similarly, the fragment <code>#setup=DV Elite Quad DAPI</code>
       will load a setup with the same name.
     </p>
+
+    <h3 id="browser-support"></h3>
 
     <div class="alert alert-info" role="alert">
       SPEKcheck does not run on Internet Explorer.
