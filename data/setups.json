@@ -734,7 +734,7 @@
     }
   ],
   [
-    "OMXv2 Sedat Rhod",
+    "OMXv2 Sedat Rhodamine",
     {
       "detector": null,
       "dye": null,
@@ -866,7 +866,7 @@
     }
   ],
   [
-    "OMXv3 Live RFP",
+    "OMXv3 Live mCherry",
     {
       "detector": null,
       "dye": null,
@@ -998,7 +998,7 @@
     }
   ],
   [
-    "OMXv3 Standard GFP",
+    "OMXv3 Standard FITC",
     {
       "detector": null,
       "dye": null,
@@ -1030,7 +1030,7 @@
     }
   ],
   [
-    "OMXv3 Standard RFP",
+    "OMXv3 Standard A594",
     {
       "detector": null,
       "dye": null,
