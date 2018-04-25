@@ -807,7 +807,8 @@ class SetupDescription extends Model
 
     validate() {
         for (let name of ['detector', 'dye', 'excitation'])
-            if (typeof(this[name]) !== 'string' && ! (x instanceof String)
+            if (typeof(this[name]) !== 'string'
+                && ! (this[name] instanceof String)
                 && this[name] !== null)
                 return `${ name } must be a String or null`;
 
