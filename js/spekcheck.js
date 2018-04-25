@@ -1784,7 +1784,7 @@ class TestDyesDialog
     }
 
     onShow() {
-        this._updateResults().then(this.renderTBody.bind(this, 'em_eff'));
+        this._updateResults().then(this.renderTBody.bind(this, 'bright'));
     }
 
     onHidden() {
