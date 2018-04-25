@@ -1072,7 +1072,7 @@ class Collection extends Model // also kind of a Map
     set(key, value) {
         const event = this._map.has(key) ? 'change' : 'add';
         this._map.set(key, value);
-        this.trigger(event, value);
+        this.trigger(event, [key]);
     }
 
     values() {
@@ -1657,7 +1657,7 @@ class ImportDialog extends View
     }
 
     selectFile() {
-        this.$file_label.text(this._$file_input[0].files[0].name);
+        this._$file_label.text(this._$file_input[0].files[0].name);
     }
 
     // TODO: might not be a bad idea to use bootstrap form validation.
@@ -1681,10 +1681,10 @@ class ImportDialog extends View
         const reader = new FileReader;
 
         reader.onload = (function() {
-            const attrs = {'uid': uid};
+            const attrs = {'uid': name};
             try {
-                const data = collection.factory(reader.result, attrs);
-                collection.add(uid, data);
+                const data = collection.reader(reader.result, attrs);
+                collection.set(name, Promise.resolve(data));
             } catch (e) {
                 this.showFailure(e.message);
                 return;
