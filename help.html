@@ -66,6 +66,16 @@
   <main role="main" class="container">
     <h2 id="usage">Usage</h2>
 
+    <h3 id="links">Links</h3>
+
+    <p>
+      It is possible to create URL to specific setups or components by
+      specifying it on URL fragment identifier.  For example,
+      adding <code>#dye=GFP</code> to the URL will load the GFP dye.
+      Similarly, the fragment <code>#setup=DV Elite Quad DAPI</code>
+      will load a setup with the same name.
+    </p>
+
     <div class="alert alert-info" role="alert">
       SPEKcheck does not run on Internet Explorer.
     </div>
@@ -229,8 +239,7 @@
       <figcaption class="card-header figure-caption">
         A <code>data/setups.json</code> file example.
       </figcaption>
-      <pre class="card-body example-pre bg-light text-dark"><code>
-[
+      <pre class="card-body example-pre bg-light text-dark"><code>[
   [
     "Setup 1 Name",
     {
