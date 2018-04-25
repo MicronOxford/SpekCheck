@@ -1717,6 +1717,7 @@ class SaveSetupDialog extends View
         this._$name = $el.find('#setup-name');
         this._$save_button = $el.find('#save-button');
         this._$failure = $el.find('#failure');
+        this._$description = $el.find('#setup-description').find('code');
 
         this.$el.on('show.bs.modal', this.reset.bind(this));
         this._$save_button.on('click', this.add.bind(this));
@@ -1725,6 +1726,7 @@ class SaveSetupDialog extends View
     reset() {
         this._$name.val('');
         this._$failure.attr('hidden', '');
+        this._$description.html(JSON.stringify(this.setup.describe(), null, 2));
     }
 
     add() {

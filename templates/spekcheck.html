@@ -149,6 +149,16 @@
           <input type="text" class="form-control" id="setup-name"/>
         </div>
 
+        <p>
+          <button class="btn btn-primary" type="button"
+                  data-toggle="collapse" data-target="#setup-description">
+            Show setup in JSON format
+          </button>
+        </p>
+        <div class="collapse" id="setup-description">
+          <pre><code></code></pre>
+        </div>
+
         <!-- To be filled and show if it fails to save the setup. -->
         <div class="alert alert-danger" role="alert" id="failure" hidden="">
         </div>
