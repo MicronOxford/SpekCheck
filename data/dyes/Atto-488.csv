@@ -1,5 +1,5 @@
-Type: Dye
-Name: Atto-488.csv
+## Type: Dye
+## Name: Atto-488.csv
 Extinction coefficient: 90000
 Quantum Yield: 0.8
 wavelength,absorption,emission

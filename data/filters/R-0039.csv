@@ -1,5 +1,5 @@
-Type: filter
-Name: API-0039 Reflectance
+## Type: filter
+## Name: API-0039 Reflectance
 wavelength,reflection
 400,0.04
 402,0.02

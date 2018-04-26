@@ -1,5 +1,5 @@
-Type: filter
-Name: Chroma ET655LP
+## Type: filter
+## Name: Chroma ET655LP
 wavelength,transmission
 300.00,2.9699999686272E-6
 300.50,9.5393397714361E-7

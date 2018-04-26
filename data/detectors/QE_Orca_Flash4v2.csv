@@ -1,5 +1,5 @@
-Type: detector
-Name: Hamamatzu Orca Flash4v2
+## Type: detector
+## Name: Hamamatzu Orca Flash4v2
 wavelength,qe
 401.85823671707095,0.4123486256247447
 406.68239117692667,0.43637634042366935

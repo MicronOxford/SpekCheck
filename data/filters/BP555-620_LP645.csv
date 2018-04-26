@@ -1,5 +1,5 @@
-Type: filter
-Name: LSM880Airyscan_BP555-620_LP645_2140-858
+## Type: filter
+## Name: LSM880Airyscan_BP555-620_LP645_2140-858
 wavelength,transmission
 520.3611368,0.003399359
 521.6578816,0.001995104

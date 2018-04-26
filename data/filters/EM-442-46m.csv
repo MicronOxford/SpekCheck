@@ -1,5 +1,5 @@
-Type: filter
-Name: Chroma Et442/46m
+## Type: filter
+## Name: Chroma Et442/46m
 wavelength,transmission
 300.0000,-0.00004
 301.0000,-0.00001

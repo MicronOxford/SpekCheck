@@ -1,5 +1,5 @@
-Type: 482_35
-Name: 633-laser
+## Type: 482_35
+## Name: 633-laser
 wavelength,intensity
 632,0
 633,1.0

@@ -1,5 +1,5 @@
-Type: dye
-Name: DiO
+## Type: dye
+## Name: DiO
 Extinction coefficient: 154000
 Quantum Yield: 0.07
 wavelength,absorption,emission

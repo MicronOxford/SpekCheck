@@ -1,5 +1,5 @@
-Type: excitation
-Name: Metal Halide lamp
+## Type: excitation
+## Name: Metal Halide lamp
 wavelength,intensity
 321.85729460,0.00076636
 321.96348648,0.00003390

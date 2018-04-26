@@ -1,5 +1,5 @@
-Type: filter
-Name: 405/45
+## Type: filter
+## Name: 405/45
 wavelength,transmission
 300,0
 302,0

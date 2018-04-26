@@ -1,5 +1,5 @@
-Type: FP
-Name: EYFP
+## Type: FP
+## Name: EYFP
 Extinction coefficient: 83400
 Quantum Yield: 0.61
 wavelength,absorption,emission

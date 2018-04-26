@@ -1,5 +1,5 @@
-Type: detector
-Name: QE of 880 PMT detetcor
+## Type: detector
+## Name: QE of 880 PMT detetcor
 wavelength,qe
 396.4125561,0.327848101
 413.0044843,0.32278481

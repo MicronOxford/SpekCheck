@@ -1,5 +1,5 @@
-Type: excitation
-Name: LumencorCFP (LED)
+## Type: excitation
+## Name: LumencorCFP (LED)
 wavelength,intensity
 321.85729460,0.00123680
 321.96348648,0.00050277

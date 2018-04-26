@@ -1,5 +1,5 @@
-Type: excitation
-Name: LumencorDAPI (LED)
+## Type: excitation
+## Name: LumencorDAPI (LED)
 wavelength,intensity
 321.85729460,0.00127999
 321.96348648,0.00067805

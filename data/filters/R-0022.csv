@@ -1,5 +1,5 @@
-Type: filter
-Name: API-0022 Reflectance
+## Type: filter
+## Name: API-0022 Reflectance
 wavelength,reflection
 300,0.0014
 302,0.0185

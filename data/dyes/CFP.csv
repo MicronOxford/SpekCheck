@@ -1,5 +1,5 @@
-Type: FP
-Name: CFP
+## Type: FP
+## Name: CFP
 Extinction coefficient: 32500
 Quantum Yield: 0.40
 wavelength,absorption,emission

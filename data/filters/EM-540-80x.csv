@@ -1,5 +1,5 @@
-Type: filter
-Name: Chroma ET540/80x batch 283571
+## Type: filter
+## Name: Chroma ET540/80x batch 283571
 wavelength,transmission
 300,0.0000001
 301,0.0000001

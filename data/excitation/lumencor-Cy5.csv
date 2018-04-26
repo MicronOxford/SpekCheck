@@ -1,5 +1,5 @@
-Type: excitation
-Name: Lumencor-Cy5 (LED)
+## Type: excitation
+## Name: Lumencor-Cy5 (LED)
 wavelength,intensity
 321.85729460,0.00282201
 321.96348648,0.00209541

@@ -1,5 +1,5 @@
-Type: FP
-Name: mCherry
+## Type: FP
+## Name: mCherry
 Extinction coefficient: 72000
 Quantum Yield: 0.22
 wavelength,absorption,emission

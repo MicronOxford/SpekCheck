@@ -1,5 +1,5 @@
-Type: filter
-Name: 550/49
+## Type: filter
+## Name: 550/49
 wavelength,transmission
 350,0
 351,0

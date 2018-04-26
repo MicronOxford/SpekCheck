@@ -1,5 +1,5 @@
-Type: 482_35
-Name: 488-laser
+## Type: 482_35
+## Name: 488-laser
 wavelength,intensity
 487,0
 488,1.0

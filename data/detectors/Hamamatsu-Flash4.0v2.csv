@@ -1,5 +1,5 @@
-Type: detector
-Name: Hamamatsu Orca Flash 4.0 V2+
+## Type: detector
+## Name: Hamamatsu Orca Flash 4.0 V2+
 wavelength,qe
 300,0.043599691
 320,0.093245433

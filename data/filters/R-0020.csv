@@ -1,5 +1,5 @@
-Type: filter
-Name: API-0020 Reflectance
+## Type: filter
+## Name: API-0020 Reflectance
 wavelength,reflection
 300,0.0068
 302,0.0009

@@ -1,5 +1,5 @@
-Name: 647-laser
-Type: 482_35
+## Name: 647-laser
+## Type: 482_35
 wavelength,intensity
 646,0
 647,1.0

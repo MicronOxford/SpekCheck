@@ -303,24 +303,17 @@
 
     <p>
       The file format for each component is a plain text file: a
-      multiline key/value header followed by the spectrum values in a
-      CSV format.
+      multiline key/value header with comments, followed by the
+      spectrum values in a CSV format.
     </p>
 
-    <div class="alert alert-danger" role="alert">
-      Why are Name and Type keys if they are actually ignored?  The
-      idea is that they are useful but we have comments so why not
-      have them in comments instead?  In that case, only Dyes require
-      an header.
-    </div>
-
     <p>
-      The header of the file must include all of the keys.  The keys
-      are <code>Name</code> and <code>Type</code>.  In the case of
-      dyes, the keys are also <code>Extinction coefficient</code>
-      and <code>Quantum Yield</code>.  While the keys must exist,
-      their values are optional.  In addition, lines starting
-      with <code>#</code> are comments and so ignored.
+      The header of the data files has a series of key/value pairs and
+      optional comments.  Comments are lines starting with the
+      <code>#</code> character.  Only data files for dyes require a
+      header, which must have the keys <code>Extinction
+      coefficient</code> and <code>Quantum Yield</code>.  While the
+      keys must exist, their values are optional.
     </p>
 
     <p>
@@ -344,8 +337,8 @@
       <div class="card">
         <div class="card-header">Example Dye file</div>
         <div class="card-body">
-          <pre><code>Type: Dye
-Name: the name
+          <pre><code># Type: Dye
+# Name: the name (actually ignored)
 # This line is a comment and will be ignored
 # The 'Extinction coefficient' and 'Quantum Yield' lines are still
 # required, but their values can be empty if not known.
@@ -364,8 +357,8 @@ wavelength,absorption,emission
       <div class="card">
         <div class="card-header">Example Filter file</div>
         <div class="card-body">
-          <pre><code>Type: dichroic filter
-Name: this filter name
+          <pre><code>## Type: dichroic filter
+## Name: this filter name
 ## Instead of transmission, this file could instead have reflection too.
 wavelength,transmission
 450.088864,0.004743
@@ -383,8 +376,8 @@ wavelength,transmission
       <div class="card">
         <div class="card-header">Example Excitation file</div>
         <div class="card-body">
-          <pre><code>Type: excitation source
-Name: 442-laser
+          <pre><code># Type: excitation source
+# Name: 442-laser
 wavelength,intensity
 441,0
 442,1.0
@@ -396,8 +389,8 @@ wavelength,intensity
       <div class="card">
         <div class="card-header">Example Detector file</div>
         <div class="card-body">
-          <pre><code>Type: detector
-Name: The Detector name
+          <pre><code>## Type: detector
+## Name: The Detector name
 ## The source of the file is a useful thing to keep as a comment.
 wavelength,qe
 410, 0.0093

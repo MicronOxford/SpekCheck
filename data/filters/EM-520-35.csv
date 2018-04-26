@@ -1,5 +1,5 @@
-Type: filter
-Name: Semrock FF01-520/35 Diamond CryoSIM
+## Type: filter
+## Name: Semrock FF01-520/35 Diamond CryoSIM
 wavelength,transmission
 270.0,2.9833e-06
 270.2,3.1675e-06

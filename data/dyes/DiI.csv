@@ -1,5 +1,5 @@
-Type: dye
-Name: DiI
+## Type: dye
+## Name: DiI
 Extinction coefficient: 134000
 Quantum Yield: 0.07
 wavelength,absorption,emission

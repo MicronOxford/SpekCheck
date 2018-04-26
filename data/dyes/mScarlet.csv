@@ -1,5 +1,5 @@
-Type: Dye
-Name: mScarlet.csv
+## Type: Dye
+## Name: mScarlet.csv
 Extinction coefficient: 100000
 Quantum Yield: 0.70
 wavelength,absorption,emission

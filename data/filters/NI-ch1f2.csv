@@ -1,5 +1,5 @@
-Type: filter
-Name: NI-ch1f2
+## Type: filter
+## Name: NI-ch1f2
 ## Typical Measured Spectrum of Semrock FF01-582/75 Optical Filter
 ## For wavelengths between 320 and 1120 nm, values near or below 3e-7 (Optical Density 6.5) are measurement noise limited.
 ## For wavelengths < 320 nm and > 1120 nm, values near or below 3e-6 (Optical Density 5.5) are measurement noise limited.

@@ -1,5 +1,5 @@
-Type: excitation
-Name: Lumencor-YFP  (LED)
+## Type: excitation
+## Name: Lumencor-YFP  (LED)
 wavelength,intensity
 321.85729460,0.00428180
 321.96348648,0.00368707

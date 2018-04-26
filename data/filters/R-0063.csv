@@ -1,5 +1,5 @@
-Type: filter
-Name: API-0063 Reflectance
+## Type: filter
+## Name: API-0063 Reflectance
 wavelength,reflection
 400,0.05
 401,0.04

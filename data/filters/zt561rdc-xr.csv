@@ -1,5 +1,5 @@
-Type: filter
-Name: ZT561tdc-xr Chroma
+## Type: filter
+## Name: ZT561tdc-xr Chroma
 wavelength,transmission
 380.00,0.0066881701350212
 381.00,0.0051186098717153

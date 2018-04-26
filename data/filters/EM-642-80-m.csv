@@ -1,5 +1,5 @@
-Type: filter
-Name: 642/80
+## Type: filter
+## Name: 642/80
 wavelength,transmission
 300.00,9.5000001465451E-7
 301.00,9.5000001465451E-7

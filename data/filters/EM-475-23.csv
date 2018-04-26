@@ -1,5 +1,5 @@
-Type: filter
-Name: Semrock FF01-475/23 Optical Filter
+## Type: filter
+## Name: Semrock FF01-475/23 Optical Filter
 wavelength,transmission
 260.0,1.0e-07
 260.2,9.9537e-08

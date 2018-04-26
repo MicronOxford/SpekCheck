@@ -1,5 +1,5 @@
-Type: 482_35
-Name: 561-laser
+## Type: 482_35
+## Name: 561-laser
 wavelength,intensity
 560,0
 561,1.0

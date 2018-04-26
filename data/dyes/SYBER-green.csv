@@ -1,5 +1,5 @@
-Type: Dye
-Name: SYBER green
+## Type: Dye
+## Name: SYBER green
 Extinction coefficient: 58000 
 Quantum Yield: 0.8
 wavelength,absorption,emission

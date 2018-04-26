@@ -1,5 +1,5 @@
-Type: filter
-Name: DV-EM-tritc.csv
+## Type: filter
+## Name: DV-EM-tritc.csv
 wavelength,transmission
 450.088864,0.007844
 450.204180,0.008102

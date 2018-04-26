@@ -1,5 +1,5 @@
-Type: filter
-Name: DV-EM-FITC.csv
+## Type: filter
+## Name: DV-EM-FITC.csv
 wavelength,transmission
 450.026539,0.013911
 450.140391,0.014796

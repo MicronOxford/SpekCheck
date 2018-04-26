@@ -1,5 +1,5 @@
-Type: filter
-Name: Semrock FF01-600/37 Diamond CryoSIM
+## Type: filter
+## Name: Semrock FF01-600/37 Diamond CryoSIM
 wavelength,transmission
 265,7.9516556560472E-07
 265.2,7.86265998554152E-07

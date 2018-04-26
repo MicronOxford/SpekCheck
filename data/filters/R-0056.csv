@@ -1,5 +1,5 @@
-Type: filter
-Name: API-0056 Reflectance
+## Type: filter
+## Name: API-0056 Reflectance
 wavelength,reflection
 364,0.88
 366,0.78

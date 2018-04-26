@@ -1,5 +1,5 @@
-Type: filter
-Name: 510/10
+## Type: filter
+## Name: 510/10
 wavelength,transmission
 300,0
 302,0

@@ -232,8 +232,7 @@ class Spectrum extends Model
 //
 //    header_map (Map): configures the factory/reader methods.  They
 //        map the fields on the header of the files to the keys of the
-//        Object passed to the constructor.  null values mean fields
-//        to ignore.
+//        Object passed to the constructor.
 //
 // Args:
 //     attrs(Object): all values in the properties Array must be keys
@@ -269,8 +268,6 @@ class Data extends Model
                 if (line.startsWith(header_key)
                     && line[header_key.length] === ':') {
                     const attr_name = header_map.get(header_key);
-                    if (attr_name === null)
-                        break; // null means value to be ignored
 
                     // We may need to rethink this in the future.  For
                     // now, all the values we have on the header are
@@ -293,7 +290,7 @@ class Data extends Model
 
         // Confirm we got all properties from the header.
         for (let attr_name of header_map.values())
-            if (attr_name !== null && attrs[attr_name] === undefined)
+            if (attrs[attr_name] === undefined)
                 throw new Error(`missing value for '${ attr_name }' in header`);
 
         return attrs;
@@ -419,10 +416,7 @@ class Data extends Model
         return new this.prototype.constructor(attrs);
     }
 }
-Data.prototype.header_map = new Map([
-    ['Name', null],
-    ['Type', null],
-]);
+Data.prototype.header_map = new Map();
 Data.prototype.properties = [
     'uid',
 ];

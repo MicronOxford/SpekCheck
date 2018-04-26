@@ -1,5 +1,5 @@
-Type: excitation
-Name: Hg(murcury) arc lamp
+## Type: excitation
+## Name: Hg(murcury) arc lamp
 wavelength,intensity
 321.85729460,0.00318324
 321.96348648,0.00245561

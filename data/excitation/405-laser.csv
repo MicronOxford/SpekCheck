@@ -1,5 +1,5 @@
-Type: 482_35
-Name: 405-laser
+## Type: 482_35
+## Name: 405-laser
 wavelength,intensity
 404,0
 405,1.0

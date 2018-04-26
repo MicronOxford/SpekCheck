@@ -1,5 +1,5 @@
-Type: filter
-Name: API-0048 Reflectance
+## Type: filter
+## Name: API-0048 Reflectance
 wavelength,reflection
 372,1      
 374,0.97   

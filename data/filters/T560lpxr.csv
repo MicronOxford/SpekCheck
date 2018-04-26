@@ -1,5 +1,5 @@
-Type: dichroic
-Name: Chroma T560lpxr CryoSIM secondary dichroic
+## Type: dichroic
+## Name: Chroma T560lpxr CryoSIM secondary dichroic
 wavelength,transmission
 380.00,0.0018482300220057
 381.00,0.0023903900291771

@@ -1,5 +1,5 @@
-Type: filter
-Name: API-0052 Reflectance
+## Type: filter
+## Name: API-0052 Reflectance
 wavelength,reflection
 318,0.893203883
 320,0.689320388

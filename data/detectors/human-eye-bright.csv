@@ -1,5 +1,5 @@
-Type: detector
-Name: Bright adapted human eye
+## Type: detector
+## Name: Bright adapted human eye
 ## Source https://web.archive.org/web/20071026115341/http://www.cvrl.org:80/database/data/lum/vlje.csv
 wavelength,qe
 370, 0.0001

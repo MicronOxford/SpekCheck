@@ -1,5 +1,5 @@
-Type: Dye
-Name: DAPI
+## Type: Dye
+## Name: DAPI
 Extinction coefficient: 27000
 Quantum Yield: 0.58
 wavelength,absorption,emission

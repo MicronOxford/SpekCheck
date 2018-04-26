@@ -1,5 +1,5 @@
-Type: Dye
-Name: eGFP
+## Type: Dye
+## Name: eGFP
 Extinction coefficient: 55000
 Quantum Yield: 0.6
 wavelength,absorption,emission

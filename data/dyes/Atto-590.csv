@@ -1,5 +1,5 @@
-Type: Dye
-Name: Atto590 from http://www.fluorophores.tugraz.at/substance/155
+## Type: Dye
+## Name: Atto590 from http://www.fluorophores.tugraz.at/substance/155
 Extinction coefficient: 120000
 Quantum Yield: 0.80
 wavelength,absorption,emission

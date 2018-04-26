@@ -1,5 +1,5 @@
-Type: dye
-Name: Alexa-488
+## Type: dye
+## Name: Alexa-488
 Extinction coefficient: 155000
 Quantum Yield: 0.1
 wavelength,absorption,emission

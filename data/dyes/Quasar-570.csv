@@ -1,5 +1,5 @@
-Type: Dye
-Name: Quasar-570.csv
+## Type: Dye
+## Name: Quasar-570.csv
 Extinction coefficient: 115000
 Quantum Yield: 0.04
 wavelength,absorption,emission

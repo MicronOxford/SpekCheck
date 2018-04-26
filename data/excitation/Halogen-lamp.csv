@@ -1,5 +1,5 @@
-Type: excitation
-Name: Halogen lamp
+## Type: excitation
+## Name: Halogen lamp
 wavelength,intensity
 321.85729460,0.02704054
 321.96348648,0.02617432

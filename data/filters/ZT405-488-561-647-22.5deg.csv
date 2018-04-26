@@ -1,5 +1,5 @@
-Type: dichroic
-Name: Chroma ZT405/488/560/647TPC 22.5deg batch 260830
+## Type: dichroic
+## Name: Chroma ZT405/488/560/647TPC 22.5deg batch 260830
 wavelength,transmission
 380,0.139058
 381,0.0942276

@@ -1,5 +1,5 @@
-Type: filter
-Name: LSM880Airyscan_BP420-480_BP495-620_2095-049
+## Type: filter
+## Name: LSM880Airyscan_BP420-480_BP495-620_2095-049
 wavelength,transmission
 416.0082321,0.003782547
 416.6083342,0.015106751

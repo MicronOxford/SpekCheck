@@ -1,5 +1,5 @@
-Type: detector
-Name: QE of 880 GAASP detetcor
+## Type: detector
+## Name: QE of 880 GAASP detetcor
 wavelength,qe
 307.1705638,0.100864433
 322.4868881,0.13379085

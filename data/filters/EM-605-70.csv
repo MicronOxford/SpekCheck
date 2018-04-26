@@ -1,5 +1,5 @@
-Type: filter
-Name: Chroma ET605/70m
+## Type: filter
+## Name: Chroma ET605/70m
 wavelength,transmission
 300.00,9.9999999392253E-9
 301.00,9.9999999392253E-9

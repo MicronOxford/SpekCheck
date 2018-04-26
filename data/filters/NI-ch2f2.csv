@@ -1,5 +1,5 @@
-Type: filter
-Name: NI-ch2f1
+## Type: filter
+## Name: NI-ch2f1
 wavelength,transmission
 300.00,2.9699999686272E-6
 300.50,9.5393397714361E-7
