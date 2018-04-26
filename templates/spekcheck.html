@@ -221,6 +221,36 @@
   </div>
 </div>
 
+<!-- A modal dialog for error messages -->
+<div class="modal fade" id="error-dialog" tabindex="-1" role="dialog"
+     aria-labelledby="error-dialog-title" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="error-dialog-title">A wild error appears</h5>
+        <button type="button" class="close" data-dismiss="modal"
+                aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert-danger" role="alert" id="error-message">
+        </div>
+
+        <div>
+          <pre><code id="error-stack-trace"></code></pre>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+                data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Selector for setup, dye, excitation source, and detector -->
 <div class="container row">
   <div class="col-sm input-group">

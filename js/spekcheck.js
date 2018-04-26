@@ -1123,7 +1123,12 @@ class DataCollection extends Collection
             const value = $.ajax({
                 url: fpath,
                 dataType: 'text',
-            }).then(text => this.reader(text, {'uid': key}));
+            }).then(
+                text => this.reader(text, {'uid': key}),
+                // throw an Error instance so it's handled like any
+                // other error downstream.
+                (jqXHR) => {throw new Error(jqXHR.statusText);}
+            );
             this._map.set(key, value);
         }
         return super.get(key);
@@ -1860,6 +1865,28 @@ class TestDyesDialog
 }
 
 
+// This will display a JavaScript Error object.  It uses its stack
+// property which while not standard seems to be pretty ubiquituous
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/Stack#Browser_compatibility
+//
+// Note that a ctah from a jQuery AJX request does not give such an
+// error and so needs to be converted first.
+class ErrorDialog
+{
+    constructor(el) {
+        this._el = el;
+        this._message = el.querySelector('#error-message');
+        this._trace = el.querySelector('#error-stack-trace');
+    }
+
+    show(err) {
+        this._message.textContent = err.message;
+        this._trace.textContent = err.stack;
+        $(this._el).modal();
+    }
+}
+
+
 // The SpekCheck App / Controller
 //
 // Args:
@@ -1937,6 +1964,10 @@ class SpekCheck
             this.live_setup
         );
 
+        this.error_dialog = new ErrorDialog(
+            this.el.querySelector('#error-dialog')
+        );
+
         // If someone imports a Detector, Dye or Excitation, change to it.
         for (let dtype of ['detector', 'dye', 'excitation'])
             this.collection[dtype].on('add', this.changeData.bind(this, dtype));
@@ -2004,9 +2035,9 @@ class SpekCheck
             const val = uid === null ? '' : uid;
             this.view[dtype].val(val);
         }).bind(this);
-        const log_failure = (function(reason) {
-            console.error(`failed to get '${ dtype }' data:\n${ reason }`);
-        });
+        const log_failure = (function(err) {
+            this.error_dialog.show(err);
+        }).bind(this);
 
         let get_data;
         if (uid === null)
