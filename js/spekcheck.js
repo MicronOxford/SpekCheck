@@ -1612,7 +1612,7 @@ class SetupPlot extends View
 
         info.push('em=' + eff2str(this.setup.em_efficiency));
 
-        if (this.setup.excitation !== null)
+        if (this.setup.excitation !== null && ! isNaN(this.setup.brightness))
             info.push('brightness=' + this.setup.brightness.toFixed(2));
 
         const title = {
