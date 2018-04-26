@@ -625,6 +625,8 @@ class FilterStack extends Model // also kind of an Array
             }
 
             // XXX: hardcoded wavelength steps of 1nm :/
+            init = Math.floor(init);
+            end = Math.ceil(end);
             const wavelength = new Array(end-init+1);
             for (let i = 0; i < wavelength.length; i++)
                 wavelength[i] = init+i;
