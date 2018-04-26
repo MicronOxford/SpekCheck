@@ -872,36 +872,13 @@ class Setup extends Model
 {
     constructor() {
         super();
-        // Adds a setter and getter for this properties, so it
-        // triggers change events for all of them.
-        const defaults = {
-            detector: null,
-            dye: null,
-            excitation: null,
-            // The filters are an array of Objects with filter and
-            // mode keys.  We can't use a Map and the filter as key
-            // because we may have the same filter multiple times.
-            // 'filter' value is a Filter object. 'mode' value is a
-            // char with value of 'r' or 't'.
-            ex_path: new FilterStack,
-            em_path: new FilterStack,
-        };
-        for (let p_name of Object.keys(defaults)) {
-            const attr_name = `_${ p_name }`;
-            Object.defineProperty(this, attr_name, {
-                value: defaults[p_name],
-                writable: true,
-            });
-            Object.defineProperty(this, p_name, {
-                get: function () {
-                    return this[attr_name];
-                },
-                set: function (val) {
-                    this[attr_name] = val;
-                    this.trigger('change');
-                },
-            });
-        }
+        // The filters are an array of Objects with filter and
+        // mode keys.  We can't use a Map and the filter as key
+        // because we may have the same filter multiple times.
+        // 'filter' value is a Filter object. 'mode' value is a
+        // char with value of 'r' or 't'.
+        this._ex_path = new FilterStack;
+        this._em_path = new FilterStack;
 
         this.ex_path.on('change', this.trigger.bind(this, 'change'));
         this.em_path.on('change', this.trigger.bind(this, 'change'));
@@ -1019,6 +996,24 @@ class Setup extends Model
     }
 }
 
+// Adds a setter and getter for this properties, so it
+// triggers change events for all of them.
+for (let p_name of ['detector', 'dye', 'excitation', 'ex_path', 'em_path']) {
+    const attr_name = `_${ p_name }`;
+    Object.defineProperty(Setup.prototype, attr_name, {
+        value: null,
+        writable: true,
+    });
+    Object.defineProperty(Setup.prototype, p_name, {
+        get: function () {
+            return this[attr_name];
+        },
+        set: function (val) {
+            this[attr_name] = val;
+            this.trigger('change');
+        },
+    });
+}
 
 // Pretty much a wrapper around Map to trigger events when it changes.
 class Collection extends Model // also kind of a Map
