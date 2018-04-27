@@ -19,22 +19,37 @@
 'use strict';
 
 
-// Base class to provide model validation and event callbacks.
+// Merges all properties from the to_mix class into the base class.
+function mixin(base, to_mix)
+{
+    // Go down the prototype tree looking for the properties to merge
+    // until we find object because a Mixin may already be inheriting
+    // from some other class;
+    let prototype = to_mix.prototype;
+    do {
+        for (let property of Object.getOwnPropertyNames(prototype)) {
+            // Don't copy the constructor since that is created
+            // automatically when using the class {} syntax and we
+            // don't want to overload the base constructor.
+            if (property === 'constructor')
+                continue;
+
+            base.prototype[property] = prototype[property];
+        }
+
+        prototype = Object.getPrototypeOf(prototype);
+    } while (prototype !== Object.prototype)
+
+    return base;
+}
+
+// Adds methods for a object to validate itself.
 //
 // For validation, subclasses should overload the 'validate' method.
 // Users should be calling 'isValid' and then accessing the
 // 'validation_error' property for the error message.
-//
-// If it looks like we are re-inventing backbone with ES6 syntax,
-// that's because we tried to use backbone first before giving up and
-// picking only the things we needed.
-class Model
+class ValidationMixin
 {
-    constructor() {
-        this.validation_error = null; // String or null
-        this._events = {}; // {event_name: [callback1, callback2, ...]}
-    }
-
     isValid() {
         this.validation_error = this.validate() || null;
         return this.validation_error === null;
@@ -45,7 +60,21 @@ class Model
     validate() {
         return null;
     }
+}
+ValidationMixin.prototype.validation_error = null; // String or null
 
+
+// Adds methods for a class to trigger on events.
+//
+// This needs 'this._events = {}' on the constructor of its base
+// class.  We can't store '_events' on the prototype because we need
+// one for each instance, we can't have a constructor because this is
+// a Mixin, and we don't want to check if its undefined on each on()
+// and trigger().  We could use a get/set to set it the first time
+// it's accessed and then delete the getter but in theory that's bad
+// for JIT.
+class EventPubMixin
+{
     on(event, callback, thisArg=callback) {
         if (this._events[event] === undefined)
             this._events[event] = [];
@@ -76,10 +105,9 @@ class Model
 // We want this class to provide immutable objects which is why the
 // methods do not modify the data.  This allow SetupPlot to keep a
 // cache of each Spectrum instance converted to Chartjs dataset.
-class Spectrum extends Model
+class Spectrum
 {
     constructor(wavelength, data) {
-        super();
         this.wavelength = wavelength.slice(0); // Array of floats
         this.data = data.slice(0); // Array of floats
     }
@@ -218,7 +246,7 @@ class Spectrum extends Model
         return new_data;
     }
 }
-
+mixin(Spectrum, ValidationMixin);
 
 // Base class for our Data: Detector, Dye, Excitation, and Filter classes.
 //
@@ -237,10 +265,9 @@ class Spectrum extends Model
 // Args:
 //     attrs(Object): all values in the properties Array must be keys
 //         of this 'attrs' instance and will be set on this instance.
-class Data extends Model
+class Data
 {
     constructor(attrs) {
-        super();
         // All declared properties must be defined.
         for (let p of this.constructor.prototype.properties) {
             if (attrs[p] === undefined)
@@ -416,6 +443,7 @@ class Data extends Model
         return new this.prototype.constructor(attrs);
     }
 }
+mixin(Data, ValidationMixin);
 Data.prototype.header_map = new Map();
 Data.prototype.properties = [
     'uid',
@@ -533,10 +561,10 @@ Filter.prototype.properties = Data.prototype.properties.concat([
 
 // Meant to represents one of the two paths (excitation and emission)
 // on a Setup.
-class FilterStack extends Model // also kind of an Array
+class FilterStack
 {
     constructor(stack=[]) {
-        super();
+        this._events = {}; // for the EventPubMixin
         this._stack = stack; // Array of {filter: Filter, mode: 'r'|'t'}
         this._resetCache();
     }
@@ -782,6 +810,8 @@ class FilterStack extends Model // also kind of an Array
         return this._stack[Symbol.iterator]();
     }
 }
+mixin(FilterStack, ValidationMixin);
+mixin(FilterStack, EventPubMixin);
 
 // Like a Setup object but with Data instances (Detector, Dye, Excitation,
 // and Filter) replaced with their names/uids, and FilterStack replaced with
@@ -790,10 +820,9 @@ class FilterStack extends Model // also kind of an Array
 // easier to save them.
 //
 // See also the Setup class.
-class SetupDescription extends Model
+class SetupDescription
 {
     constructor(detector, dye, excitation, ex_path, em_path) {
-        super();
         this.detector = detector; // String or null
         this.dye = dye; // String or null
         this.excitation = excitation; // String or null
@@ -856,7 +885,7 @@ class SetupDescription extends Model
         return obj;
     }
 }
-
+mixin(SetupDescription, ValidationMixin);
 
 // Handles the computation of the Setup efficiency, transmission, etc.
 //
@@ -868,10 +897,11 @@ class SetupDescription extends Model
 // There is also an SetupDescription which does not have the actual
 // Detector, Dye, Excitation, and Filter objects, instead it replaces
 // them with their uids.
-class Setup extends Model
+class Setup
 {
     constructor() {
-        super();
+        this._events = {}; // for the EventPubMixin
+
         // The filters are an array of Objects with filter and
         // mode keys.  We can't use a Map and the filter as key
         // because we may have the same filter multiple times.
@@ -995,6 +1025,7 @@ class Setup extends Model
         return clone;
     }
 }
+mixin(Setup, EventPubMixin);
 
 // Adds a setter and getter for this properties, so it
 // triggers change events for all of them.
@@ -1015,11 +1046,12 @@ for (let p_name of ['detector', 'dye', 'excitation', 'ex_path', 'em_path']) {
     });
 }
 
+
 // Pretty much a wrapper around Map to trigger events when it changes.
-class Collection extends Model // also kind of a Map
+class Collection // also kind of a Map
 {
     constructor(iterable) {
-        super();
+        this._events = {}; // for the EventPubMixin
         this._map = new Map(iterable);
     }
 
@@ -1075,7 +1107,7 @@ class Collection extends Model // also kind of a Map
         return this._map[Symbol.iterator]();
     }
 }
-
+mixin(Collection, EventPubMixin);
 
 // Like Collection for Filter, Detectors, Dyes, and Excitation.
 //
