@@ -1,0 +1,16 @@
+* spekcheck-logo.svg
+
+Icon was created in inkscape by merging a checkmark icon and an image
+of the visible spectrum.
+
+The checkmark icon is the bold checkmark of wingdings font (252 0xfc
+U+00b8 "checkbld" CEDILLA).  It was converted to svg from the ttf file
+with font forge.
+
+The image of the visible spectrum was created with the
+'create-spectrum.py' script in spekcheck, for the 380-780nm range.
+
+The visible spectrum is an image with a single row and is embedded on
+the final svg.  It is was resized to have the same dimensions as the
+checkmark icon.  Finally, the merge is done by the set of the two
+objects (Object>Clip>Set on inkscape).
