@@ -110,6 +110,8 @@ class Spectrum
     constructor(wavelength, data) {
         this.wavelength = wavelength.slice(0); // Array of floats
         this.data = data.slice(0); // Array of floats
+
+        this._area = null;
     }
 
     clone() {
@@ -123,11 +125,6 @@ class Spectrum
         return this.wavelength.length;
     }
 
-    set
-    length(val) {
-        throw new Error('Spectrum.length is a read-only property');
-    }
-
     // Wavelength where this data has its maximum value.
     get
     peak_wavelength() {
@@ -137,28 +134,21 @@ class Spectrum
         return this.wavelength[max_index];
     }
 
-    set
-    peak_wavelength(val) {
-        throw new Error('Spectrum.peak_wavelength is a read-only property');
-    }
-
     // Area of the spectrum.
     get
     area() {
-        const w = this.wavelength;
-        const v = this.data;
-        let area = 0.0;
-        // We don't handle values below zero because spectrum data
-        // should be clipped to [0,1].  This should be done by
-        // Data.parseCSV.
-        for (let i = 1; i < this.length; i++)
-            area += 0.5 * (v[i] + v[i-1])*(w[i] - w[i-1]);
-        return area;
-    }
-
-    set
-    area(val) {
-        throw new Error('Spectrum.area is a read-only property');
+        if (this._area === null) {
+            const w = this.wavelength;
+            const v = this.data;
+            let area = 0.0;
+            // We don't handle values below zero because spectrum data
+            // should be clipped to [0,1].  This should be done by
+            // Data.parseCSV.
+            for (let i = 1; i < this.length; i++)
+                area += 0.5 * (v[i] + v[i-1])*(w[i] - w[i-1]);
+            this._area = area;
+        }
+        return this._area;
     }
 
     validate() {
@@ -599,11 +589,6 @@ class FilterStack
         return this._stack.length;
     }
 
-    set
-    length(val) {
-        throw new Error('length is a read-only property');
-    }
-
     validate() {
         for (let x of this._stack) {
             if (! (x.filter instanceof Filter))
@@ -678,11 +663,6 @@ class FilterStack
         }
 
         return this._transmission;
-    }
-
-    set
-    transmission(val) {
-        throw new Error('transmission is a read-only property');
     }
 
     // Transmission spectrum that 'source' will have in this FilterStack.
@@ -936,16 +916,6 @@ class Setup
             return this.em_path.transmissionOf(this.dye.emission);
     }
 
-    set
-    ex_transmission(val) {
-        throw new Error('Setup.ex_transmission is a read-only property');
-    }
-
-    set
-    em_transmission(val) {
-        throw new Error('Setup.em_transmission is a read-only property');
-    }
-
     // Efficiency of the dye excitation, not of the excitation path.
     get
     ex_efficiency() {
@@ -958,19 +928,9 @@ class Setup
         return dye_ex_in_path.area / source.area;
     }
 
-    set
-    ex_efficiency(val) {
-        throw new Error('Setup.ex_efficiency is a read-only property');
-    }
-
     get
     em_efficiency() {
         return this.em_path.efficiencyOf(this.dye.emission);
-    }
-
-    set
-    em_efficiency(val) {
-        throw new Error('Setup.em_efficiency is a read-only property');
     }
 
     // Describe this instance, i.e., replace the Filter, Dye, and
@@ -1013,11 +973,6 @@ class Setup
         return bright * 10;
     }
 
-    set
-    brightness(val) {
-        throw new Error('Setup.brightness is a read-only property');
-    }
-
     clone() {
         const clone = new Setup();
         for (let p of ['detector', 'dye', 'excitation', 'ex_path', 'em_path'])
@@ -1058,11 +1013,6 @@ class Collection // also kind of a Map
     get
     size() {
         return this._map.size;
-    }
-
-    set
-    size(val) {
-        throw new Error('Collection.size is a read-only property');
     }
 
     clear() {
