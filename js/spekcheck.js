@@ -556,7 +556,7 @@ class FilterStack
     constructor(stack=[]) {
         this._events = {}; // for the EventPubMixin
         this._stack = stack; // Array of {filter: Filter, mode: 'r'|'t'}
-        this._resetCache();
+        this._resetTransmission();
     }
 
     _resetTransmission() {
@@ -713,6 +713,10 @@ class FilterStack
     }
 
     empty() {
+        if (this.length === 0)
+            // Already empty.  Do nothing and avoid a change event.
+            return;
+
         this._empty();
         this.trigger('change');
     }
@@ -759,18 +763,15 @@ class FilterStack
     // Whether this instance describes the same FilterStack as other.
     //
     // Args:
-    //     other(FilterStack)
+    //     other(Array filter description)
     isEqual(other) {
-        if (other instanceof Setup)
-            other = other.describe();
-
         if (this.length !== other.length)
             return false;
 
-        for (let p of ['filter', 'mode'])
-            for (let i = 0; i < this.length; i++)
-                if (this._stack[i][p] !== other._stack[i][p])
-                    return false;
+        for (let i = 0; i < this.length; i++)
+            if (this._stack[i].mode !== other[i].mode
+                || this._stack[i].filter.uid !== other[i].filter)
+                return false;
 
         return true;
     }
@@ -1983,7 +1984,16 @@ class SpekCheck
         promises.push(this.changeData('excitation', setup.excitation));
 
         for (let path_name of ['ex_path', 'em_path']) {
+            // Avoid modifying the path if there will be no changes.
+            // This prevents triggering change events which would
+            // cause a re-render of the plot.  This case is actually
+            // pretty common.  For example, all setups for the same
+            // OMXv3 or DV drawers have the same ex path, only the em
+            // path changes.
             const path = this.live_setup[path_name];
+            if (path.isEqual(setup[path_name]))
+                continue;
+
             // TODO: new replace method on path so that it can
             // identify if the change is small (or maybe none)
             path.empty();
@@ -2003,6 +2013,16 @@ class SpekCheck
     }
 
     changeData(dtype, uid) {
+        // Don't do anything if we don't have to.  We may end up here
+        // if the user changes setup and the new setup has the same
+        // dye for example.  If we were to assign the same dye to the
+        // live_setup, that would trigger a change event causing the
+        // plot to update itself without need.
+        const current = this.live_setup[dtype];
+        if ((current !== null && current.uid === uid)
+            || (current === uid))
+            return Promise.resolve();
+
         const change = (function(data) {
             this.live_setup[dtype] = data;
             const val = uid === null ? '' : uid;
@@ -2014,7 +2034,7 @@ class SpekCheck
 
         let get_data;
         if (uid === null)
-            get_data = new Promise((r) => r(null));
+            get_data = Promise.resolve(null);
         else
             get_data = this.collection[dtype].get(uid);
         return get_data.then(change).catch(log_failure);
