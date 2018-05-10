@@ -748,8 +748,7 @@ class FilterStack
         const removed = this._stack[i];
         if (removed !== undefined) {
             const old_stack = this._stack;
-            this._stack = Array.concat(old_stack.slice(0, i),
-                                       old_stack.slice(i+1));
+            this._stack = old_stack.slice(0, i).concat(old_stack.slice(i+1));
             this._resetTransmission();
             this.trigger('change');
         }
