@@ -1024,7 +1024,7 @@ class Collection // also kind of a Map
     delete(key) {
         const deleted_something = this._map.delete(key);
         if (deleted_something)
-            this.trigger('delete', key);
+            this.trigger('delete', [key]);
         return deleted_something;
     }
 
@@ -1946,11 +1946,13 @@ class SpekCheck
         for (let dtype of ['detector', 'dye', 'excitation'])
             this.collection[dtype].on('add', this.changeData.bind(this, dtype));
 
-        // Configure initial display based on the URL hash
-        this.route(location.hash);
+        // Filter out unwanted setups
+        this.route_search(location.search);
+        // Configure initial display
+        this.route_hash(location.hash);
     }
 
-    route(hash) {
+    route_hash(hash) {
         hash = decodeURIComponent(hash);
         for (let dir of ['#setup=', '#dye=', '#excitation=', '#detector=']) {
             if (hash.startsWith(dir)) {
@@ -1961,6 +1963,27 @@ class SpekCheck
                 break;
             }
         }
+    }
+
+    route_search(search) {
+        search = decodeURIComponent(search);
+        if (! search.startsWith('?setup='))
+            return;
+
+        // Python's SimpleHTTPServer will serve 301 with '/' appended
+        // to the URL if there is a search component, and we don't
+        // actually use index.html on the URL.  See
+        // https://stackoverflow.com/a/25786569 We could cover this by
+        // ignoring a trailing '/' on the URL but really, that
+        // trailing '/' is part of the search parameter and should not
+        // be ignored.
+        const regex = new RegExp(search.slice(7));
+
+        // XXX: This will dispatch a delete event each time we
+        //      delete() which is not ideal
+        for (let key of this.collection.setup.keys())
+            if (! regex.test(key))
+                this.collection.setup.delete(key);
     }
 
     // Modify live_setup according to a new SetupDescription.
