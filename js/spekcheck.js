@@ -1958,8 +1958,10 @@ class SpekCheck
             if (hash.startsWith(dir)) {
                 const cname = dir.slice(1, -1);
                 const uid = hash.slice(dir.length);
-                if (this.collection[cname].has(uid))
-                    this.view[cname].$el.val(uid).change();
+                if (cname === 'setup')
+                    this.changeSetup(uid);
+                else
+                    this.changeData(cname, uid);
                 break;
             }
         }
@@ -2032,7 +2034,15 @@ class SpekCheck
                 (filters) => path.push(...filters)
             ));
         }
-        return promises;
+        const change = (function(data) {
+            const val = uid === null ? '' : uid;
+            this.view.setup.val(val);
+        }).bind(this);
+        const log_failure = (function(err) {
+            this.error_dialog.show(err);
+        }).bind(this);
+
+        return Promise.all(promises).then(change).catch(log_failure);
     }
 
     changeData(dtype, uid) {
