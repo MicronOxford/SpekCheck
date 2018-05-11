@@ -71,6 +71,11 @@
     <dl>
       <dt>Excitation Efficiency</dt>
       <dd>
+        The excitation efficiency measures how effectively the
+        excitation light is exciting the dye as a percentage of its
+        maximum absorption.  It is calculated by multiplying the light
+        source spectra by the excitation filters and dichroics, and
+        then the absorption spectra of the dye.
       </dd>
       <dt>Emission Efficiency</dt>
       <dd>
@@ -156,7 +161,7 @@
       names, minus the <code>.csv</code> extension, listed on the
       corresponding json file.  The <code>setups.json</code> file
       describes the predefined setups (see
-      Section <a href="#file-formats">File Formats</a>).
+      Section <a href="#files">File Formats</a>).
     </p>
 
     <h3 id="inserted-into-page">Included on another webpage</h3>
@@ -204,7 +209,11 @@
 
     <h2 id="files">File Format</h2>
 
-    Microscope setups and new components can be
+    <p>
+      Microscope setups and new components can be defined in specific
+      files within the <code>data</code> directory structure. These
+      are defined below.
+    </p>
 
     <h3 id="setups-file">Setups file</h3>
 
