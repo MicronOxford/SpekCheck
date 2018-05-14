@@ -2082,7 +2082,7 @@ class SpekCheck
             // Remember when a user selects a dye manually to prevent
             // changing it as part of changing setup.  Forget about
             // it, when a user unselects a dye.
-            if (dtype === ' dye') {
+            if (dtype === 'dye') {
                 if (val === '')
                     this.user_selected_dye = false;
                 else
