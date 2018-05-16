@@ -19,6 +19,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>SPEKcheck logo</dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -27,18 +28,23 @@
     <clipPath
        id="clipPath3055"
        clipPathUnits="userSpaceOnUse">
-      <path
-         id="path3057"
-         d="M 1352,-410 C 1183.3333,-314 1010.6667,-176.33333 834,3 657.33333,182.33333 512.66667,367 400,557 L 369,487 C 306.33333,347.66667 249.33333,278 198,278 138,278 72,316 0,392 c 42.666667,14.66667 81.166667,44.33333 115.5,89 34.33333,44.66667 71.5,113.6667 111.5,207 l 28,65 c 29.33333,71.3333 48.33333,122.6667 57,154 22,-20.6667 63.66667,-52.3333 125,-95 l 74,-50 c 92,-194 225.33333,-402.66667 400,-626 174.6667,-223.33333 333.3333,-388.66667 476,-496 l -35,-50 z"
-         style="fill:currentColor" />
+      <g
+         id="g3896"
+         transform="matrix(1,0,0,-1,-148,1158)">
+        <path
+           style="fill:currentColor"
+           id="path3894"
+           d="m 1500,1568 35,-50 Q 1321,1357 1059,1022 797,687 659,396 l -74,-50 q -92,-64 -125,-95 -13,47 -57,154 l -28,65 Q 315,610 263.5,677 212,744 148,766 q 108,114 198,114 77,0 171,-209 l 31,-70 q 169,285 434,554 265,269 518,413 z" />
+      </g>
     </clipPath>
   </defs>
   <image
-     clip-path="url(#clipPath3055)"
-     width="1387"
-     height="1317"
-     xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAABCAIAAAB/kG/JAAAAA3NCSVQICAjb4U/gAAAAu0lEQVQ4 jdWSwQ6CMBAFB3arGL+Sz/ekQcUo0HooJS1WFG82k5d52x562KKmFoygPktUMCXqKTAlWow+Qpog oA4NKQ71WMShFnWIRS06jCID2kMHPUzSpeJ5hPTcoQX2UEEFW9iE9Jg0zYtrzvV9ZiVbaeGa5hUu aZ4DDTRwgiMcdtH3sz9aQFKJq6TzrMz8tf4GQ6CPfFb7T/Ixs7JMvHazhZu27Q43/uJYsOCCfFPX Dlc9+IZhzVU8eQLHxMdmjIrFPQAAAABJRU5ErkJggg== "
-     id="image3048"
+     xlink:href="visible-spectrum.png"
+     y="-410"
      x="0"
-     y="-410" />
+     id="image176"
+     preserveAspectRatio="none"
+     height="1317"
+     width="1387"
+     clip-path="url(#clipPath3055)" />
 </svg>
