@@ -1463,9 +1463,23 @@ class SetupPlot extends View
     //         label used.  It can also be used to change the colour.
     asChartjsDataset(spectrum, options = {}) {
         if (! this._dataset_cache.has(spectrum)) {
-            const points = new Array(spectrum.wavelength.length);
-            for (let i = 0; i < points.length; i++)
+
+            // In Chrome, lines outside the range of the x Axis appear
+            // as weird horizontal lines.  See issue #73.  So we crop
+            // the data for the displayed range.
+            const x_min = this.plot.options.scales.xAxes[0].ticks.min;
+            const x_max = this.plot.options.scales.xAxes[0].ticks.max;
+            let i_first = spectrum.wavelength.findIndex(x => x >= x_min);
+            let i_last = spectrum.wavelength.findIndex(x => x > x_max);
+            if (i_first === -1)
+                i_first = 0;
+            if (i_last === -1)
+                i_last = spectrum.wavelength.length -1;
+
+            const points = new Array(i_last - i_first);
+            for (let i = i_first; i < points.length; i++)
                 points[i] = {x: spectrum.wavelength[i], y: spectrum.data[i]};
+
             // Convert a wavelength to HSL-alpha string.
             const hue = SetupPlot.wavelengthToHue(spectrum.peak_wavelength);
 
