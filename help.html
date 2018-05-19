@@ -95,18 +95,49 @@
     <h3 id="links">Links</h3>
 
     <p>
-      It is possible to create URL to specific setups or components by
-      specifying it on URL fragment identifier.  For example,
-      adding <code>#dye=GFP</code> to the URL will load the GFP dye.
+      It is possible to create URLs for specific setups or components by
+      specifying it on URL fragment identifier.
+      For example, adding <code>#dye=GFP</code> to the URL will
+      initialise SPEKcheck with the GFP dye.
       Similarly, the fragment <code>#setup=DV Elite Quad DAPI</code>
       will load a setup with the same name.
     </p>
 
-    <h3 id="browser-support"></h3>
+    <p>
+      The query component of the URL can also be used to filter the
+      list of setups available for selection.
 
-    <div class="alert alert-info" role="alert">
-      SPEKcheck does not run on Internet Explorer.
-    </div>
+      For example, adding the <code>#setup=OMXv3</code> to the URL
+      will initialise SPEKcheck with only the setups matching that
+      name.  The value for setup query can be
+      any <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions">javascript
+        regular expression</a>.  For example:
+      </p>
+
+    <dl class="row">
+      <dt class="col-sm-3"><code>?setup=OMXv3</code></dt>
+      <dd class="col-sm-9">
+        Any setup with the text <code>OMXv3</code>
+      </dd>
+
+      <dt class="col-sm-3"><code>?setup=OMXv3|2</code></dt>
+      <dd class="col-sm-9">
+        Any setup with the text <code>OMXv3</code> or <code>OMXv2</code>
+      </dd>
+
+      <dt class="col-sm-3"><code>?setup=^OMXv\d</code></dt>
+      <dd class="col-sm-9">
+        Any setup whose name starts (<code>^</code>) with the
+        text <code>OMXv</code>, followed by a digit (<code>\d</code>).
+      </dd>
+
+      <dt class="col-sm-3"><code>?setup=^OMX.*DAPI$</code></dt>
+      <dd class="col-sm-9">
+        Any setup whose name starts (<code>^</code>) with the
+        text <code>OMX</code>, followed by any text (<code>.*</code>),
+        but with <code>DAPI</code> at the end (<code>$</code>).
+      </dd>
+    </dl>
 
     <h2 id="installation">Installation</h2>
 
@@ -115,6 +146,15 @@
       web browser such as Firefox, either locally or served through a
       web server.  In addition, it can be included as part of another
       web page.
+    </p>
+
+    <h3 id="requirements">Requirements</h3>
+
+    <p>
+      SPEKcheck requires support for HTML5 and ECMAScript 2015.
+      Effectively, this means that SPEKcheck will <em>not</em> run in
+      Internet Explorer, very old versions of other web browsers, and
+      web browsers with javascript disabled.
     </p>
 
     <h3 id="local-installation">Local installation</h3>
@@ -142,7 +182,7 @@
     <h3 id="server-installation">Installation on web server</h3>
 
     <p>
-      SPEKcheck runs fully client-side and can be served as static
+      SPEKcheck runs fully client-side and can be served as a static
       site.  To serve your own instance of SPEKcheck, simply extract
       all files into whatever location the web server is configured to
       use.
@@ -176,7 +216,7 @@
     <p>
       SPEKcheck is dependent on bootstrap, jQuery, and Chart.js and so
       those need to be referenced.  SPEKcheck will inject itself into
-      any <code>div</code>
+      any HTML element.
     </p>
 
     <figure class="card figure">
@@ -244,10 +284,10 @@
   "dye": "Dye Name",
   "excitation": null,
   "ex_path": [
-    {"filter": "Filter 1 Name", "mode": "t"}
+    {"filter": "Dichroic Name", "mode": "t"}
   ],
   "em_path": [
-    {"filter": "Filter 1 Name", "mode", "r"},
+    {"filter": "Dichroic Name", "mode", "r"},
     {"filter": "Filter 2 Name", "mode", "t"}
   ]
 }
@@ -279,10 +319,10 @@
       "dye": "Dye Name",
       "excitation": null,
       "ex_path": [
-        {"filter": "Dichroic Filter 1 Name", "mode": "t"}
+        {"filter": "Dichroic Name", "mode": "t"}
       ],
       "em_path": [
-        {"filter": "Dichroic Filter 1 Name", "mode", "r"},
+        {"filter": "Dichroic Name", "mode", "r"},
         {"filter": "Filter 2 Name", "mode", "t"}
       ]
     }
@@ -294,10 +334,10 @@
       "dye": null,
       "excitation": "Excitation Source Name",
       "ex_path": [
-        {"filter": "Filter 1 Name", "mode": "t"}
+        {"filter": "Dichroic Name", "mode": "t"}
       ],
       "em_path": [
-        {"filter": "Filter 1 Name", "mode", "r"},
+        {"filter": "Dichroic Name", "mode", "r"},
         {"filter": "Filter 3 Name", "mode", "t"}
       ]
     }
@@ -335,11 +375,6 @@
       for filters, and <code>qe</code> for detectors.
     </p>
 
-    <div class="alert alert-danger" role="alert">
-      I don't like <code>qe</code> for column name.
-    </div>
-
-
     <div class="card-deck mb-3">
       <div class="card">
         <div class="card-header">Example Dye file</div>
@@ -365,8 +400,8 @@ wavelength,absorption,emission
         <div class="card-header">Example Filter file</div>
         <div class="card-body">
           <pre><code>## Type: dichroic filter
-## Name: this filter name
-## Instead of transmission, this file could instead have reflection too.
+# Name: this filter name
+# Instead of transmission, this file could instead have reflection too.
 wavelength,transmission
 450.088864,0.004743
 450.204180,0.005017
@@ -397,8 +432,8 @@ wavelength,intensity
         <div class="card-header">Example Detector file</div>
         <div class="card-body">
           <pre><code>## Type: detector
-## Name: The Detector name
-## The source of the file is a useful thing to keep as a comment.
+# Name: The Detector name
+# The source of the file is a useful thing to keep as a comment.
 wavelength,qe
 410, 0.0093
 420, 0.0175
