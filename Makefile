@@ -25,6 +25,8 @@ TAR ?= tar
 XXD ?= xxd
 ZIP ?= zip
 
+## Default target (first declared target) must be the same as all.
+all: index.html help.html
 
 help:
 	@echo "Targets:"
@@ -107,7 +109,7 @@ $(foreach file, $(npm_css_dependencies) $(npm_js_dependencies), \
 templates/link-includes.in: $(npm_css_dependencies)
 	$(RM) $@
 	for FILE in $^ ; do \
-	  INTEGRITY=`shasum -b -a 384 "$$FILE" | xxd -r -p | base64`; \
+	  INTEGRITY=`$(SHASUM) -b -a 384 "$$FILE" | $(XXD) -r -p | $(BASE64)`; \
 	  echo '  <link rel="stylesheet" type="text/css"' >>\
 	  echo '        href="'"$$FILE"'"' >> $@; \
 	  echo '        integrity="sha384-'"$$INTEGRITY"'"' >> $@; \
@@ -117,7 +119,7 @@ templates/link-includes.in: $(npm_css_dependencies)
 templates/script-includes.in: $(npm_js_dependencies)
 	$(RM) $@
 	for FILE in $^ ; do \
-	  INTEGRITY=`shasum -b -a 384 "$$FILE" | xxd -r -p | base64`; \
+	  INTEGRITY=`$(SHASUM) -b -a 384 "$$FILE" | $(XXD) -r -p | $(BASE64)`; \
 	  echo '  <script src="'"$$FILE"'"' >> $@; \
 	  echo '          integrity="sha384-'"$$INTEGRITY"'"' >> $@; \
 	  echo '          crossorigin="anonymous"></script>' >> $@; \
@@ -134,7 +136,7 @@ templates/script-includes.in: $(npm_js_dependencies)
 	       -e '}' \
 	        $< > $@
 
-serve: index.html
+serve: all
 	$(PYTHON) -m SimpleHTTPServer
 
 check:
