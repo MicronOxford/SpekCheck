@@ -1,23 +1,20 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-  <meta name="application-name" content="SpekCheck">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no"/>
+  <meta name="application-name" content="SpekCheck"/>
 
   <title>SpekCheck: Filterset optimisation</title>
-  <meta name="description" content="Spectral visualisation and optimisation tool for fluorescence microscopy">
-  <meta name="keywords" content="microscopy, spectral transmission, filter sets, dyes">
+  <meta name="description" content="Spectral visualisation and optimisation tool for fluorescence microscopy"/>
+  <meta name="keywords" content="microscopy, spectral transmission, filter sets, dyes"/>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico"/>
 
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  @EXTERNAL_LINK_INCLUDES@
 
-  <link rel="stylesheet" type="text/css"
-        href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
-        crossorigin="anonymous">
+  @EXTERNAL_SCRIPT_INCLUDES@
 
   <link rel="stylesheet" type="text/css" href="css/spekcheck.css">
-
   <!--
     We have example code block and text file contents as card-body in
     a pre element.  The pre element adds a bottom margin that we want
@@ -28,19 +25,6 @@
       margin-bottom: 0rem;
     }
   </style>
-
-  <script src="node_modules/jquery/dist/jquery.min.js"
-          integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
-          crossorigin="anonymous"></script>
-  <script src="node_modules/popper.js/dist/umd/popper.min.js"
-          integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
-          crossorigin="anonymous"></script>
-  <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"
-          integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T"
-          crossorigin="anonymous"></script>
-  <script src="node_modules/chart.js/dist/Chart.min.js"
-          integrity="sha384-0saKbDOWtYAw5aP4czPUm6ByY5JojfQ9Co6wDgkuM7Zn+anp+4Rj92oGK8cbV91S"
-          crossorigin="anonymous"></script>
 
   <script src="js/spekcheck.js"></script>
 

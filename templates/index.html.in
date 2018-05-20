@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no"/>
+  <meta name="application-name" content="SpekCheck"/>
+
+  <title>SpekCheck: Filterset optimisation</title>
+  <meta name="description" content="Spectral visualisation and optimisation tool for fluorescence microscopy"/>
+  <meta name="keywords" content="microscopy, spectral transmission, filter sets, dyes"/>
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico"/>
+
+  @EXTERNAL_LINK_INCLUDES@
+
+  @EXTERNAL_SCRIPT_INCLUDES@
+
+  <link rel="stylesheet" type="text/css" href="css/spekcheck.css"/>
+  <script src="js/spekcheck.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded',
+                              (event) => main());
+  </script>
+</head>
+<body id="spekcheck">
+</body>
+</html>
