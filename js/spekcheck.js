@@ -578,9 +578,6 @@ class FilterStack
         // Maps Spectrum instances to their transmission Spectrum in
         // this FilterStack.
         this._transmitted_cache = new WeakMap;
-        // Maps Spectrum instances to their transmission efficiency in
-        // this FilterStack.
-        this._efficiency_cache = new WeakMap;
     }
 
     // Number of filters in the path.
@@ -683,19 +680,6 @@ class FilterStack
             this._transmitted_cache.set(source, transmitted);
         }
         return this._transmitted_cache.get(source);
-    }
-
-    // Efficiency of this
-    efficiencyOf(source) {
-        if (! this._efficiency_cache.has(source)) {
-            let efficiency = 1.0;
-            if (this.length !== 0) {
-                const transmission = this.transmissionOf(source);
-                efficiency = transmission.area / source.area;
-            }
-            this._efficiency_cache.set(source, efficiency);
-        }
-        return this._efficiency_cache.get(source);
     }
 
     describe() {
@@ -905,15 +889,23 @@ class Setup
             return this.ex_path.transmissionOf(this.excitation.intensity);
     }
 
-    // Scaled dye emission
+    // Dye emission, scaled by emission path and detector
     get
     em_transmission() {
         if (this.dye === null)
             return null;
-        else if (this.em_path.length === 0)
-            return this.dye.emission;
+
+        let transmission;
+        if (this.em_path.length === 0)
+            transmission = this.dye.emission;
         else
-            return this.em_path.transmissionOf(this.dye.emission);
+            transmission = this.em_path.transmissionOf(this.dye.emission);
+
+        if (this.detector !== null) {
+            transmission = transmission.clone();
+            transmission.data = transmission.multiplyBy(this.detector.qe);
+        }
+        return transmission;
     }
 
     // Efficiency of the dye excitation, not of the excitation path.
@@ -930,7 +922,7 @@ class Setup
 
     get
     em_efficiency() {
-        return this.em_path.efficiencyOf(this.dye.emission);
+        return this.em_transmission.area / this.dye.emission.area;
     }
 
     // Describe this instance, i.e., replace the Filter, Dye, and
