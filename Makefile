@@ -40,13 +40,15 @@ DIST_ARCHIVES := $(distdir).tar.gz
 
 
 npm_css_dependencies = \
-  node_modules/bootstrap/dist/css/bootstrap.min.css \
+  node_modules/bootstrap/dist/css/bootstrap.min.css
 
+## The order of this dependencies matters because it's the order that
+## will be used when creating the index.html and help.html files.
 npm_js_dependencies = \
-  node_modules/bootstrap/dist/js/bootstrap.min.js \
-  node_modules/chart.js/dist/Chart.min.js \
   node_modules/jquery/dist/jquery.min.js \
-  node_modules/popper.js/dist/umd/popper.min.js
+  node_modules/popper.js/dist/umd/popper.min.js \
+  node_modules/bootstrap/dist/js/bootstrap.min.js \
+  node_modules/chart.js/dist/Chart.min.js
 
 
 DISTFILES = \
