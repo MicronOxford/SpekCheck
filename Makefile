@@ -25,26 +25,16 @@ TAR ?= tar
 XXD ?= xxd
 ZIP ?= zip
 
-## Default target (first declared target) must be the same as all.
-all: index.html help.html
-
-help:
-	@echo "Targets:"
-	@echo "    serve        serve site at http://localhost:8000"
-	@echo "    dist         create distribution tar file"
-	@echo "    dist-zip     create distribution zip file"
-
 distdir := $(PACKAGE)-$(VERSION)
 
 DIST_ARCHIVES := $(distdir).tar.gz
 
-
-npm_css_dependencies = \
+npm_css_dependencies := \
   node_modules/bootstrap/dist/css/bootstrap.min.css
 
 ## The order of this dependencies matters because it's the order that
 ## will be used when creating the index.html and help.html files.
-npm_js_dependencies = \
+npm_js_dependencies := \
   node_modules/jquery/dist/jquery.min.js \
   node_modules/popper.js/dist/umd/popper.min.js \
   node_modules/bootstrap/dist/js/bootstrap.min.js \
@@ -70,6 +60,17 @@ DISTFILES = \
   templates/spekcheck.html \
   $(npm_css_dependencies) \
   $(npm_js_dependencies)
+
+
+## Default target (first declared target) must be the same as all.
+## And for the case of SPEKcheck, this is just DISTFILES.
+all: $(DISTFILES)
+
+help:
+	@echo "Targets:"
+	@echo "    serve        serve site at http://localhost:8000"
+	@echo "    dist         create distribution tar file"
+	@echo "    dist-zip     create distribution zip file"
 
 
 images/visible-spectrum.png: src/create-spectrum.py
