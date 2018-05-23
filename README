@@ -1,0 +1,41 @@
+# SPEKcheck
+
+SPEKcheck is a web application to visualise the efficiency of the
+light path in a fluorescence microscope.  It can run locally and
+completely offline, or it can be configured to run in a site.
+
+SPEKcheck models an optical setup as a detector, a dye, an excitation
+source, and an arbitrary number of filters in both the excitation and
+emission paths.  SPEKcheck then reports values for the excitation
+efficiency of the dye, the collection efficiency of the emitted
+fluorescence, and a 'brightness' score, all easy comparison between
+different fluorescent labels.  It also displays a spectral plot of
+various components, and the final emitted fluorescence.
+
+## Trying SPEKcheck
+
+A public of instance is available online at
+https://www.micron.ox.ac.uk/software/spekcheck
+
+## Documentation
+
+A manual with configuration and installation options is included in
+the release.  It is also available online at
+https://www.micron.ox.ac.uk/software/spekcheck/help.html
+
+## Installation
+
+1. Download the latest release from the releases page:
+
+    https://github.com/MicronOxford/SpekCheck/releases/
+
+2. SPEkcheck can then run in two modes:
+
+   1. To run without a web server, simply open the `index.html`.
+    Browsers other than Firefox will require extra configuration to
+    run it this way, see `help.html` for details.
+
+   2. To run with a web server, move the SPEKcheck directory into
+    whatever directory your web server is configured to serve.
+    Alternatively, run `python -m SimpleHTTPServer` and then connect
+    to http://127.0.0.1:8000/index.html

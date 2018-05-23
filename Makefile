@@ -102,7 +102,8 @@ buildable_files := \
 DISTFILES := \
   COPYING \
   Makefile \
-  README.md \
+  NEWS \
+  README \
   css/spekcheck.css \
   data/setups.json \
   images/README \
