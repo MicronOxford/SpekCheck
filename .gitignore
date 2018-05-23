@@ -1,0 +1,13 @@
+/index.html
+/help.html
+/node_modules/
+
+/templates/link-includes.in
+/templates/script-includes.in
+
+/images/spekcheck-logo.png
+/images/favicon.ico
+/images/favicon.png
+
+/SPEKcheck-*.tar.gz
+/SPEKcheck-*.zip
