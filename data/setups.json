@@ -1279,6 +1279,30 @@
           "mode": "t"
         },
         {
+          "filter": "EM-525-50",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Olympus TIRF old Green",
+    {
+      "detector": null,
+      "dye": "GFP",
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "t"
+        },
+        {
           "filter": "EM-520-44",
           "mode": "t"
         }
