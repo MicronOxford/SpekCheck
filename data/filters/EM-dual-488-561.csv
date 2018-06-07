@@ -1,5 +1,6 @@
 #Type: filter,
 #Name: Chroma ZET488/561m,
+wavelength,transmission
 300,9.50E-07
 300.5,9.50E-07
 301,9.50E-07

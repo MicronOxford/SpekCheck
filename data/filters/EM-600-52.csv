@@ -1,5 +1,6 @@
 #Type: filter,
 #Name: Semrock FF01-600/52 Optical Filter  ,
+wavelength,transmission
 441,1.00E-07
 441.2,1.00E-07
 441.4,1.00E-07
