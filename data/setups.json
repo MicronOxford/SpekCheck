@@ -1262,6 +1262,126 @@
     }
   ],
   [
+    "Olympus TIRF Green",
+    {
+      "detector": null,
+      "dye": "GFP",
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-525-50",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Olympus TIRF old Green",
+    {
+      "detector": null,
+      "dye": "GFP",
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-520-44",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Olympus TIRF Red",
+    {
+      "detector": null,
+      "dye": "mCherry",
+      "excitation": "561-laser",
+      "ex_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-600-52",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Olympus TIRF Dualband Green",
+    {
+      "detector": null,
+      "dye": "GFP",
+      "excitation": "488-laser",
+      "ex_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-dual-488-561",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
+    "Olympus TIRF Dualband Red",
+    {
+      "detector": null,
+      "dye": "mCherry",
+      "excitation": "561-laser",
+      "ex_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "r"
+        }
+      ],
+      "em_path": [
+        {
+          "filter": "ZT-488-561-rpc",
+          "mode": "t"
+        },
+        {
+          "filter": "EM-dual-488-561",
+          "mode": "t"
+        }
+      ]
+    }
+  ],
+  [
     "Z880-CFP-YFP CFP",
     {
       "detector": null,
