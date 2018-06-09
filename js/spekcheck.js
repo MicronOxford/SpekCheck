@@ -1236,7 +1236,7 @@ class CollectionViewB
     }
 
     handleDragStart(ev) {
-        ev.dataTransfer.setData('text', ev.target.textContent);
+        ev.dataTransfer.setData('text/plain', ev.target.textContent);
         ev.dataTransfer.effectAllowed = 'copy';
     }
 }
@@ -1314,7 +1314,7 @@ class FilterStackView
     }
 
     handleDragStart(ev) {
-        ev.dataTransfer.setData('text', ev.target.textContent);
+        ev.dataTransfer.setData('text/plain', ev.target.textContent);
         ev.dataTransfer.dropEffect = 'move';
     }
 }
@@ -1376,17 +1376,18 @@ class PathBuilder
     }
 
     handleDragOver(ev) {
-        const uid = ev.dataTransfer.getData('text');
-        if (! this.filters.has(uid))
-            return;
-
         ev.preventDefault();
         ev.dataTransfer.dropEffect = 'copy';
     }
 
     handleDrop(path_name, ev) {
+        const uid = ev.dataTransfer.getData('text/plain');
+        if (! this.filters.has(uid)) {
+            console.error(`no filter with uid ${ uid }.  Ignoring`);
+            return;
+        }
         ev.preventDefault();
-        const uid = ev.dataTransfer.getData('text');
+
         const setup = this.setup;
         this.filters.get(uid).then(
             f => setup[path_name].push({'filter': f, 'mode': 't'})
