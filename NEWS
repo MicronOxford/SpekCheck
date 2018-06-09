@@ -3,6 +3,17 @@
 
  ** Fixed drag and drop of filters for Chrome and Safari.
 
+ ** New dyes:
+
+        Atto-594
+
+ ** New filters:
+
+        EM-520-44
+        EM-600-52
+        EM-dual-488-561
+        ZT-488-561-rpc
+
 
  Summary of important user-visible changes for SPEKcheck 0.1:
 -------------------------------------------------------------
