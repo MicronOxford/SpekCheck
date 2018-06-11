@@ -3,6 +3,9 @@
 
  ** Fixed drag and drop of filters for Chrome and Safari.
 
+ ** Changed choice of colour for each spectra to better approximate
+    the correct colour for each wavelength.
+
  ** New dyes:
 
         Atto-594

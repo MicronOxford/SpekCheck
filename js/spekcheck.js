@@ -1473,11 +1473,11 @@ class SetupPlot extends View
             for (let i = i_first; i < points.length; i++)
                 points[i] = {x: spectrum.wavelength[i], y: spectrum.data[i]};
 
-            // Convert a wavelength to HSL-alpha string.
-            const hue = SetupPlot.wavelengthToHue(spectrum.peak_wavelength);
+            const rgb = SetupPlot.wavelengthToRGB(spectrum.peak_wavelength);
+            const rgb_str = rgb.join(',');
 
-            const bg_colour = `hsla(${ hue }, 100%, 50%, 0.2)`;
-            const line_colour = `hsla(${ hue }, 100%, 50%, 1)`;
+            const bg_colour = `rgba(${ rgb_str }, 0.2)`;
+            const line_colour = `rgba(${ rgb_str }, 1.0)`;
             const chartjs_dataset = {
                 data: points,
                 backgroundColor: bg_colour,
@@ -1523,11 +1523,12 @@ class SetupPlot extends View
             // matters the most to the user, so don't make it
             // transparent like the filters.
             const intensity = this.setup.excitation.intensity;
-            const hue = SetupPlot.wavelengthToHue(intensity.peak_wavelength);
+            const rgb = SetupPlot.wavelengthToRGB(intensity.peak_wavelength);
+            const rgb_str = rgb.join(',');
             const options = {
                 label: this.setup.excitation.uid,
-                backgroundColor: `hsla(${ hue }, 100%, 50%, 1)`,
-                borderColor: `hsla(${ hue }, 100%, 50%, 1)`,
+                backgroundColor: `rgba(${ rgb_str }, 1.0)`,
+                borderColor: `rgba(${ rgb_str }, 1.0)`,
                 borderWidth: 2.0,
             };
             // We don't display the spectrum of the excitation source,
@@ -1550,10 +1551,10 @@ class SetupPlot extends View
             // like the others, and make the border thicker and dark.
             if (this.setup.em_path.length !== 0) {
                 const transmission = this.setup.em_transmission;
-                const hue = SetupPlot.wavelengthToHue(transmission.peak_wavelength);
+                const rgb = SetupPlot.wavelengthToRGB(transmission.peak_wavelength);
                 const options = {
                     label: this.setup.dye.uid + '(transmitted)',
-                    backgroundColor: `hsla(${ hue }, 100%, 50%, 1.0)`,
+                    backgroundColor: `rgba(${ rgb.join(',') }, 1.0)`,
                     borderColor: 'rgba(0, 0, 0, 0.5)',
                     borderWidth: 2.0,
                 };
@@ -1605,9 +1606,39 @@ class SetupPlot extends View
         return this.$el[0].toDataURL(format);
     }
 
+    // Converted to javascript from Octave's wavelength2rgb
+    // http://hg.code.sf.net/p/octave/image/file/590aa72e3880/inst/wavelength2rgb.m
     static
-    wavelengthToHue(wavelength) {
-        return Math.max(0.0, Math.min(300.0, 650.0 - wavelength)) * 0.96;
+    wavelengthToRGB(wavelength, gamma=0.8) {
+        let rgb;
+        if (wavelength < 380.0)
+            rgb = [0.0, 0.0, 0.0];
+        else if (wavelength < 440.0)
+            rgb = [-(wavelength-440.0)/60.0, 0.0, 1.0];
+        else if (wavelength < 490.0)
+            rgb = [0.0, (wavelength-440.0)/50.0, 1.0];
+        else if (wavelength < 510.0)
+            rgb = [0.0, 1.0, -(wavelength-510.0)/20.0];
+        else if (wavelength < 580.0)
+            rgb = [(wavelength-510.0)/70.0, 1.0, 0.0];
+        else if (wavelength < 645.0)
+            rgb = [1.0, -(wavelength-645.0)/65.0, 1.0];
+        else if (wavelength < 780.0)
+            rgb = [1.0, 0.0, 0.0];
+        else
+            rgb = [0.0, 0.0, 0.0];
+
+        // Let intensity fall off near the vision limits.
+        let factor;
+        if (wavelength < 420.0)
+            factor = 0.3 + 0.7 * (wavelength - 380.0) / 40.0;
+        else if (wavelength <= 700.0)
+            factor = 1.0;
+        else // (wavelength > 700.0)
+            factor = 0.3 + 0.7 * (780.0 - wavelength) / 80.0;
+
+        rgb = rgb.map(x => Math.round(255.0 * ((x * factor) ** gamma)));
+        return rgb;
     }
 }
 
