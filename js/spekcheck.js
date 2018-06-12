@@ -1622,7 +1622,7 @@ class SetupPlot extends View
         else if (wavelength < 580.0)
             rgb = [(wavelength-510.0)/70.0, 1.0, 0.0];
         else if (wavelength < 645.0)
-            rgb = [1.0, -(wavelength-645.0)/65.0, 1.0];
+            rgb = [1.0, -(wavelength-645.0)/65.0, 0.0];
         else if (wavelength < 780.0)
             rgb = [1.0, 0.0, 0.0];
         else
