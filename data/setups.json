@@ -1,117 +1,212 @@
 [
-[
-"WF-Quad DAPI",
-{
-  "detector": null,
-  "dye": "DAPI",
-  "excitation": "Metal-Halide-lamp",
-  "ex_path": [
-    {
-      "filter": "89100bs",
-      "mode": "r"
-    },
-    {
-      "filter": "ET-402-15x",
-      "mode": "t"
-    }
-  ],
-  "em_path": [
-    {
-      "filter": "89100bs",
-      "mode": "t"
-    },
-    {
-      "filter": "ET-455-50m",
-      "mode": "t"
-    }
-  ]
-}
-],
+    [
+	"WF-Quad DAPI",
+	{
+	    "detector": null,
+	    "dye": "DAPI",
+	    "excitation": "Metal-Halide-lamp",
+	    "ex_path": [
+		{
+		    "filter": "89100bs",
+		    "mode": "r"
+		},
+		{
+		    "filter": "ET-402-15x",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "89100bs",
+		    "mode": "t"
+		},
+		{
+		    "filter": "ET-455-50m",
+		    "mode": "t"
+		}
+	    ]
+	}
+    ],
 
-[
-"WF-Quad GFP",
-{
-  "detector": null,
-  "dye": "GFP",
-  "excitation": "Metal-Halide-lamp",
-  "ex_path": [
-    {
-      "filter": "89100bs",
-      "mode": "r"
-    },
-    {
-      "filter": "ET-490-20x",
-      "mode": "t"
-    }
-  ],
-  "em_path": [
-    {
-      "filter": "89100bs",
-      "mode": "t"
-    },
-    {
-      "filter": "ET-525-36m",
-      "mode": "t"
-    }
-  ]
-}
-],
+    [
+	"WF-Quad GFP",
+	{
+	    "detector": null,
+	    "dye": "GFP",
+	    "excitation": "Metal-Halide-lamp",
+	    "ex_path": [
+		{
+		    "filter": "89100bs",
+		    "mode": "r"
+		},
+		{
+		    "filter": "ET-490-20x",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "89100bs",
+		    "mode": "t"
+		},
+		{
+		    "filter": "ET-525-36m",
+		    "mode": "t"
+		}
+	    ]
+	}
+    ],
 
-[
-"WF-Quad Alexa-568",
-{
-  "detector": null,
-  "dye": "Alexa-568",
-  "excitation": "Metal-Halide-lamp",
-  "ex_path": [
-    {
-      "filter": "ET-555-25x",
-      "mode": "t"
-    },
-    {
-      "filter": "89100bs",
-      "mode": "r"
-    }
-  ],
-  "em_path": [
-    {
-      "filter": "89100bs",
-      "mode": "t"
-    },
-    {
-      "filter": "ET-605-52m",
-      "mode": "t"
-    }
-  ]
-}
-],
+    [
+	"WF-Quad Alexa-568",
+	{
+	    "detector": null,
+	    "dye": "Alexa-568",
+	    "excitation": "Metal-Halide-lamp",
+	    "ex_path": [
+		{
+		    "filter": "ET-555-25x",
+		    "mode": "t"
+		},
+		{
+		    "filter": "89100bs",
+		    "mode": "r"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "89100bs",
+		    "mode": "t"
+		},
+		{
+		    "filter": "ET-605-52m",
+		    "mode": "t"
+		}
+	    ]
+	}
+    ],
 
-[
-"WF-Quad Cy5",
-{
-  "detector": null,
-  "dye": "Cy5",
-  "excitation": "Metal-Halide-lamp",
-  "ex_path": [
-    {
-      "filter": "89100bs",
-      "mode": "r"
-    },
-    {
-      "filter": "ET-645-30x",
-      "mode": "t"
-    }
-  ],
-  "em_path": [
-    {
-      "filter": "89100bs",
-      "mode": "t"
-    },
-    {
-      "filter": "ET-705-72m",
-      "mode": "t"
-    }
-  ]
-}
-]
+    [
+	"WF-Quad Cy5",
+	{
+	    "detector": null,
+	    "dye": "Cy5",
+	    "excitation": "Metal-Halide-lamp",
+	    "ex_path": [
+		{
+		    "filter": "89100bs",
+		    "mode": "r"
+		},
+		{
+		    "filter": "ET-645-30x",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "89100bs",
+		    "mode": "t"
+		},
+		{
+		    "filter": "ET-705-72m",
+		    "mode": "t"
+		}
+	    ]
+	}
+    ],
+
+    [
+	"Confocal DAPI",
+
+	{
+	    "detector": null,
+	    "dye": "DAPI",
+	    "excitation": "405-laser",
+	    "ex_path": [
+		{
+		    "filter": "zt405-488-561-640",
+		    "mode": "r"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "zt405-488-561-640",
+		    "mode": "t"
+		},
+		{
+		    "filter": "FF484",
+		    "mode": "r"
+		},
+		{
+		    "filter": "EM-450-50m",
+		    "mode": "t"
+		}
+	    ]
+	}
+    ],
+
+    [
+	"Confocal GFP",
+	{
+	    "detector": null,
+	    "dye": "GFP",
+	    "excitation": "488-laser",
+	    "ex_path": [
+		{
+		    "filter": "zt405-488-561-640",
+		    "mode": "r"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "zt405-488-561-640",
+		    "mode": "t"
+		},
+		{
+		    "filter": "FF484",
+		    "mode": "t"
+		},
+		{
+		    "filter": "EM-525-50",
+		    "mode": "t"
+		},
+		{
+		    "filter": "FF538",
+		    "mode": "r"
+		}
+	    ]
+	}
+    ],
+    [
+	"Confocal Alexa-568",
+	{
+	    "detector": null,
+	    "dye": "Alexa-568",
+	    "excitation": "561-laser",
+	    "ex_path": [
+		{
+		    "filter": "zt405-488-561-640",
+		    "mode": "r"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "zt405-488-561-640",
+		    "mode": "t"
+		},
+		{
+		    "filter": "FF484",
+		    "mode": "t"
+		},
+		{
+		    "filter": "FF538",
+		    "mode": "t"
+		},
+		{
+		    "filter": "ET-605-52m",
+		    "mode": "t"
+		}
+	    ]
+	}
+    ]    
 ]

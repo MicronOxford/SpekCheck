@@ -18,6 +18,7 @@
   "DV-SSI-C-YFP-mCh",
   "DV-SSI-Quad-mCh",
   "DV-SSI-Quad",
+  "Di01-R405-488-532-635",
   "EM-442-46",
   "EM-442-46m",
   "EM-445-45",
@@ -58,6 +59,9 @@
   "ET-605-52m",
   "ET-645-30x",
   "ET-705-72m",
+  "FF484",
+  "FF538",
+  "FF635",
   "NI-EM-splitter",
   "NI-EX-dichroic",
   "NI-ch1f1",
@@ -86,5 +90,6 @@
   "ZT405-488-561-647rpc",
   "ZT405-488-561rpc",
   "ZT488_592",
+  "zt405-488-561-640",
   "zt561rdc-xr"
 ]
