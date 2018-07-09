@@ -6,7 +6,7 @@
 ## without any warranty.
 
 PACKAGE := SPEKcheck
-VERSION := 0.2
+VERSION := 0.2+dev
 
 ## Configuration
 ##
