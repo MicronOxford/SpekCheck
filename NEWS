@@ -6,16 +6,35 @@
  ** Changed choice of colour for each spectra to better approximate
     the correct colour for each wavelength.
 
+ ** Replaced the long and complex default setups with a simpler
+    example setup file.  Now has a widefield quad setup, and a
+    confocal with three channels.
+
  ** New dyes:
 
         Atto-594
 
  ** New filters:
 
+        89100bs
+        AT-305-50x
+        Di01-R405-488-532-635
         EM-520-44
         EM-600-52
         EM-dual-488-561
+        ET-402-15x
+        ET-455-50m
+        ET-490-20x
+        ET-525-36m
+        ET-555-25x
+        ET-605-52m
+        ET-645-30x
+        ET-705-72m
+        FF484
+        FF538
+        FF635
         ZT-488-561-rpc
+        zt405-488-561-640
 
 
  Summary of important user-visible changes for SPEKcheck 0.1:
