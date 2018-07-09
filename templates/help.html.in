@@ -153,13 +153,12 @@
 
     <div class="alert alert-info" role="alert">
       The Chrome and Safari web browsers do not load local files by
-      default and so, by default, will require a web server to run
-      SPEKcheck.  To read on how to configure this browsers, and its
-      implications,
-      see <a href="http://www.chrome-allow-file-access-from-file.com/">this
-      for Chrome</a> and <a>this for Safari</a>.  Alternatively,
-      run <code>python -m SimpleHTTPServer</code> which will start a
-      web server, and then access SPEKcheck
+      default and will require a web server to run SPEKcheck. It is
+      possible to configure these browsers to load local files but
+      they are set not to as a security measure. To use these browsers
+      we suggest you run a simple local webserver, such as that
+      provided by python.  Run <code>python -m SimpleHTTPServer</code>
+      which will start a web server, and access SPEKcheck
       at <a href="http://localhost:8000">http://localhost:8000</a>
     </div>
 
