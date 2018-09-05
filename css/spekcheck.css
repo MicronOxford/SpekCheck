@@ -14,14 +14,11 @@
 }
 
 /*
-  Style cursor for drag and drop the filters.  Because the li also
-  have buttons on them (to switch mode between reflection and
-  transmission), we use the more general 'pointer' instead of the
-  grab/grabbing cursors.
+  Style cursor for drag and drop the filters.
 */
-#path-builder li:hover
+#filters-view li:hover
 {
-    cursor: pointer;
+    cursor: grab;
 }
 
 /*

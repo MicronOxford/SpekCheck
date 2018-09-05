@@ -1300,8 +1300,6 @@ class FilterStackView
         const close = node.querySelector('button.close');
         close.addEventListener('click', this.removeFilter.bind(this, i));
 
-        node.ondragstart = this.handleDragStart;
-
         return node;
     }
 
@@ -1311,11 +1309,6 @@ class FilterStackView
 
     removeFilter(i) {
         this._filterstack.removeElem(i);
-    }
-
-    handleDragStart(ev) {
-        ev.dataTransfer.setData('text/plain', ev.target.textContent);
-        ev.dataTransfer.dropEffect = 'move';
     }
 }
 
