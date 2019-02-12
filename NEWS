@@ -1,6 +1,10 @@
  Summary of important user-visible changes for SPEKcheck 0.3:
 -------------------------------------------------------------
 
+ ** Fixed display of spectrum whose raw data started below the
+    displayed minimum (300nm by default).  This issue did not affect
+    the efficiency computations, it only clipped the data on the plot.
+
  ** New dyes:
 
         mRuby2

@@ -1463,8 +1463,11 @@ class SetupPlot extends View
                 i_last = spectrum.wavelength.length -1;
 
             const points = new Array(i_last - i_first);
-            for (let i = i_first; i < points.length; i++)
-                points[i] = {x: spectrum.wavelength[i], y: spectrum.data[i]};
+            for (let i = 0; i < points.length; i++)
+                points[i] = {
+                    x: spectrum.wavelength[i_first+i],
+                    y: spectrum.data[i_first+i]
+                };
 
             const rgb = SetupPlot.wavelengthToRGB(spectrum.peak_wavelength);
             const rgb_str = rgb.join(',');
