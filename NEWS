@@ -5,6 +5,11 @@
     displayed minimum (300nm by default).  This issue did not affect
     the efficiency computations, it only clipped the data on the plot.
 
+ ** New detectors:
+
+        Prime95B
+        PrimeBSI
+
  ** New dyes:
 
         mRuby2
