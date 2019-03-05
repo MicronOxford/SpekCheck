@@ -211,7 +211,7 @@ templates/link-includes.in: $(npm_css)
 	$(RM) $@
 	for FILE in $^ ; do \
 	  INTEGRITY=`$(SHASUM) -b -a 384 "$$FILE" | $(XXD) -r -p | $(BASE64)`; \
-	  echo '  <link rel="stylesheet" type="text/css"' >>\
+	  echo '  <link rel="stylesheet" type="text/css"' >> $@; \
 	  echo '        href="'"$$FILE"'"' >> $@; \
 	  echo '        integrity="sha384-'"$$INTEGRITY"'"' >> $@; \
 	  echo '        crossorigin="anonymous"/>' >> $@; \
