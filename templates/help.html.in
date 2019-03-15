@@ -36,6 +36,10 @@
 <body>
   <header>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="https://www.micron.ox.ac.uk/">
+        <img src="images/micron-logo.png" width="63" height="29"
+             class="d-inline-block align-top" alt="" />
+      </a>
       <a class="navbar-brand" href="./">
         <img src="images/spekcheck-logo.png" width="30" height="29"
              class="d-inline-block align-top" alt="">

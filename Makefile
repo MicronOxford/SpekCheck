@@ -93,6 +93,7 @@ buildable_files := \
   help.html \
   images/favicon.ico \
   images/favicon.png \
+  images/micron-logo.png \
   images/spekcheck-logo.png \
   images/visible-spectrum.png \
   index.html \
@@ -106,6 +107,7 @@ DISTFILES := \
   README \
   css/spekcheck.css \
   data/setups.json \
+  images/micron-logo.svg \
   images/README \
   images/spekcheck-logo.svg \
   js/spekcheck.js \
@@ -144,6 +146,9 @@ images/spekcheck-logo.png: images/spekcheck-logo.svg images/visible-spectrum.png
 
 images/favicon.png: images/spekcheck-logo.svg images/visible-spectrum.png
 	$(RSVG_CONVERT) --format png --width 16 --height 16 $< > $@
+
+images/micron-logo.png: images/micron-logo.svg
+	$(RSVG_CONVERT) --format png $< > $@
 
 ## Not all browsers support png for their icons, so we need this
 ## conversion.  See https://caniuse.com/#feat=link-icon-png
