@@ -19,7 +19,7 @@
 
 ## This code is based on the function wavelength2rgb part of the
 ## Octave image package released under GPLv3+, hence the copyright to
-## William Krekeler, and add the following references:
+## William Krekeler, and had the following references:
 ##
 ## http://stackoverflow.com/questions/2374959/algorithm-to-convert-any-positive-integer-to-an-rgb-value
 ## http://www.midnightkite.com/color.html per Dan Bruton
