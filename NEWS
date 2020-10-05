@@ -7,16 +7,25 @@
 
  ** New detectors:
 
+        Andor iXon Ultra 897(512x512)
         Prime95B
         PrimeBSI
 
  ** New dyes:
 
+        Atto-633
+        CF660c
+        CF-680
+        DY-650
         JF-646 (Janelia Fluor)
         mRuby2
+        mTurquoise
 
  ** New excitation sources:
 
+        559.5-laser
+        639-laser
+        642-laser
         CoolLED-PE300
         Lumencor-SOLA
         X-Cite-Xylis
@@ -31,6 +40,7 @@
         DV-ET-605-52m
         DV-ET-645-30x
         DV-ET-705-72m
+        Di01-R405-488-561-635
         Di01-T405-488-568-647
         Di01-T442-514-647
         Di01-T488
@@ -38,6 +48,8 @@
         EM-525-45
         EM-609-54
         EM-680-42
+        ET-655lp
+        ET-700-75m
         EX-392-23
         EX-466-40
         EX-554-23
@@ -47,12 +59,18 @@
         Em01-R442-647
         Em01-R488-568
         Em01-R514
+        FF01-390-482-563-640
         FF01-530-55
+        FF01-600-52
+        FF01-661-20
         FF409
         FF495
         FF573
         FF625
         FF652
+        FF697-SDi01
+        ZET405-488-561-647mv2
+        ZT405-488-561-640rpcv2
 
 
 Summary of important user-visible changes for SPEKcheck 0.2:
