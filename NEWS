@@ -65,6 +65,9 @@
         FF01-661-20
         FF01-676-37
         FF409
+        FF470-100
+        FF490-60
+        FF490-60
         FF495
         FF573
         FF625
@@ -72,7 +75,6 @@
         FF697-SDi01
         ZET405-488-561-647mv2
         ZT405-488-561-640rpcv2
-
 
 Summary of important user-visible changes for SPEKcheck 0.2:
 -------------------------------------------------------------
