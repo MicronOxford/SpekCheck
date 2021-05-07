@@ -166,8 +166,8 @@ images/favicon.ico: images/favicon.png
 %.json: %
 	$(PYTHON) -c \
 	    "import os, json; \
-	     files = filter(lambda x: x.endswith('.csv'), os.listdir('$^')); \
-	     print(json.dumps(map(lambda x: x[:-4], sorted(files)), \
+	     files = [f for f in os.listdir('$^') if f.endswith('.csv')]; \
+	     print(json.dumps([x[:-4] for x in sorted(files)], \
 	                      separators=(',',': '), indent=2));" \
 	    > $@
 

@@ -27,7 +27,7 @@
 import sys
 
 import numpy
-import scipy.misc
+import PIL.Image
 
 def wavelength2rgb(nm, gamma=0.8):
     if nm.ndim == 1:
@@ -87,7 +87,8 @@ def main(fname):
     ## Array with the visible wavelength range
     nm = numpy.array(range(380, 780))
     rgb = wavelength2rgb(nm)
-    scipy.misc.imsave(fname, rgb)
+    img = PIL.Image.fromarray((rgb * 255).astype(numpy.uint8))
+    img.save(fname)
 
 
 if __name__ == "__main__":
