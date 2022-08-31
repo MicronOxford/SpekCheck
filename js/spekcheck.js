@@ -1414,12 +1414,12 @@ class SetupPlot extends View
                         },
                         ticks: {
                             suggestedMin: 380,
-                            suggestedMax: 780,
+                            suggestedMax: 1000,
                             // Seems like we only want to show this
                             // range, even if we have spectrum data
                             // beyond it.
                             min: 300,
-                            max: 800,
+                            max: 1000,
                         },
                     }],
                     yAxes: [{
