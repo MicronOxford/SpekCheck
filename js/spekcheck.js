@@ -1607,6 +1607,8 @@ class SetupPlot extends View
     static
     wavelengthToRGB(wavelength, gamma=0.8) {
         let rgb;
+	if (wavelength > 780)
+	    wavelength = 780-(wavelength -780) 
         if (wavelength < 380.0)
             rgb = [0.0, 0.0, 0.0];
         else if (wavelength < 440.0)
