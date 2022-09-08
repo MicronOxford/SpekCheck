@@ -1476,6 +1476,8 @@ class SetupPlot extends View
             const line_colour = `rgba(${ rgb_str }, 1.0)`;
             const chartjs_dataset = {
                 data: points,
+		showLine: true,
+		fill: true,
                 backgroundColor: bg_colour,
                 borderColor: line_colour,
                 pointRadius: 0.0, // show the line only, not the datapoints
