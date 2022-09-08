@@ -1407,7 +1407,7 @@ class SetupPlot extends View
                 maintainAspectRatio: false,
                 showLines: true,
                 scales: {
-                    xAxes: [{
+                    x: {
                         scaleLabel: {
                             display: true,
                             labelString: 'Wavelength (nm)',
@@ -1421,14 +1421,14 @@ class SetupPlot extends View
                             min: 300,
                             max: 1000,
                         },
-                    }],
-                    yAxes: [{
+                    },
+                    y: {
                         ticks: {
                             beginAtZero: true,
                             min: 0,
                             max: 1,
                         },
-                    }],
+                    },
                 },
             },
         });
@@ -1453,8 +1453,8 @@ class SetupPlot extends View
             // In Chrome, lines outside the range of the x Axis appear
             // as weird horizontal lines.  See issue #73.  So we crop
             // the data for the displayed range.
-            const x_min = this.plot.options.scales.xAxes[0].ticks.min;
-            const x_max = this.plot.options.scales.xAxes[0].ticks.max;
+            const x_min = this.plot.options.scales.x.ticks.min;
+            const x_max = this.plot.options.scales.x.ticks.max;
             let i_first = spectrum.wavelength.findIndex(x => x >= x_min);
             let i_last = spectrum.wavelength.findIndex(x => x > x_max);
             if (i_first === -1)
@@ -1515,6 +1515,7 @@ class SetupPlot extends View
         }
 
         if (this.setup.excitation !== null) {
+
             // Excitation, together with Dye, is the thing that
             // matters the most to the user, so don't make it
             // transparent like the filters.
