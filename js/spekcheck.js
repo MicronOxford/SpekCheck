@@ -1400,9 +1400,6 @@ class SetupPlot extends View
                 datasets: [],
             },
             options: {
-                title: {
-                    fontSize: 24,
-                },
                 responsive: true,
                 maintainAspectRatio: false,
                 showLines: true,
@@ -1564,10 +1561,10 @@ class SetupPlot extends View
         // We use the title to place the efficiency values, so there's
         // no title if there's no dye.
         if (this.setup.dye === null)
-            Object.assign(this.plot.options.title,
+            Object.assign(this.plot.options.plugins.title,
                           {display: false, text: ''});
         else
-            Object.assign(this.plot.options.title,
+            Object.assign(this.plot.options.plugins.title,
                           this.formatTitle());
 
         // Reverse the datasets.  First elements appear on top of the
@@ -1594,6 +1591,7 @@ class SetupPlot extends View
             info.push('brightness=' + this.setup.brightness.toFixed(2));
 
         const title = {
+	    font: { size: 24},
             display: true,
             text: `${ this.setup.dye.uid } efficiency: ${ info.join(', ') }`,
         };
