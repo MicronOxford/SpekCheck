@@ -1,5 +1,7 @@
 # SPEKcheck
 
+##Note: This is old and is compatible with chart.js v2 for chart.js V3 compatibility please use the master branch
+
 SPEKcheck is a web application to visualise the efficiency of the
 light path in a fluorescence microscope.  It can run locally and
 completely offline, or it can be configured to run in a site.
