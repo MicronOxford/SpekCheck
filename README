@@ -37,5 +37,6 @@ https://www.micron.ox.ac.uk/software/spekcheck/help.html
 
    2. To run with a web server, move the SPEKcheck directory into
     whatever directory your web server is configured to serve.
-    Alternatively, run `python -m SimpleHTTPServer` and then connect
+    Atlternatively, run `python -m SimpleHTTPServer` (python2) or 
+    `python3 -m http.server --directory .` (python3) and then connect
     to http://127.0.0.1:8000/index.html
