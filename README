@@ -29,7 +29,7 @@ https://www.micron.ox.ac.uk/software/spekcheck/help.html
 
     https://github.com/MicronOxford/SpekCheck/releases/
 
-2. SPEkcheck can then run in two modes:
+2. SPEKcheck can then run in two modes:
 
    1. To run without a web server, simply open the `index.html`.
     Browsers other than Firefox will require extra configuration to
@@ -39,3 +39,49 @@ https://www.micron.ox.ac.uk/software/spekcheck/help.html
     whatever directory your web server is configured to serve.
     Alternatively, run `python -m SimpleHTTPServer` and then connect
     to http://127.0.0.1:8000/index.html
+
+### Download node.js files and setup indices.
+
+You will likely need to run make to install the required npm packages,
+generate help files and generate the required json indices of
+filters, dyes, excitation sources and detectors. On a unix like system
+(Linux or macos) this can likely be done by running 'make' at the
+command line.
+
+### Likely needed steps on Windows
+
+On windows this is more involved due to the lack of a number of the
+expected packages. The easiest way to solve this is to use WSL (the
+windows system for Linux) to run the linux tools directly on
+windows. this involves a few steps.
+
+1) Install WSL: Start a command prompt from the start menu and type
+'wsl'. This will run wsl if it is installed or prompt you on how to
+install it if it isn't.
+
+2) Install make sudo apt install make
+
+3) Install npm by following the instructions on
+https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl
+
+but I managed with
+
+ curl -o-
+ https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+
+wait while that installs
+
+ nvm install --lts
+
+That actually installs npm which make will use to install the required
+node.js libraries
+
+4) Install a couple of graphics tools for the help files sudo apt
+install librsvg2-bin sudo apt install icoutils
+
+5) Then to download and install the js packages, generate web
+pages,help files and json indices.
+
+make
+
+The package should now work.
