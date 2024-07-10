@@ -69,15 +69,27 @@ but I managed with
  curl -o-
  https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
 
-wait while that installs
+wait while that installs, then you need to restart your shell or
+otherwise execute your startup script as it alters your path. I
+rexecuted my startup script with
+
+ source ~/.bashrc
+
+Then install the latest long term support version of the tools with 
 
  nvm install --lts
 
 That actually installs npm which make will use to install the required
 node.js libraries
 
-4) Install a couple of graphics tools for the help files sudo apt
-install librsvg2-bin sudo apt install icoutils
+4) Install a couple of graphics tools for the help files
+First to get rsvg-convert
+
+ sudo apt install librsvg2-bin
+
+Then to get icotool
+
+ sudo apt install icoutils
 
 5) Then to download and install the js packages, generate web
 pages,help files and json indices.
