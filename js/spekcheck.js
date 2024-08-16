@@ -1400,35 +1400,32 @@ class SetupPlot extends View
                 datasets: [],
             },
             options: {
-                title: {
-                    fontSize: 24,
-                },
                 responsive: true,
                 maintainAspectRatio: false,
                 showLines: true,
                 scales: {
-                    xAxes: [{
+                    x: {
                         scaleLabel: {
                             display: true,
                             labelString: 'Wavelength (nm)',
                         },
                         ticks: {
                             suggestedMin: 380,
-                            suggestedMax: 780,
+                            suggestedMax: 1000,
                             // Seems like we only want to show this
                             // range, even if we have spectrum data
                             // beyond it.
                             min: 300,
-                            max: 800,
+                            max: 1000,
                         },
-                    }],
-                    yAxes: [{
+                    },
+                    y: {
                         ticks: {
                             beginAtZero: true,
                             min: 0,
                             max: 1,
                         },
-                    }],
+                    },
                 },
             },
         });
@@ -1453,8 +1450,8 @@ class SetupPlot extends View
             // In Chrome, lines outside the range of the x Axis appear
             // as weird horizontal lines.  See issue #73.  So we crop
             // the data for the displayed range.
-            const x_min = this.plot.options.scales.xAxes[0].ticks.min;
-            const x_max = this.plot.options.scales.xAxes[0].ticks.max;
+            const x_min = this.plot.options.scales.x.ticks.min;
+            const x_max = this.plot.options.scales.x.ticks.max;
             let i_first = spectrum.wavelength.findIndex(x => x >= x_min);
             let i_last = spectrum.wavelength.findIndex(x => x > x_max);
             if (i_first === -1)
@@ -1476,6 +1473,8 @@ class SetupPlot extends View
             const line_colour = `rgba(${ rgb_str }, 1.0)`;
             const chartjs_dataset = {
                 data: points,
+		showLine: true,
+		fill: true,
                 backgroundColor: bg_colour,
                 borderColor: line_colour,
                 pointRadius: 0.0, // show the line only, not the datapoints
@@ -1515,6 +1514,7 @@ class SetupPlot extends View
         }
 
         if (this.setup.excitation !== null) {
+
             // Excitation, together with Dye, is the thing that
             // matters the most to the user, so don't make it
             // transparent like the filters.
@@ -1561,10 +1561,10 @@ class SetupPlot extends View
         // We use the title to place the efficiency values, so there's
         // no title if there's no dye.
         if (this.setup.dye === null)
-            Object.assign(this.plot.options.title,
+            Object.assign(this.plot.options.plugins.title,
                           {display: false, text: ''});
         else
-            Object.assign(this.plot.options.title,
+            Object.assign(this.plot.options.plugins.title,
                           this.formatTitle());
 
         // Reverse the datasets.  First elements appear on top of the
@@ -1591,6 +1591,7 @@ class SetupPlot extends View
             info.push('brightness=' + this.setup.brightness.toFixed(2));
 
         const title = {
+	    font: { size: 24},
             display: true,
             text: `${ this.setup.dye.uid } efficiency: ${ info.join(', ') }`,
         };
@@ -1607,6 +1608,8 @@ class SetupPlot extends View
     static
     wavelengthToRGB(wavelength, gamma=0.8) {
         let rgb;
+	if (wavelength > 780)
+	    wavelength = 780-(wavelength -780) 
         if (wavelength < 380.0)
             rgb = [0.0, 0.0, 0.0];
         else if (wavelength < 440.0)
