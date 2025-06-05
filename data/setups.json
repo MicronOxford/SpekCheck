@@ -15,7 +15,7 @@
 	    ]
 	}
     ],
-
+    
     [
 	"Light Sheet 488",
 	{
@@ -32,7 +32,7 @@
 	    ]
 	}
     ],
-
+    
     [
 	"Ligth Sheet 561",
 	{
@@ -49,7 +49,7 @@
 	    ]
 	}
     ],
-
+    
     [
 	"Light Sheet 640",
 	{
@@ -66,10 +66,10 @@
 	    ]
 	}
     ],
-
+    
     [
 	"Light Sheet 785",
-
+	
 	{
 	    "detector": null,
 	    "dye": "Alexa-plus-800",
@@ -84,10 +84,10 @@
 	    ]
 	}
     ],
-
+    
     [
 	"Light Sheet 785 new",
-
+	
 	{
 	    "detector": null,
 	    "dye": "Alexa-plus-800",
@@ -103,52 +103,284 @@
 	}
     ],
     [
-	"Nikon Sora Alexa555",
+	"Nikon SoRa 405",
 	{
-  "detector": null,
-  "dye": "Alexa-555",
-  "excitation": "577-laser",
-  "ex_path": [
-    {
-      "filter": "DM-Ziva-penta",
-      "mode": "t"
-    }
-  ],
-  "em_path": [
-    {
-      "filter": "EM-Ziva-606-18",
-      "mode": "t"
-    },
-    {
-      "filter": "DM-Ziva-penta",
-      "mode": "r"
-    }
-  ]
-}
-],
+	    "detector": null,
+	    "dye": null,
+	    "excitation": "405-laser",
+	    "ex_path": [
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "EM-Ziva-445-49",
+		    "mode": "t"
+		},
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "r"
+		}
+	    ]
+	}
+    ],
+    [
+	"Nikon SoRa 445",
+	{
+	    "detector": null,
+	    "dye": null,
+	    "excitation": "440-laser",
+	    "ex_path": [
+		{
+		    "filter": "DM-Ziva-triple-446-518-577",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "EM-Ziva-481-36",
+		    "mode": "t"
+		},
+		{
+		    "filter": "DM-Ziva-triple-446-518-577",
+		    "mode": "r"
+		}
+	    ]
+	}
+    ],
+    [
+	"Nikon Sora 488",
+	{
+	    "detector": null,
+	    "dye": null,
+	    "excitation": "488-laser",
+	    "ex_path": [
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "r"
+		},
+		{
+		    "filter": "EM-Ziva-531-50",
+		    "mode": "t"
+		}
+	    ]
+	}
+    ],
+    [
+	"Nikon SoRa 514",
+	{
+	    "detector": null,
+	    "dye": null,
+	    "excitation": "514-laser",
+	    "ex_path": [
+		{
+		    "filter": "DM-Ziva-triple-446-518-577",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "EM-Ziva-547-20",
+		    "mode": "t"
+		},
+		{
+		    "filter": "DM-Ziva-triple-446-518-577",
+		    "mode": "r"
+		}
+	    ]
+	}
+    ],
+    [
+	"Nikon SoRa 577",
+	{
+	    "detector": null,
+	    "dye": null,
+	    "excitation": "577-laser",
+	    "ex_path": [
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "EM-Ziva-606-18",
+		    "mode": "t"
+		},
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "r"
+		}
+	    ]
+	}
+    ],
+    [
+	"Nikon SoRa 577mC",
+	{
+	    "detector": null,
+	    "dye": null,
+	    "excitation": "577-laser",
+	    "ex_path": [
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "EM-Ziva-647-100",
+		    "mode": "t"
+		},
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "r"
+		}
+	    ]
+	}
+    ],
+    [
+	"Nikon SoRa 640",
+	{
+	    "detector": null,
+	    "dye": null,
+	    "excitation": "640-laser",
+	    "ex_path": [
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "EM-Ziva-Cy5-691-64",
+		    "mode": "t"
+		},
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "r"
+		}
+	    ]
+	}
+    ],
+    
+    [
+	"Nikon SoRa 750",
+	{
+	    "detector": null,
+	    "dye": null,
+	    "excitation": "730-laser",
+	    "ex_path": [
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "EM-Ziva-Cy7-823-100",
+		    "mode": "t"
+		},
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "r"
+		}
+	    ]
+	}
+    ],
+    [
+	"Nikon SoRa penta-multipass",
+	{
+	    "detector": null,
+	    "dye": null,
+	    "excitation": null,
+	    "ex_path": [
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "EM-Ziva-penta-445-531-606-691-823",
+		    "mode": "t"
+		},
+		{
+		    "filter": "DM-Ziva-penta",
+		    "mode": "r"
+		}
+	    ]
+	}
+    ],
+    [
+	"Nikon SoRa triple-multipass",
+	{
+	    "detector": null,
+	    "dye": null,
+	    "excitation": null,
+	    "ex_path": [
+		{
+		    "filter": "DM-Ziva-triple-446-518-577",
+		    "mode": "t"
+		}
+	    ],
+	    "em_path": [
+		{
+		    "filter": "EM-Ziva-triple-481-547-647",
+		    "mode": "t"
+		},
+		{
+		    "filter": "DM-Ziva-triple-446-518-577",
+		    "mode": "r"
+		}
+	    ]
+	}
+    ],    
+    [
+	"LLS FarRed",
+	{
+	    "detector": null,
+	    "dye": null,
+	    "excitation": "640-laser",
+	    "ex_path": [],
+	    "em_path": [
+		{
+		    "filter": "Zeiss-SBS-LP565",
+		    "mode": "r"
+		},
+		{
+		    "filter": "Zeiss-BP570-620_LP655",
+		    "mode": "t"
+		}
+	    ]
+	}
+    ],
+    
+    [
+	"LLS Red",
+	{
+	    "detector": null,
+	    "dye": null,
+	    "excitation": "561-laser",
+	    "ex_path": [],
+	    "em_path": [
+		{
+		    "filter": "Zeiss-SBS-LP565",
+		    "mode": "r"
+		},
+		{
+		    "filter": "Zeiss-BP570-620_LP655",
+		    "mode": "t"
+		}
+	    ]
+	}
+    ]
+]
 
-[
-"Nikon Sora Alexa 488",
-{
-  "detector": null,
-  "dye": "Alexa-488",
-  "excitation": "488-laser",
-  "ex_path": [
-    {
-      "filter": "DM-Ziva-penta",
-      "mode": "t"
-    }
-  ],
-  "em_path": [
-    {
-      "filter": "DM-Ziva-penta",
-      "mode": "r"
-    },
-    {
-      "filter": "EM-Ziva-531-50",
-      "mode": "t"
-    }
-  ]
-}
-]
-]
