@@ -47,3 +47,30 @@
     float: left;
     margin: 1em;
 }
+
+/*
+  Styling for spectral selection controls
+*/
+#spectral-min-slider,
+#spectral-max-slider
+{
+    width: 100%;
+    cursor: pointer;
+    padding: 0;
+    height: 2rem;
+    vertical-align: middle;
+}
+
+/* Flex layout for range input + number input */
+.d-flex {
+    display: flex;
+}
+
+.d-flex .form-control-range {
+    flex-grow: 1;
+    margin-right: 0.5rem;
+}
+
+.d-flex .form-control-sm {
+    flex-shrink: 0;
+}

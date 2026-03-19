@@ -127,6 +127,21 @@
       </dd>
     </dl>
 
+   <h2 id="Code and citation">Code and citation</h2>
+
+    <p>
+      The code for SPEKcheck is available on
+     <a href="https://github.com/MicronOxford/SpekCheck">github</a>
+     and the details of the implementation can be found in Phillips et
+     al. SPEKcheck - fluorescence microscopy 
+     spectral visualisation and optimisation: a web application,
+     javascript library, and data resource.
+     Wellcome Open Res. 2018 Jul 30;3:92.
+     doi: <a href=
+	     https://dx.doi.org/10.12688/wellcomeopenres.14703.1>10.12688/wellcomeopenres.14703.1</a>
+     PMID: 30175248; PMCID: PMC6107975. 
+    </p>
+    
     <h2 id="installation">Installation</h2>
 
     <p>

@@ -318,6 +318,51 @@
         </ul>
       </div>
     </div>
+    
+    <div class="col-sm" id="spectral-selection">
+      <div class="card">
+        <div class="card-header">
+          <div class="custom-control custom-checkbox">
+            <input type="checkbox" class="custom-control-input" id="spectral-enable"
+                   title="Enable spectral selection filter">
+            <label class="custom-control-label" for="spectral-enable">
+              Spectral Selection
+            </label>
+          </div>
+        </div>
+        <div class="card-body" style="padding: 0.75rem;">
+          <!-- Min wavelength control -->
+          <div class="form-group mb-3">
+            <label for="spectral-min-slider" class="mb-1" style="font-size: 0.9rem; font-weight: 500;">
+              Min (nm)
+            </label>
+            <div class="d-flex gap-2" style="gap: 0.5rem;">
+              <input type="range" class="form-control-range flex-grow-1" id="spectral-min-slider"
+                     min="300" max="1000" step="1" value="500"
+                     title="Minimum wavelength of spectral selection">
+              <input type="number" class="form-control form-control-sm" id="spectral-min-input"
+                     min="300" max="1000" step="1" value="500"
+                     style="width: 70px; flex-shrink: 0;">
+            </div>
+          </div>
+          
+          <!-- Max wavelength control -->
+          <div class="form-group mb-0">
+            <label for="spectral-max-slider" class="mb-1" style="font-size: 0.9rem; font-weight: 500;">
+              Max (nm)
+            </label>
+            <div class="d-flex gap-2" style="gap: 0.5rem;">
+              <input type="range" class="form-control-range flex-grow-1" id="spectral-max-slider"
+                     min="300" max="1000" step="1" value="600"
+                     title="Maximum wavelength of spectral selection">
+              <input type="number" class="form-control form-control-sm" id="spectral-max-input"
+                     min="300" max="1000" step="1" value="600"
+                     style="width: 70px; flex-shrink: 0;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <template id="collection-filters">
