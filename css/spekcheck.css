@@ -74,3 +74,11 @@
 .d-flex .form-control-sm {
     flex-shrink: 0;
 }
+/*
+  The default style for this button does not make it obvious it is a
+  button, so make it thicker and less transparent (issue #85).
+*/
+.navbar-dark .navbar-toggler {
+    border-width: 2px;
+    border-color: rgb(255, 255, 255, 0.5);
+}
